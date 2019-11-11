@@ -1,0 +1,67 @@
+
+*  QuickASM command table
+*
+*    L = Linker
+*    C = Compiler/Assembler
+*    I = Internal Command (leave the ID's alone)
+*                         (you CAN change the command's NAME)
+*    E = External Command (found in prefix #6)
+*    A = Shell Application
+
+* Name  Type  ID#           Comment
+*-----------------------------------------
+
+QLINKGS     *L    1           ;QuickASM Linker
+QASMGS      *C    1           ;QuickASM 65816/GS Merlin Assembler
+
+QUIT        I     1           ;Quit Shell
+BYE         I     1           ;Same as QUIT
+PREFIX      I     2           ;Set/Show Prefix
+PFX         I     2           ;Same as PREFIX
+PURGE       I     3           ;Purge and compact mem
+HELP        I     4           ;Show commands
+
+ASM         I     5           ;Assemble
+ASSEMBLE    I     5           ;Assemble
+COMPILE     I     5           ;Compile(ASM)
+LINK        I     6           ;Link
+SHOW        I     7           ;Show Prefixes and mem
+STATS       I     7           ;Same as SHOW
+
+ASML        I     8           ;Assemble and link
+CMPL        I     8           ;Compile and link
+ASMLG       I     9           ;Assemble, link and execute
+CMPLG       I     9           ;Compile, link, and exevute
+SET         I     10          ;Set Prefixes
+POP         I     11          ;Pop a prefix level
+TOOLMACS    I     12          ;Load Built in Macros
+=           I     13          ;launch/return
+-           I     14          ;launch/noreturn
+RUN         I     13          ;same as =
+LAUNCH      I     14          ;same as -
+SHUTDOWN    I     15          ;Reboot System
+RESTART     I     15          ;same as shutdown
+ASCII       I     16          ;Show ASCII table
+ONLINE      I     17          ;Show online volumes and devices
+*TEST I 18 ;For testing commands under development
+*EJECT I 19 ;Ejects all 3.5 disks online
+*PARK I 20 ;Parks all HD's online
+*UNPARK I 21 ;Restarts all HD's online
+*APW I 22 ;boot into apw (not complete)
+*MON I 23 ;Enter Monitor
+*MONITOR I 23 ;Same as mon..
+
+CATALOG     *E    1           ;catalog
+CAT         *E    1           ;catalog
+c           *E    1
+DUMP        *E    2           ;Dump OMF file
+TYPE        *E    6           ;type a text file to screen
+WHERE       *E    7           ;show handles
+DELLINK     *E    10          ;delete all $F8 (LNK) files from directory(nested)
+LC          *E    11          ;lower case all fnames in directory
+DELETE      *E    12          ;delete files (supports wildcards)
+REZ         *E    13          ;Resource Compiler
+time        *E    14
+
+EDIT        *A    8           ;Edit a file
+

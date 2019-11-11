@@ -1,0 +1,492 @@
+
+	QuickASM Shell v0.40				by Lane Roath
+
+The QuickASM shell combines the best of both worlds; Graphics and Text.  With this shell you can use a graphical, multi-window system similar to MPW on the Macintosh or a text based system similar to APW on the GS.  Not only that, but you can switch between the two at will with a single keypress!
+
+This version of the QuickASM shell is NOT completed, but should give you enough of a base to do serious development work in.  "Not Implemented" details those features of the graphics enviroment which have not been implemented at this time.
+
+Not Implemented
+
+"Project"		has not even begun to be implemented!  However, the single option "Build Project" does allow you to select a Merlin 16+ link file to use as a bases for linking ( ___ BUGGY ___).  If you have an open source window, this option will try to use it as the link file.  (ie, open your link file, then edit your documents.  When ready to link, just select the link file's window and choose this option!)  Later, this will instead look (only???) at QuickASM project files & will work on the open project if there is one.
+
+"Apple" -		"Help" provides no such thing!  Must learn the list manager...
+
+"Document" -	"Label/Line #"  does nothing at this point.  Use "Find" instead.
+
+"Tools" -		does nothing!  (the SFDialog does appear, but nothing happens).
+
+"GS/OS" -	the only option that works is "Delete".
+
+"Transfer" -	"Launch..." allows selection of the file, but will probably crash your system
+		(___BUGGY___).  The file list (ie, Merlin 16+) is not implemented!
+
+ Text Mode
+
+This should all work, but extensive testing has NOT been done.  To return to the graphics enviroment simply press the ESC key at the "CMD:" prompt.
+
+To be done
+
+"Fix Source"	instead of just changing $A0 to tabs, need to format each line and replace it in the document.  MUCH slower, but needed because otherwise we can't fix sources from QuickEdit or APW.  Also, we leave lines which Merlin prints correctly but doesn't modify (ie, all spaces are $20) in a bad state (ie, comments with no ; preceding them).
+
+QuickLink	we need to have a way to link a project using the QuickLink.S file method, preferably with a hot key associated with it (*Ll?).  This would be an "interm" idea until our project stuff is done???
+
+_________________________________________________________________________
+
+	QuickASM Technical Information			Jan 9, 1990  - 1st revision
+_________________________________________________________________________
+
+Introduction
+
+This document will attempt give some insight on developing applications and utilities that execute under the QuickASM development environment.  It describes what is available under the development system and gives examples on using the QuickASM toolset, writing SHELL programs, shell applications, utilities, additional compilers/assemblers, additional linkers, and adding additional features to the QuickASM GS assembler (such as keyboard macros, USR opcodes, and USER files).
+
+The QuickASM development system has been designed to allow the Apple //GS software developer the flexibility and power he needs along with the ability to allow his development environment grow as his needs change.  The basic system includes TWO different interfaces: a text based command line interface is available for those developers who enjoy the traditional text based programming environment similar to that of the Apple Programmer's Workshop, and a full SHR "desktop" environment that includes pull down menus, multiple edit windows, and the ability for multiple "shell applications" to execute simultaneously on the desktop.
+
+Combined with the ability to easily add new commands and shell applications (including new compilers and linkers!) the QuickASM development system will be hard to beat for a long time to come, and will constantly be updated.
+
+The QuickASM development environment has been designed with both APW and Merlin users in mind.  It combines the power and flexibility of the APW programming environment with the ease of use and SPEED of Merlin 16+. APW users have only DREAMED they could achieve the speed of Merlin under their APW shell, and Merlin users could only wish for APW expandability and power!  With QuickASM, you have the best of both worlds!
+
+At the heart of the system is a Merlin 16+ compatible 65816 macro assembler, which, along with being 100%+ Merlin compatible at source code and link file levels, has over 40 new features (including built in GS ToolBox macros) and psuedo opcodes for even more assembly language power.  Have you ever scratched your head and thought "I wish I could do this...in Merlin??" Well...now you can!
+
+The QuickASMGS linker is also 100%+ Merlin compatible and all of your current Merlin linker command files will work perfectly without change.  But we weren't satisfied with that! The QuickASM linker is also 25% faster than the Merlin linkers, generates SMALLER object files, supports GS resources, has an "auto-EXPRESS" feature (to create EXPRESSLOAD files), allows expression evaluation (like "DS reserved*2"...where "reserved" is a label in your assembly source!!!), and allows much more flexibility in program design by allowing a greater number of segments, multiple SAV's and a variety of other time and space saving features.
+
+The QuickASM development system also includes 2 utilities for working with resource forks in your application. First, the resource compiler allows you to compile text files into resources, much like APW's REZ program. Second, the resource editor allows you to visually edit, change ID's, cut, copy, and paste resources between different programs. The resource editor has been designed to use "resource translators" so as more resource types are defined, simply adding a new translator will allow you to graphically edit the new resource.  Coupled with the linker's ability to automatically link resources from "resource libraries", the QuickASM development environment delivers more power to develop programs utilizing resources than any other development system on the market.
+
+ *** A resource de-compiler will also be available that will create a resource compiler compatible text file from existing resources.  ***
+
+Also in the works is a Project Manager that will allow the developer to create "projects" that will automatically "remember" prefix settings, source files, link orders, and final "load file" segment types and position.  If you are familiar with Lightspeed Pascal for the Macintosh....we have a treat for you!  *** NOTE **** if you have suggestions for the project manager, be sure to let Lane know about them soon!!!
+
+The QuickASM development system also includes a symbolic debugger (much like the APW DEBUG program) that allows the programmer to step, trace, and execute any GS program, along with setting breakpoints, viewing memory, 65816 registers, and the stack.  If the program has been created with the QuickASM linker, you will also have the ability to access variables, subroutines, etc. by LABEL!!!!
+
+
+Definitions
+
+Throughout this information, you will encounter several terms which, generally speaking, may cause some confusion. The following definitions will make things clearer.
+
+Application -       Unless otherwise noted, "application" will describe a QuickASM "shell application", a program that has been specifically written to run under the QuickASM shell environment.  The best way to understand these programs is to consider them to be "shell desk accessories".  When these programs are executed by the user they remain active on the QuickASM "desktop" until they are closed by the user.  Normally (but not limited to), these applications will put a window on the desktop and allow the user to do some action.  These programs are passed "messages" by the QuickASM shell, that tell the application what action it is to take. Multiple "applications" may be open at once on the desktop and the QuickASM shell acts like a "multifinder" allowing each to handle it's own events.
+
+Compiler -          Throughout this discussion, the term "compiler" will be used to designate any program that converts the user's source code files into files that a "linker" will use to create the final GS program file.  The QuickASM 65816 assembler is one example of such a program.  Additional "compilers" may be added to the QuickASM development system simply by following the "Compiler Requirements" below.  We anticipate other compilers, such as BASIC, PASCAL and C to become available in the future.  We are also working on a Merlin compatible assembler that creates link files that are compatible with the APW linker.
+
+Linker -            the term "linker" describes any program that takes output files from different "compilers" and creates an Apple //GS "load" file from them. The QuickASM linker currently accepts Merlin type LNK files ($F8) and imediately creates GS programs in OMF format.
+
+External Command -  An external command is a disk based command, such as TYPE or DUMP.  These programs are only in memory while it is executing, and is shutdown after completing its task.  These programs are located in the "COMMANDS" directory (prefix #6) and are available in either the command line or graphics interface.
+
+Internal Command -  Internal commands are those commands built into the QuickASM system, such as CATALOG or DELETE. These commands are always available to the user, from either the command line or graphics shell.
+
+
+Inside the Environment
+
+When the user launches the file QASM, the QuickASM development system goes through a rather complex boot process to initialize itself. Actually, the QASM file is simply an init file responsible for:
+
+Startup:
+
+1:  Starting up the Tool Locator, Memory Manager, Miscellaneous Tools, ADB toolset, Integer Math toolset, SANE toolset, the resource Manager, and the Text Toolset (the Text Toolset is also initialized for BASIC style input/output, the screen is cleared and the cursor is moved to home.
+
+2:  Loading the file QASYSTEM/QATOOLS using _InitialLoad, installing it as a USER toolset, and calling _QABootInit.
+
+3:  Loading the file QASYSTEM/QAINTCMD using _InitialLoad, to load the system's internal commands. The handle to this program file is saved to pass to the QA toolset.
+
+4:  Loading the file QASYSTEM/QAPREFS, which is the user's preference file and again saving the handle to this file for later.
+
+5:  Reading the user's command table (file: QASYSTEM/QACMD), which is simply a TXT or SRC file in the following format:
+
+Command Name	Type	ID #	Comment
+TYPE		E	12	;List a TXT file
+
+The COMMAND NAME is a valid ProDOS pathname that may be no longer than 15 characters in length. It is this name that the user will type at the command line to access the command.  The commmand name may consist of upper or lower case letters, but the commands are considered case-INSENSITIVE.
+
+The TYPE is a letter designating the type of the command: C for compiler, L for linker, I for internal command, E for external command, and A for application. The type letter may be preceded by a '*' to allow the program to be restartable from memory.
+
+The ID NUMBER is any number from 1 to 65535 that will be used internally by the system.  Duplicate IDs are allowed, but the file used by any duplicate ID numbers will be the name of the file that comes first in the list. This allows the user to have multiple commands that do the same thing. 
+
+For example:
+
+CATALOG	*E	1	;this is the catalog command
+CAT	E	1	;this will execute CATALOG
+DIR	E	1	;again, same as CATALOG
+
+The COMMENT field is not required but may be used 
+to describe the command.
+
+The command file is read and stored into records of the following format:
+
+	Offset	# bytes	Description
+	+ 0	16	Command Name (P-Str, all caps)
+	+16	2	Type (L=1,C=2,I=3,E=4,A=5)
+	+18	2	ID Number (1-65535)
+	+20	2	Flags (b15=restartable, all others 0)
+	+22	2	UserID (must be zero)
+	+24	4	DP Handle (must be zero)
+	+28	2	DP address (must be zero)
+	+30	4	Load Address (must be zero)
+	+34	2	Message (must be zero)
+	+36	4	Message subtype (must be zero)
+
+The INIT program should do a _QAGetCmdRecSize():recsize call to determine the length of each individual record. The current version of the toolset will return 40. This allows the extension of the records in the future as well as maintaining backward compatiblity.
+
+         ** The handle to this array of commands MUST be passed to the QAToolSet. **
+
+
+6: The init file must then check bit 15 of the INITFLAGS field in the QAPREFS file (which has already been loaded) and if the bit is set to 1, the init file loads the file QASYSTEM/QAGRAF using _InitialLoad. If the bit is 0 the file QASYSTEM/QATEXT is loaded using _InitialLoad.  In each case, a new USERID is obtained and a $100 byte direct page is obtained from the memory manager (use the new userid)
+
+7: _QAStartUp is then called, using the USERID of the INIT file, and a MODEFLAGS field of $00008000 (for QAGRAF) or $00000000 (for QATEXT).
+
+8: _QASetCmdHdl is called with the handle to the command table array. _QASetParmHdl is called with the handle to QAPREFS.
+
+9: Next, the A register is loaded with the userid of the QAGRAF or QATEXT program and the D register is loaded with the value of the $100 byte block obtained from the memory manager, the X and Y registers are currently undefined and should be set to zero. Finally, a JSL is executed to call the shell program.
+
+Any Errors obtained at any of these levels are considered FATAL and are reported to the user using the TEXT TOOLS.  All necessary shutdown is performed, (_UserShutdown, disposing of memory, etc) and control is passed back to the launching application via a GS/OS QUIT call.
+
+
+ShutDown
+
+When control passes back to the INIT file via RTL from the shell program, the status of the carry flag is checked to determine if a fatal error occurred in the shell. If carry clear, no error occurred and shutdown may proceed as normal, otherwise the error code is reported to the user via TEXT tools, shutdown is completed as described below and a GS/OS QUIT call is performed.
+
+If no error occurred from the shell, a _QAGetQuitParms call is executed to check whether another application is to be launched or not and the GS/OS QUIT call is called accordingly after all shutdown is completed.
+
+The INIT file must do the following:
+
+1: Disposing of any memory that it may have obtained (commandtblhdl,parmhandle, etc).
+
+2: If QATEXT or QAGraf was started up, a _UserShutDown call must be made to remove it from memory. (_UserShutdown will dispose of the DP handle used for it automatically if the INIT file used the shell's USERID when it requested the handle)
+
+3: If _QAStartup was called and successful, the INIT file MUST, before calling _QAShutdown, do a _QADispose which will shutdown any and all external programs (applications, compilers, etc.) that may still be executing.  The graphics shell should have done this already, but the text shell may not have....if it has already been called, no harm will be done, and it is better to be safe, than sorry!
+
+4: ShutDown all toolsets that were started.
+
+5: Make a GS/OS QUIT call (using results of _QAGetQuitParms if necessary..see above) to return to the system.
+
+
+QATEXT/QAGRAF
+
+These two programs are the user interface that link the user to the QAToolset and the commands, and applications available to him. QATEXT is a command line interface (much like APW) and QAGRAF is a desktop environment. In either case these programs are responsible for:
+
+1: When control is passed to the program it is via JSL, the A reg is set to it's USERID and the D register is set to a $100 byte block of direct page.  The shell must use its OWN userid for obtaining memory, and if it needs more than $100 bytes of DP it should do a _FindHandle, and a _SetHandleSize.
+
+2: Before taking ANY steps (after saving the DP and USERID) the shell program should do a _QAStatus call (make sure you use PEA $00, not PHA, etc) to determine if the QATools are started up. If an error is returned, or the result is $00, the shell was not launched by the QuickASM development environment and should immediatly execute a GS/OS QUIT call.
+
+3: After determining that QATools are active, the shell must load and startup any and all toolsets that it requires other than those started by the INIT program (see above). If the shell will be using the Event Manager (or TASKMASTER), it must do a _QAGetModeFlags, set bit 14 (remember MODEFLAGS is a long word!) and do a _QASetModeFlags.
+
+4: After the shell has started up the tools it needs, setup anything else it needs (menus, windows, etc), the shell must use the call _QASetVector to set pointers to routines that will handle the I/O for commands, compilers, linkers, and applications.  Text based shells need not set these vectors as the QATools defaults to standard text input and output.
+
+Vectors of significance to the SHELL are described below:
+
+**** Important ****
+
+All vectors are called in full native mode (16 bit A,X,Y) with a JSL.  The routines must preserve the D and B registers and return via RTL in full native mode. If an error occured, the carry must be set with the error code in A, else carry is clear with the registers set as defined below:
+
+***************************************************************
+These vector numbers are NOT SET in stone....you should use the QA.EQUATES file and use the name of the vector preceded with a 'v'. Thus, to access the PrintChar vector use '#vPrintChar'.
+
+****************************************************************
+
+Vector #    Name       Description
+
+1 - PrintChar - Print character in A reg (low byte only, high undefined) to current display window.
+2 - PrintStr     - Print Pascal type string (ptr low in A, ptr high in X) to current display window.
+3 - ErrChar     - Print character in A reg (low byte only, high undefined) to current error output window.
+4 - ErrStr        - Print Pascal type string (ptr low in A, ptr high in X) to current error output window.
+10 - Keyavail - Return $FFFF (true) in A if keypress, autokey available in queue. Return $0000 (false) if no keypress available. ALWAYS leave keypress in queue!
+11 - GetChar     - Return pending keyboard character (high bit set) in low byte in A. Return keyboard modifiers at time of press (format of $C025 keyboard register) in high byte of A. Remove keypress from queue.
+12 - GetLine     - Get a line of input from user. On entry, the A register holds the low word of a pointer to the parameter table, the X register holds the high word of the pointer. The parameter table is defined below.  The routine should return the user's input line at the address pointed to by the LINESTR field in the table.  The high bits of all input characters MUST be clear, and a <CR> character must be appended to the end of the string. LINEPTR is a Pascal Type string (with a length byte) and should be returned as such. On entry, LINESTR will hold the default text to use, or will be a NULL string if none. PROMPTPTR is a pointer to a promptstr that should be used to ask the user for input. The MAXLEN field is the maximum length of the string that the user may enter. If an error occurs, the carry should be set, and the A holds the error code on return. If no error occurs, the carry must be clear, and the A register holds $0000 if the user chose to ACCEPT the line, or $FFFF if the user canceled the operation. If CANCEL is selected, the original LINESTR MUST NOT be changed in any way.
+
+GetLine	Parameter		Table:
++0	MaxLen		word
++2	PromptPtr		Long
++6	LineStrPtr	Long
+
+16	TabToColumn - Move cursor X position to value in A
+			register, if current X is >= value,
+			simply move X pos forward one pos,
+			scrolling if necessary.
+
+5:  Once all vectors are setup, the Shell starts its main event loop.  During each pass through this loop, it must do the following things:
+
+Call _QAGetQuitFlag and if the result is true, the user has selected quit somewhere (it may not be from within the shell, so you MUST check this flag) and the shell must take whatever action it needs to quit the program (see "shutdown" below).
+
+Call _QARun. This procedure requires nothing of the shell itself, no parameters or results, it simply passes a RUN message to any shell applications that may be executing.
+
+If after recieving an event (either from TaskMaster or the event manager), that cannot be handled by the shell itself, it must call _QAEvent with the pointer to the event record (or taskrecord) and a flag describing whether the record is an event record or a task record. This allows shell applications to handle events that were intended for them.
+
+6: In order for the shell to execute commands that are built into the system, either external programs (commands) or internal commands, it must pass a pointer to a cmd line to the routine (_QAParse) which will determine if the command is a valid command or not, and return a type ID (1..5) and a command ID (1.65536) of a valid command, or an error if not. To actually execute the command, the shell simply calls _QAExecCommand with the typeid and commandid of the command it wants to execute, the toolbox handles all loading and unloading, obtains the necessary DP for the utility, and calls it. Most commands will require that a previous _QASetCommandLine be executed so that it may retrieve whatever parameters it needs to do its job.  Even if the shell is not using a command line interface...it MUST place SOMETHING in the system command line string before calling _QAExecCommand.  *** See Below....About Command Lines ***
+
+_QAExecCommand will return no error (carry clear..toolbox convention) if the command reported no error, and the error code (carry set) in A if an error occurred or the command was not valid. The shell should report this error to the user in what ever means it sees fit.
+
+
+Shell Shutdown
+
+When the system QUITFLAG is TRUE (via _QAGetQuitFlag) the shell must do the following before returning via RTL to the INIT program.
+
+Call _QADispose before shutting down any tools or disposing of any system handles or pointers. This will pass shutdown messages to any currently executing applications that may require them. It will also release any and all memory given to these applications and delete their USERIDs from the list of active IDs.
+
+Call _QAResetVectors. This call resets the internal vectors to their default values, so the shell doesn't get called after it's been unloaded.
+
+Dispose of any memory that the shell has acquired for it's own use.
+
+Shutdown any tools (excluding those started by the INIT file..see above)
+
+Exit via RTL with carry clear indicating NO FATAL ERROR. If the Shell can't startup correctly (can't load a tool, etc) it should exit carry set, with error code in A, so the INIT file can report it to user and shutdown the system.
+
+
+***** More about Command Lines *****
+
+The QAToolSet keeps it's own internal command line so that external commands and applications can get required parameters from them.  This command line is a PType string (with a length byte) that consists of ASCII characters >=$20 (i.e. no control characters) and high bits clear. The string is also terminated by a <CR> char ($0D) and this byte is included in the length count.  The MAXIMUM length of this command line is 255 characters and 1 length byte for a total of 256 bytes.
+
+A shell program uses the call _QASetCommandline to set this command line in the system.  It will automatically append any needed <CR> as well as remove control characters. Most (if not all) commands executed via _QAExecCommand will expect this command line to be valid as they will use the call _QAGetCommandLine to get their info.  They will also expect to find a command word (i.e CATALOG) at the beginning of the system command line.  The command word is not important in what it says.....just that it be there. External commands DO NOT check what the characters are (or else the user would not be able to rename his commands), but they do "skip" over this word to get to their parameters.  Thus, any shell wishing to call _QAExecCommand MUST put at least one alphanumeric character, a space, any required paramters, and a <CR> into the system command line using _QASetCommandLine, before calling _QAExecCommand.
+
+________________________________________________________________________
+
+			QuickASM GS Beta Test Docs
+________________________________________________________________________
+
+
+QuickASM is copyright 1990, QuickSoft Software Development
+Merlin is copyright 1989, Roger Wagner Publishing and Glen Bredon
+
+This file is a brief introduction to the QuickASM development environment.  This is a temporary documentation file and it in no way covers EVERYTHING available in the system. It is simply a brief set of instructions in order to get you up and running.  If you are recieving this file, you will also be receiving a more complete set of doc files as soon as they become available.  If you are not interested in beta testing this development system or are not interested in receiving any more "junk" mail concerning this development system please contact us and we will leave you alone.  You have been selected to receive these files because you have shown some interest in "taking a look" at what we have put together and because we value your input.  If you find things that you would like to have included in the system, or if you find incompatibilities with QuickASM and Merlin....or if you (heaven forbid) find a bug or two, please contact either Lane Roath at 318-949-8264 (GEnie:L.Roath/Delphi:LRoath) or myself, Shawn Quick at (406) 752-0193.
+
+We are asking you to test this system as thoroughly as you have the time to do so.  With any program as complex as this development system, there are FAR more possibilities than the author can test...although I have done a very thorough job of debugging as the programs were being developed.  I guess basically what I am asking is that you do anything and everything that you can think of to MAKE it break.  You will undoubtably find sections of the environment that may not run as quickly as you would like (the editor for example), and these problems will be remedied in the near future.
+
+Thanks for you time, and your input.....when the system is ready for release you will be rewarded for your efforts with a final copy of the system.....that I GUARANTEE will become your "official" development environment!!!
+
+
+In order to succesfully get the system running you will need the following files in their respective directories:
+
+QASM           S16    ;the initial "boot" file (the one you launch)
+QASYSTEM       DIR    ;System directory
+  QAINTCMD     TOL    ;Internal command handlers
+  QATOOLS      TOL    ;QuickASM ToolSet
+  QATEXT       EXE    ;The TEXT (command line) shell program
+  QAGRAF       EXE    ;The desktop shell (Lane's in charge of this)
+  QAPREFS      BIN    ;User Parameter file
+  QACMD        TXT    ;User Command File
+  TOOLMACS     BIN    ;Built in ToolBox Macros
+  QUICKLINK.S  TXT    ;System QuickLink command file
+  LOGIN        TXT    ;User LOGIN file (not implemented)
+UTILITY        DIR    ;External Command/Languages Directory
+  QASMGS       EXE    ;QuickASM 65816 assembler
+  QLINKGS      EXE    ;QuickASM Linker
+  CATALOG      EXE    ;External Catalog command (not necessary)
+  DUMP         EXE    ;External file dump utility (originally by G. Bredon)
+
+
+The QuickASM development environment has been designed to be modular. Allowing you to modify it to work the way you work.  It is 100% Merlin 16+ compatible at both the source and link levels, and also includes two separate user interfaces: a text based command line interface (much like APW) and a SHR "desktop" environment (though not completed yet) that works like a "multifinder" allowing multiple "utility" programs to be active at once.  The system will also allow the addition of new compilers, assemblers and linkers as they become available (such as a BASIC compiler, Pascal, or an APW compatible assembler/linker) as well as external commands and utilities much like the APW environment.
+
+In addition to the Merlin compatible assembler and linker, the development system also includes a symbolic debugger (like APW's debug, only allowing symbolic addresses to be used) *** still in alpha testing ***, a resource compiler, decompiler, and visual resource editor *** late alpha stage ***.
+Along with these utilities, you may also look forward to a complete PROJECT MANAGER (much like Lightspeed Pascal for the Macintosh), disk utilities, and a powerful EXEC language, plus keyboard macros, USR and USER files.
+(*** although these files are not present in this version....the entire system has been designed to support these automatically, and in fact, all of the above mentioned programs exist in one form or another on my hard disk...just waiting for more intensive debugging!!!! ***)
+
+Design Philosphies
+
+In writing the QuickASM development system, I have tried to keep several goals in mind.
+
+I wanted to create a development environment that professional Apple // developers would find powerful enough to handle any programming challenge presented to them and yet be intuitive enough that developers weren't constantly having to search through menus, or type long commands over and over, etc.
+
+I wanted to design the FASTEST possible //GS assembler system that combined the speed of LISA, the popularity of Merlin, and the power and expandability of APW.
+
+I wanted a development environment interface that would act as a "multifinder" that would allow multiple "applications" and utilities to be available simultaneously on the "desktop".
+
+I wanted this new development system to be completely compatible with my already huge library of source code from my 10 years of Apple // programming.
+
+I wanted the development system to grow and change as my needs changed.  I was looking for an environment that could be updated, expanded, etc. without constantly having to mail in for "update disks".  I needed an environment that third parties could add to, user's could add to, and would always be "up to date"
+
+I wanted a development system that was integrated, yet separate.  This modularity would allow it change and yet still support utilities and programs that were written for older versions.  Whether I wanted "bare bones" text based programming, or a powerful "desktop" based environment.
+
+I wanted a development environment that ran in a minimal memory configuration....yet take advantage of ALL the memory I had available.  QuickASM will run quite effectively with 512K....and will still take advantage of 8 megs if you have it!!!
+
+And most of all....I wanted a development environment that was RESPONSIVE to the base of programmers who are using it.  QuickASM comes with a detailed set of technical information describing EVERY aspect of the systems internal functions.  Many example programs are included which show how to add any type of utility, command, compiler/assembler, linker, built in macros, new opcodes, new shell programs, etc.  If you ever have said "I wish..." QuickASM probably CAN!
+
+QuickASM was originally created with the Merlin 16+ assembler (thanks Glen and Roger!!) and now that it is "old" enough (meaning it can assemble/link itself) it is actually used to develop itself!!!!
+
+About the SHELL
+
+Within this initial beta release you will find only the text based development environment.  Lane Roath is working on the graphics/desktop shell which will be completed within a week or two.  
+
+After booting/launching the QASM program file you will be presented with your desired user interface (text/graphics) as set within your system preferences file.  This is your interface to the entire development system that you have defined within your user command file (QASYSTEM/QACMD).  Adding a new external command, utility program, or even new compilers/assemblers or linkers is as easy as entering the command in your system command table.
+
+(*** the final docs will give technical information regarding how to write new commands and utilities as well as how to add new commands to the command table ***)
+
+In order to get a listing of the currently defined/installed commands, simply enter HELP at the command line, or choose help from the menu bar.
+
+All of the currently defined commands are straightforward except maybe the command ASML. ASML is equivilent to the Merlin "QuickLink" (OA-6 from the editor). This command will assemble the file given as a parameter in the command line (no .S extension), and link the resulting object file into an executable GS program file.  ASML stands for assemble and link, and the "quicklink" function is described below in the section "About the Linker".
+(*** ASMLG, though valid as a command is not supported in this version ***)
+
+
+About the Assembler
+
+The QuickASM assembler is initiated via the "ASM filename" command from the command line. There are various aliases to the ASM command, such as COMPILE, ASSEMBLE, etc and all serve the same purpose.
+
+The assembler itself is 100%+ Merlin 16+ compatible and will correctly assemble ALL Merlin source codes.  There are a variety of new features that the assembler supports and some of the most important features are described below:
+
+LUP  - The LUP opcode now supports up to 16 levels of nesting. This can be very helpful for building tables, etc...but it also can get confusing. Remember that any LUP's that are found within another LUP structure will be expanded multiple times. Merlin 16 allows LUP 0 and will in effect turn off assembly until the matching --^ opcode is encountered. QuickASM will generate an appropriate error message for any LUP operand that evaluates to a value less than 1.
+
+EVL  - The EVL (Evaluate) psuedo opcode enables algebraic operand evaluation for ALL operands and not just those enclosed in braces {}. EVL supports ON and OFF in the operand field to enable and disable this feature.
+
+ENC  - The ENC (encode) opcode expects an 8 bit operand and instructs the assembler to EOR every byte put into the object code with the operand value. ENC without an operand will restablish normal object code generation, as will ENC $00.  This is useful for "hiding" text or object code within the resulting disk files. The program code itself is responsible for "un-encoding" these bytes before using them in the program.  If the assembler finds that the ENC opcode is inappropriate (for example in REL code sections) an error message is generated.  ENC is useful for hiding copyright messages and serial numbers within programs.
+
+TBX  - TBX (toolbox) enables/disables the automatic recognition of the built in GS Toolbox macros. It supports the following operands:
+
+TBX ON (or none)	- enables toolbox macro recognition
+TBX OFF		 - disables toolbox macro recognition
+TBX LC		- enables recognition and all expanded macros are listed in LowerCase.
+TBX UC		- enables recognition and expanded macros are listed in UpperCase.
+
+The GS toolbox macros are all defined using the toolbox name preceded with an "_". For example: _NewHandle.
+
+TBX also enables built in GS type macros such as PSL (pushlong), PSW (pushword), JNE (Jump if not =), TLL (toolcall) etc.  (** A complete list of these standard GS macros will be included in the final docs **)
+
+If you wish to use your own toolbox macros or change the built in macros, simply create a macro in your source file that has the same name as the built in macro.  For example:
+
+	TLL	 mac		;my macro def
+		ldx	#]1
+		jsl	$e10000
+		bcc	]2
+		eom
+
+The above macro would then REPLACE the built in macro called TLL and all calls to this macro would then come from this new definition.
+
+GS/OS (as well as ProDOS 16 and ProDOS 8) macros are also included for ease in making DOS calls. These macros are called by the syntax:
+
+_GSOS:Open parameterlist  or,
+_P16:Open paramlist
+_P8:Open paramlist
+
+IN ORDER to use the built in ToolBox or DOS macros, you MUST use the SHELL command TOOLMACS before using the macros in your assemblies.  This command need only be executed once (usually within your LOGIN file) and simply loads the macro definitions into memory for access by the assembler (or ANY other utility, like the symbolic debugger!!! ). If you wish to save memory, and do not use the built in macros, simply do not execute the TOOLMACS command.
+
+
+DUP - DUP (duplicate) supports both ON and OFF in its operand and will enable/disable the ability of the assembler to ignore duplicate label errors if the labels are EQUated to the same value.
+
+SYM - The SYM opcode will print the symbol table on the second pass of the assembly. This is the equivilent of the symbol table printout in Merlin at the end of assembly with listing on. QuickASM will NOT print the symbol table at the end of assembly UNLESS a SYM opcode has been encountered.
+
+(*** In the future, SYM will also allow alphabetic and numeric listing of the symbol table, as well as saving the symbol table to disk for use by other assemblies (a kind of "preassembled" equate files ***)
+
+RND - RND (random) will assign a 32 bit random number to the label in the label column of the RND line. Thus the line:
+
+mylable   RND   ;random number
+
+PEK - PEK (peek) will assign the label in the label column the 8 bit value at the memory location in the operand. Example:
+
+mylable   PEK  $E0C000   ;read the current keyboard location
+
+will assign mylable the value of memory location $E0C000 at the time of the assembly.
+
+MTX - MTX (mousetext) is similar to the ASC psuedo-op but the characters are converted to mouse text before being placed in the object code.
+
+LIB - LIB (library) is similar to USE except that the file is not accessed on the second pass of the assembly. LIB files will contain EQUs and macro definitions that are only needed on the first pass of the assembly.  Using LIB instead of USE for these types of files will speed your assembly times.  Caution: because LIB files are only accessed on the first pass of assembly, NO CODE MAY BE GENERATED within these files or errors will occur.
+
+BEL - Beeps the GS's speaker on the second pass of the assembly. Most likely used at the end of a source code listing to signal that assembly is complete.
+
+XC- - XC- (XC minus) is the reverse of the XC opcode in Merlin. XC OFF is also supported.
+
+DL - DL (Define Long) simply another name for the ADRL psuedo-op.
+BYT - BYT (Byte) same as DFB, or DB
+BTR - (Branch if True) equivilent to BNE
+BFL - (Branch if False) same as BEQ
+
+
+Other Additions:
+
+Macro Nesting levels have been expanded to 16 levels
+DO/FIN nesting expanded to 16 levels
+
+IF supports " IF XC" (like IF MX) to determine whether or not extended opcodes have been enabled. XC returns 0 if 6502 mode selected, 1 if 65C02 mode selected, and 3 if 65816 mode selected. Useful in macros where PEA might be used if 65816 enabled and LDA, PHA, LDA, PHA would be used for the 6502.
+
+The assembler creates Merlin type LNK files ($f8) that are DIRECTLY compatible with the Merlin Linkers (and vice versa).
+
+The assembler also supports the math operator MOD which is '//', thus 10 mod 3 would be expressed as:  10//3 and would evaluate to 1 (one). 10 div 3 = 3 with remainder of 1.
+
+Things to consider:
+
+The assembler is slightly slower than Merlin 16+ on assembly times.  There are two reasons for this (both of which will be fixed in a short while). First, the macro expansion code is "slightly" sloppy and this is the main bottleneck in the assemblies. Second, because of the "modularity" of the development system, the assembler has been written to support a variety of different environments that it may be run under. For example, whether or not the Event Manager is active, whether there is a keyboard macro program installed, and/or whether the EXEC language has called the assembler. Therefore, reading the keyboard to see if the user would like to pause the listing, cancel the assembler, etc. requires a toolbox call instead of a simple read of the keyboard location.  In large source files, the keyboard may be read up to 100,000 times.  This overhead has been found to slow assemblies by approximately 12 seconds on a 25,000 line source code.  We have developed a method that will prevent this, but at this time the code is not in place....simply twiddle your thumbs for a few seconds longer per assembly.
+
+The assembler has been designed internally to support "precompiled" source code files.....such as those found in the LISA assembler system.  It is anticipated that this precompilation of source code files (by a special editor or utility program) will cut assembly times by 50%!!!!! This is our ultimate goal.  The format for this precompilation has been designed on paper, but until I can find a day or two to write a program to convert source codes....we'll have to wait.
+
+- USR opcodes are not supported in this version.  The USR routine is tied to a routine that compresses the text of the QuickASM opcodes (like LDA) and places them in the object code.  This is so QuickASM can assemble itself while in the development process. USR opcodes (as well as new user opcodes that can have ANY name) will be available when the shell is complete.
+
+KBD is not available in this version of the assembler..although labels defined via KBD will use a value passed to it from the Linker.  We have to settle on a GetLine routine that will work from both text and graphics modes and when that's settled KBD will be as normal!
+
+About the Linker
+
+The QuickASM Linker is a superset of the Merlin 16+ linker.  It supports all of the Merlin linker opcodes (except LIB...which we have decided is much more work than its worth...we have never known anyone who uses it..but if YOU do and want it....it can be put in). There are also many other features that have been added to make the linker much more powerful.
+
+The QuickASM linker is ALWAYS a two pass linker (like the Version 2 Merlin linker)...but you will find that link times are comparable with the Merlin 1 pass linker.  When using OMF version 2 you will also find that the final GS load files (programs) will be much smaller than the exact same program linked with the Merlin linker. Multi segmented files are supported (multiple SAVs) and dynamic segments are also supported.
+
+New Linker opcodes:
+
+AUX  - places value of operand in the auxtype of the output file.  Similar to ADR.
+PFX  - sets prefix 0 to text in operand. You may also use CMD PREFIX /DISK
+
+IMP  - Import. IMP filename. will allow ANY type of file to be linked into the output file.  Inserts the file's filename into the ENTry table so that other REL files may reference it. Similar to Merlin's ability to link a BINary file....except it allows ANY file type.  Periods in the filename are converted to underlines.
+
+REZ  - REZ filename. Copies the resource fork of "filename" into the resource fork of the output file.  This allows you to have a file of resources (created with REZ, etc) that are placed into to final load file at link time, without having to REZ EVERY TIME!!!
+
+ZIP -  Automatically converts the final output file to EXPRESSLOAD format.
+       (** not quite working yet **)
+
+POS/LEN - currently ignored because I HAVE NO IDEA what they do, nor how to use them in Merlin.  When I find out, you'll be the first to know!!!
+
+
+The QuickASM linker also supports expression evaluation as in the assembler. Algabraic evaluation is done within braces {}. AND you may use ENTry labels within the linker.  For example, if an assembly source has an entry label called STORAGE contained within it, you may use STORAGE within the link file as long as it's use follows a "LNK filename" of the file containing the entry.  This could be used, for example, as the operand in a linker DS opcode to reserve variable space.
+
+The linker supports all expression types (binary,hex decimal,label) and all operands (+-<=>/*&.! and // (mod)). The assembler convention of "*" (current program address) is NOT supported within the linker.
+
+
+QuickLINK
+
+If you are a Merlin user you will no doubt know how useful Merlin QuickLink (OA-6) feature is.  But if you ever want to do anything more in your link file besides an ASM, LNK, and a SAV, you have to create a .cmd file and type LINK xyz whenever you want to link the file. With QuickASM, the quicklink function works slightly differently.  When QuickLink is chosen (currently ASML from the shell, but the editors will soon support it) the linker searches the current prefix (0) for a file named QUICKLINK.S and if found uses this as the link cmd file.  Failing to find the file in the current prefix, the linker searches the system directory (QASYSTEM) for a file of the same name (QUICKLINK.S) and will use that. Normally, the system file will simply be an OVR ALL, ASM filename, LNK filename, and a SAV filename (which will accomplish the same as the Merlin quicklink function). But if you need more flexibility, simply create a cmd file with the commands you need and save it in your work directory as QUICKLINK.S.  Whenever you need to do a link, OA-6 (from the editor) or ASML filename (from the shell) will execute this file and link your program with the FULL power of the linker.
+
+Because the QuickLink function must operate with varying filenames, three variables have been defined for use within these files:
+
+]1   = the filename of the source program itself (no .S extension)
+]2   = the filename that the assembler/compiler used to save the LNK file
+]3   = the filename used for the LNK file minus the last 2 characters.
+
+Whenever the linker encounters these variables in a QuickLink file, it replaces them with the respective filename.  Think of them as Link Macros, because the substitution is done exactly like that of assembler macros.
+
+The standard QuickLink file would therefore look like this:
+
+	OVR	ALL	;assemble no matter what
+	ASM	]1	;assemble filename passed in command line
+	LNK	]2	;link the file created by the assembler
+	SAV	]3	;Drop the last 2 chars (usually .L) from
+			;the name to save the output file.
+
+ONLY the "]x" part of the line is substituted so you may use lines like this:
+
+	ASM	]2.L
+
+which would expand to:
+
+	ASM	filename.L
+
+
+About the Editor
+
+The editor is pretty straightforward, (** and currently the "weak link" of the system **)  The command structure is the same as the Merlin full screen editor, with these exceptions:
+
+-Replace (OA-R) is not completed
+
+-Goto line number or label (OA-L in Merlin) has been changed to OA-Jump
+
+-OA-L is now "load"
+
+-the keypad "Clear" key is used to clear the current buffer as in NEW
+
+-Undo is not supported.
+
+- The command box (OA-O) supports PREFIX (PFX), CATALOG, and NEW.
+
+- BE CAREFUL with the mouse......(** in fact, don't even THINK about touching it unless you can return it to it's original position otherwise you won't be able to leave the editor without rebooting......**) I'll FIX it, don't worry.
+
+The editor may not seem like the most responsive sports car you've ever
+driven, but it is acceptable.  Optimization is high on my priority list.  I also intend to allow the user to select his command keys and to make find/replace, and moving throughout the document much quicker.  (In fact, Shawn has a new editor which should be as fast as ROSE, and much smaller than the current editor to boot!)
+
+We will also make available a full SHR based text editor that will allow, multiple windows, color text, multiple fonts and point sizes, etc. The ULTIMATE "pretty" source file editor!!!  (ie, based on WordWorks)
+
+Well, those are some "hilites" of the system.  I hope you enjoy it, and I really appreciate your help in finalizing everything.  As always, suggestions are WELCOME, whatever you would like to see just let either Lane or myself know.
+
+Questions/Comments/Problems....(want to help write some utilities!!! hint hint!!!)
+
+Thanks.....
+Shawn Quick and Lane Roath
+
+

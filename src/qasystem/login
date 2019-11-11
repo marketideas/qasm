@@ -1,0 +1,7 @@
+*
+* This is the login file for Lane's QuickASM system :)
+*
+
+set         /a/work/zappa
+pfx         8     2
+pfx         0     2
