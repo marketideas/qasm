@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
+project(QAsm)
+
 set(CMAKE_BUILD_TYPE Debug)
 set(APPVERSION "1.0.0")
 set(LIBRARY_NAME pal)
