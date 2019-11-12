@@ -60,11 +60,11 @@ void CLASS::print(uint32_t lineno)
 	}
 	int b = 4;
 
-	printf("%02X ", addressmode);
-	printf("%6d", lineno + 1);
+	//printf("%02X ", addressmode);
+	//printf("%6d", lineno + 1);
 	if (!empty)
 	{
-		printf(" %02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
+		printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
 	}
 	else
 	{
@@ -79,6 +79,23 @@ void CLASS::print(uint32_t lineno)
 	{
 		printf("   ");
 	}
+
+	if ((getBool("asm.showmx", false)))
+	{
+		if (outbytect > 0)
+		{
+			printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
+		}
+		else
+		{
+			printf("    ");
+		}
+	}
+	if (isDebug())
+	{
+		printf("%02X ", addressmode);
+	}
+	printf("%6d  ", lineno + 1);
 
 	if (empty)
 	{
@@ -115,12 +132,12 @@ void CLASS::clear()
 	operand_expr = "";
 	operand_expr2 = "";
 	addrtext = "";
+	linemx = 0;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
 	startpc = 0;
 	errorcode = 0;
-	inbytect = 0;
 	outbytect = 0;
 	lineno = 0;
 	outbytes.clear();
@@ -280,6 +297,7 @@ void CLASS::init(void)
 
 void CLASS::complete(void)
 {
+
 	uint64_t n = GetTickCount();
 	if (isDebug())
 	{
@@ -434,9 +452,11 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
+	//printf("finding: %s\n",symname.c_str());
 	auto itr = symbols.find(Poco::toUpper(symname));
 	if (itr != symbols.end())
 	{
+		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
 		res = &itr->second;
 
 		return (res);
@@ -458,6 +478,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 
 	if (fnd != NULL)
 	{
+		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
 		fnd->value = val;
 		return (fnd);
 	}
@@ -468,6 +489,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	s.namelc = Poco::toLower(sym);
 	s.stype = 0;
 	s.value = val;
+	s.used=false;
 	s.cb = NULL;
 	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 	symbols.insert(p);
@@ -475,12 +497,39 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	return (res);
 }
 
-void CLASS::showSymbolTable(void)
+// set alpha to true to print table sorted by name or
+// false to print by value;
+void CLASS::showSymbolTable(bool alpha)
 {
+	std::map<std::string, uint32_t> alphamap;
+	std::map<uint32_t, std::string> nummap;
+
+
 	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 	{
 		TSymbol ptr = itr->second;
-		printf("Sym: %-24s 0x%08X\n", ptr.name.c_str(), ptr.value);
+		alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
+		nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
+
+		//printf("Sym: %-24s 0x%08X\n", ptr.name.c_str(), ptr.value);
+	}
+
+	if (alpha)
+	{
+		printf("\nSymbol table sorted alphabetically:\n");
+
+		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+		{
+			printf("%-16s 0x%08X\n", itr->first.c_str(), itr->second);
+		}
+	}
+	else
+	{
+		printf("\nSymbol table sorted numerically:\n");
+		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
+		{
+			printf("0x%08X %-16s\n", itr->first, itr->second.c_str());
+		}
 	}
 }
 
@@ -510,11 +559,6 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		TSymbol s = itr->second;
 		if (s.cb != NULL)
 		{
-			if (s.stype & OP_ONEBYTE)
-			{
-				line.inbytes[0] = (s.opcode);
-				line.inbytect = 1;
-			}
 			res = s.cb(line, s);
 			if (res == -1)
 			{
@@ -539,6 +583,9 @@ typedef struct
 
 // these are the regular expressions that determine the addressing mode
 // and extract the 'expr' part of the addr-mode
+
+// ^([_,a-z,A-Z,0-9:\]].+)\,[s,S]{1}$ // might be a better syn_s
+
 TaddrMode addrRegEx[] =
 {
 	{ "^(?'expr'.+)\\,[s,S]{1}$", syn_s, "e,s"},    				// expr,s
@@ -594,29 +641,85 @@ void CLASS::init(void)
 
 void CLASS::initpass(void)
 {
-	casesen = true;
-	relocatable = false;
-	listing = true;
+	std::string s;
+
+	casesen = getBool("asm.casesen",true);
+	listing = getBool("asm.lst", true);
 	skiplist = false;
 
 	origin = 0x8000;
 	currentpc = origin;
+
+	s = getConfig("asm.cpu", "M65816");
+	s = Poco::trim(Poco::toUpper(s));
+
 	cpumode = MODE_65816;
 	mx = 0x00;
+
+	if (s == "M65816")
+	{
+		cpumode = MODE_65816;
+		mx = 0x00;
+	}
+	else if (s == "M65C02")
+	{
+		cpumode = MODE_65C02;
+		mx = 0x03;
+	}
+	else if (s == "M6502")
+	{
+		cpumode = MODE_6502;
+		mx = 0x03;
+	}
+	else
+	{
+		printf("Unknown CPU type in .ini\n");
+	}
+	relocatable = false;
 	currentsym = NULL;
 	totalbytes = 0;
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
+
+	savepath = "";
 }
 
 void CLASS::complete(void)
 {
-	printf("=== Assembly Complete: %d bytes %u errors.\n", totalbytes, errorct);
+	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", totalbytes, errorct);
+
+	if (savepath != "")
+	{
+		if (errorct == 0)
+		{
+			MerlinLine *line;
+			std::ofstream f(savepath);
+
+			uint32_t lineno = 0;
+			uint32_t l = lines.size();
+			while (lineno < l)
+			{
+				line = &lines[lineno++];
+				if (line->outbytect > 0)
+				{
+					for (uint32_t i = 0; i < line->outbytect; i++)
+					{
+						f.put(line->outbytes[i]);
+					}
+				}
+			}
+		}
+		else
+		{
+			printf("\nErrors in assembly. Output not SAVED.\n\n");
+		}
+	}
 
 	if (listing)
 	{
-		showSymbolTable();
+		showSymbolTable(true);
+		showSymbolTable(false);
 	}
 	TFileProcessor::complete();
 }
@@ -646,7 +749,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 	return res;
 }
 
-int CLASS::getAddrMode(MerlinLine &line)
+int CLASS::getAddrMode(MerlinLine & line)
 {
 	int  res = -1;
 	uint16_t mode = syn_none;
@@ -728,7 +831,7 @@ int CLASS::getAddrMode(MerlinLine &line)
 	return (res);
 }
 
-int CLASS::parseOperand(MerlinLine &line)
+int CLASS::parseOperand(MerlinLine & line)
 {
 
 	int res = -1;
@@ -772,6 +875,7 @@ void CLASS::process(void)
 			op = Poco::toLower(line->opcode);
 			operand = Poco::toLower(line->operand);
 			line->startpc = currentpc;
+			line->linemx = mx;
 			line->bytect = 0;
 
 			if ((line->lable != "") && (pass == 0))

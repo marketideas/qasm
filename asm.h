@@ -15,7 +15,6 @@
 #define OP_65C02 0x02
 #define OP_65816 0x04
 #define OP_PSUEDO 0x08
-#define OP_ONEBYTE 0x10
 #define OP_SPECIAL 0x20
 #define OP_CLASS0 0x0000
 #define OP_CLASS1 0x0100
@@ -40,11 +39,12 @@ enum asmErrors
 	errBadBranch,
 	errUnimplemented,
 	errForwardReference,
+	errNoRedefinition,
 	errMAX
 };
 
 #ifdef ADD_ERROR_STRINGS
-std::string errStrings[errMAX] = {
+std::string errStrings[errMAX+1] = {
 	"No Error",
 	"Warning",
 	"Unfinished Opcode",
@@ -53,9 +53,12 @@ std::string errStrings[errMAX] = {
 	"Unknown Opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
-	"Relative branch offset too large"
+	"Relative branch offset too large",
 	"Unimplemented Instruction",
-	"Forward Reference to symbol"
+	"Forward Reference to symbol",
+	"Unable to redefine symbol",
+
+	""
 };
 #else
 extern std::string errStrings[errMAX];
@@ -99,6 +102,7 @@ public:
 	std::string operand_expr2;
 	std::string comment;
 	std::string addrtext;
+	uint8_t linemx;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -106,8 +110,6 @@ public:
 	uint32_t addressmode;
 	int32_t expr_value;
 	uint32_t errorcode;
-	uint8_t inbytect;
-	uint8_t inbytes[256];
 
 	uint16_t pass0bytect;
 	uint16_t bytect;
@@ -152,11 +154,13 @@ public:
 	uint32_t value;
 	uint16_t stype;
 	uint8_t opcode;
+	bool used;
 	TOpCallback cb;
 	Poco::HashMap<std::string, TSymbol>locals;
 
 	TSymbol()
 	{
+		used=false;
 		locals.clear();
 	};
 };
@@ -176,6 +180,7 @@ protected:
 	uint32_t origin;
 	uint8_t mx;
 	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816
+	std::string savepath;
 	TSymbol *currentsym;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
@@ -201,7 +206,7 @@ public:
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
 
 	void initpass(void);
-	void showSymbolTable(void);
+	void showSymbolTable(bool alpha);
 
 	int evaluate(std::string expr, int64_t &value);
 
@@ -218,6 +223,7 @@ public:
 	int doAddress(MerlinLine &line, TSymbol &sym);
 	int doNoPattern(MerlinLine &line, TSymbol &sym);
 	int doMVN(MerlinLine &line, TSymbol &sym);
+	int doPER(MerlinLine &line, TSymbol &sym);
 
 	int doEQU(MerlinLine &line, TSymbol &sym);
 	int doXC(MerlinLine &line, TSymbol &sym);

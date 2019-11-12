@@ -160,7 +160,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                     numexpect = false;
 
                 }
-                else if ((c >= 'A') && (c <= 'A'))
+                else if ((c >= 'A') && (c <= 'Z'))
                 {
                     state = 20;
                     ident += c;
@@ -214,7 +214,6 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
         {
             case Token::Type::Symbol:
                 token.type = Token::Type::Number;
-
                 if (token.str == "*")
                 {
                     sprintf(buff, "%u", assembler.currentpc);
@@ -222,10 +221,14 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 }
                 else
                 {
+                    //printf("symbol find |%s|\n",token.str.c_str());
+
                     sym = assembler.findSymbol(token.str);
                     if (sym != NULL)
                     {
-                        sprintf(buff, "%u", sym->value);
+                        sym->used=true;
+                        //printf("symbol found\n");
+                        sprintf(buff, "%d", sym->value);
                         token.str = buff;
                     }
                     else
@@ -518,7 +521,8 @@ int CLASS::evaluate(std::string & e, int64_t &res)
         {
             case Token::Type::Symbol:
                 stack.push_back(std::stoi((char *)"0"));
-                //op = "Push " + token.str;
+                op = "Push " + token.str;
+                //printf("shouldn't get this kind of token\n");
                 break;
             case Token::Type::Number:
                 val = 0;
@@ -528,7 +532,7 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                     val = -1;
                 }
                 stack.push_back(val);
-                //op = "Push " + token.str;
+                op = "Push " + token.str;
                 break;
 
             case Token::Type::Operator:
@@ -545,6 +549,10 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                     stack.pop_back();
                     lhs = stack.back();
                     stack.pop_back();
+                }
+                else
+                {
+                    printf("not enough parameters for the operator\n");
                 }
 
                 switch (token.str[0])
@@ -580,11 +588,12 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                         break;
                     case '&':
                         stack.push_back(lhs & rhs);
+                        break;
                     break; case '.':
                         stack.push_back(lhs | rhs);
                         break;
                 }
-                //op = "Push " + std::to_string(lhs) + " " + token.str + " " + std::to_string(rhs);
+                op = "Push " + std::to_string(lhs) + " " + token.str + " " + std::to_string(rhs);
             }
             break;
 
@@ -596,7 +605,7 @@ int CLASS::evaluate(std::string & e, int64_t &res)
         //debugReport(token, queue, stack, op);
     }
 
-    int64_t v = -1;
+    int64_t v = 700;
     if (stack.size() > 0)
     {
         v = stack.back();

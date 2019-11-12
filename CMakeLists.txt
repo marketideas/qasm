@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 set(CMAKE_BUILD_TYPE Debug)
-set(APPVERSION "1.0.0")
+set(APPVERSION "1.0.1")
 set(LIBRARY_NAME pal)
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeHeader.txt)
@@ -36,7 +36,6 @@ ${Poco_LIBRARIES}
 )
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeCommands.txt)
-
 
 
 

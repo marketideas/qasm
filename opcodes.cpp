@@ -6,6 +6,7 @@ enum
 {
 	P_ORG = 1,
 	P_LST,
+	P_SAV,
 
 	P_MAX
 };
@@ -38,6 +39,9 @@ int CLASS::doPSEUDO(MerlinLine &line, TSymbol &sym)
 		case P_ORG:
 			currentpc = line.expr_value;
 			break;
+		case P_SAV:
+			savepath = line.operand;
+			break;
 		case P_LST:
 			if (pass > 0)
 			{
@@ -69,7 +73,7 @@ int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 	std::string s;
 	int res = 0;
 
-	if (cpumode < 2)
+	if (cpumode < MODE_65816)
 	{
 		cpumode++;
 	}
@@ -87,8 +91,15 @@ int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 
 int CLASS::doMX(MerlinLine &line, TSymbol &sym)
 {
-	mx = (uint8_t)(line.expr_value & 0xFF);
-	//printf("setting MX=%02X\n",mx);
+	if (cpumode < MODE_65816)
+	{
+		line.setError(errIncompatibleOpcode);
+	}
+	else
+	{
+		mx = (uint8_t)(line.expr_value & 0x03);
+		line.linemx = mx;
+	}
 	return (0);
 }
 
@@ -123,6 +134,37 @@ int CLASS::doUNK(MerlinLine &line, TSymbol &sym)
 
 		//line.outbytes.push_back(0x00);
 		line.outbytect = res;
+	}
+	return (res);
+}
+
+// PER is a special case because it does strange address calcs
+int CLASS::doPER(MerlinLine &line, TSymbol &sym)
+{
+	int res;
+	int32_t value = 0;;
+
+	res = 0;
+	if ((line.addressmode == syn_abs) || (line.addressmode == syn_imm))
+	{
+		res = 3;
+		if (pass > 0)
+		{
+			// SGQ should check under/over flows
+			value = line.expr_value;
+			value -= line.startpc + 3;
+
+			//printf("addr calc=%08X %08X %08X\n",line.expr_value,line.startpc+3,value);
+			setOpcode(line, sym.opcode);
+			line.outbytes.push_back(value & 0xFF);
+			line.outbytes.push_back((value >> 8) & 0xFF);
+
+			line.outbytect = res;
+		}
+	}
+	if (res == 0)
+	{
+		line.setError(errBadAddressMode);
 	}
 	return (res);
 }
@@ -305,7 +347,10 @@ int CLASS::doJMP(MerlinLine &line, TSymbol &sym)
 			{
 				op = 0;    // can't do these without an '816
 			}
-			res++;
+			if (op == 0x5C)
+			{
+				res++;
+			}
 		}
 
 	}
@@ -360,6 +405,9 @@ int CLASS::doBRANCH(MerlinLine & line, TSymbol & sym)
 		int64_t o64 = line.expr_value;
 		int32_t o32 = (int32_t)(o64 & 0xFFFFFFFF);
 		int32_t offset = o32 - line.startpc - res;
+
+		// SGQ should check under/over flows
+
 		//printf("offset %d\n", offset);
 		setOpcode(line, op);
 		for (i = 0; i < (res - 1); i++)
@@ -621,10 +669,8 @@ int CLASS::doEND(MerlinLine & line, TSymbol & sym)
 
 int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 {
-	int res = -1;
+	int res = 1;
 
-	res = line.inbytect;
-	//printf("inbytes=%d %02X\n",res,line.inbytes[0]);
 	if (pass > 0)
 	{
 		setOpcode(line, sym.opcode);
@@ -641,7 +687,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("ENT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ORG", P_ORG, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DSK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("SAV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("SAV", P_SAV, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DS",  0x00, OP_PSUEDO,  OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("REL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("OBJ", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -711,25 +757,25 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BNE", 0x03, OP_6502, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BPL", 0x00, OP_6502, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BRA", 0x40, OP_65816, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("BRK", 0x00, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("BRK", 0x00, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("BRL", 0x20, OP_65816, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVC", 0x01, OP_6502, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVS", 0x81, OP_6502, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("CLC", 0x18, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("CLD", 0xD8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("CLI", 0x58, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("CLV", 0xB8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("CLC", 0x18, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("CLD", 0xD8, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("CLI", 0x58, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("CLV", 0xB8, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("CMP", 0x06, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("COP", 0x02, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("CPX", 0x07, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("CPY", 0x06, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("DEC", 0x06, OP_STX | OP_SPECIAL, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("DEX", 0xCA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("DEY", 0x88, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("DEX", 0xCA, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("DEY", 0x88, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("EOR", 0x02, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("INC", 0x07, OP_STX | OP_SPECIAL, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("INX", 0xE8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("INY", 0xC8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("INX", 0xE8, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("INY", 0xC8, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("JML", 0x00, OP_65816, OPHANDLER(&CLASS::doJMP));
 	pushopcode("JMP", 0x01, OP_6502, OPHANDLER(&CLASS::doJMP));
 	pushopcode("JSL", 0x02, OP_65816, OPHANDLER(&CLASS::doJMP));
@@ -740,58 +786,58 @@ void CLASS::insertOpcodes(void)
 	pushopcode("LSR", 0x02, OP_ASL, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("MVN", 0x00, OP_6502, OPHANDLER(&CLASS::doMVN));
 	pushopcode("MVP", 0x01, OP_6502, OPHANDLER(&CLASS::doMVN));
-	pushopcode("NOP", 0xEA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("NOP", 0xEA, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("ORA", 0x00, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("PEA", 0xF4, 2, OPHANDLER(&CLASS::doAddress));
 	pushopcode("PEI", 0xD4, 1, OPHANDLER(&CLASS::doAddress));
-	pushopcode("PER", 0x62, 2, OPHANDLER(&CLASS::doAddress));
-	pushopcode("PHA", 0x48, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHB", 0x8B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHD", 0x0B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHK", 0x4B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHP", 0x08, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHX", 0xDA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PHY", 0x5A, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLA", 0x68, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLB", 0xAB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLD", 0x2B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLP", 0x28, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLX", 0xFA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("PLY", 0x7A, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PER", 0x62, 2, OPHANDLER(&CLASS::doPER));
+	pushopcode("PHA", 0x48, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHB", 0x8B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHD", 0x0B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHK", 0x4B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHP", 0x08, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHX", 0xDA, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PHY", 0x5A, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLA", 0x68, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLB", 0xAB, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLD", 0x2B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLP", 0x28, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLX", 0xFA, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("PLY", 0x7A, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("REP", 0xC2, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("ROL", 0x01, OP_ASL, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("ROR", 0x03, OP_ASL, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("RTI", 0x40, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("RTL", 0x6B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("RTS", 0x60, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("RTI", 0x40, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("RTL", 0x6B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("RTS", 0x60, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("SBC", 0x07, OP_STD, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("SEC", 0x38, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("SED", 0xF8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("SEI", 0x78, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("SEC", 0x38, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("SED", 0xF8, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("SEI", 0x78, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("SEP", 0xE2, 1, OPHANDLER(&CLASS::doAddress));
-	pushopcode("STP", 0xDB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("STP", 0xDB, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("STA", 0x04, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("STX", 0x04, OP_STX, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("STY", 0x04, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("STZ", 0x01, OP_6502, OPHANDLER(&CLASS::doNoPattern));
-	pushopcode("TAX", 0xAA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TAY", 0xA8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TCD", 0x5B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TCS", 0x1B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TDC", 0x7B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TAX", 0xAA, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TAY", 0xA8, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TCD", 0x5B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TCS", 0x1B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TDC", 0x7B, OP_6502, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TRB", 0x03, OP_6502, OPHANDLER(&CLASS::doNoPattern));
 	pushopcode("TSB", 0x02, OP_6502, OPHANDLER(&CLASS::doNoPattern));
-	pushopcode("TSC", 0x3B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TSX", 0xBA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TXA", 0x8A, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TXS", 0x9A, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TXY", 0x9B, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TYA", 0x98, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("TYX", 0xBB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("WAI", 0xCB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("WDM", 0x42, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("XBA", 0xEB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("XCE", 0xFB, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TSC", 0x3B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TSX", 0xBA, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TXA", 0x8A, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TXS", 0x9A, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TXY", 0x9B, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TYA", 0x98, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TYX", 0xBB, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("WAI", 0xCB, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("WDM", 0x42, 1, OPHANDLER(&CLASS::doAddress));
+	pushopcode("XBA", 0xEB, OP_6502, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("XCE", 0xFB, OP_6502, OPHANDLER(&CLASS::doBYTE));
 }
 
 #undef CLASS
