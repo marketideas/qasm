@@ -40,11 +40,12 @@ enum asmErrors
 	errUnimplemented,
 	errForwardReference,
 	errNoRedefinition,
+	errBadOperand,
 	errMAX
 };
 
 #ifdef ADD_ERROR_STRINGS
-std::string errStrings[errMAX+1] = {
+const std::string errStrings[errMAX+1] = {
 	"No Error",
 	"Warning",
 	"Unfinished Opcode",
@@ -57,11 +58,12 @@ std::string errStrings[errMAX+1] = {
 	"Unimplemented Instruction",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
+	"Unable to evaluate",
 
 	""
 };
 #else
-extern std::string errStrings[errMAX];
+extern const std::string errStrings[errMAX];
 extern uint8_t opCodeCompatibility[256];
 
 #endif
@@ -110,6 +112,7 @@ public:
 	uint32_t addressmode;
 	int32_t expr_value;
 	uint32_t errorcode;
+	std::string errorText;
 
 	uint16_t pass0bytect;
 	uint16_t bytect;

@@ -18,7 +18,7 @@ distclean:
 	rm -rf build app/build sgqlib/build
 
 clean:
-	-cd ./build && $(MAKE) clean
+	-rm -rf ./build
 
 depend:
 	-cd ./build && $(MAKE) depend
@@ -36,8 +36,8 @@ install:
 	-cd ./build && cmake -P cmake_install.cmake
 
 asm:
-	qasm src/testfile.s
-	#cd src/asm && ../qasm main.s
+	qasm src/main.s
+	#qasm src/testfile.s
 	
 	
 

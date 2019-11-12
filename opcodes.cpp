@@ -197,6 +197,8 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			else
 			{
 				value = 0xFFFFFFFF;
+				line.setError(errBadOperand);
+				line.errorText=line.operand_expr2;
 			}
 
 			setOpcode(line, op);

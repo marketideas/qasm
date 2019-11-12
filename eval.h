@@ -22,6 +22,20 @@ class T65816Asm;
 class Token
 {
 public:
+    enum evalErr {
+        noError = 0,
+        unknownSymbolErr = -1,
+        forwardRef = -2,
+        operatorErr = -3,
+        syntaxErr = -4,
+        parenErr = -5,
+        overflowErr = -6,
+        divideErr = -7,
+        badParamErr = -8,
+        numberErr = -9,
+        maxError
+    };
+
     enum Type
     {
         Unknown = 0,
@@ -46,9 +60,12 @@ class CLASS
 {
 protected:
     T65816Asm &assembler;
+    int evalerror;
+    void setError(int ecode);
 public:
     CLASS(T65816Asm &_asm);
     ~CLASS();
+    std::string badsymbol;
     std::deque<Token> shuntingYard(const std::deque<Token>& tokens);
     std::deque<Token> exprToTokens(const std::string& expr);
     int parseNumber(std::string n, int64_t &val);

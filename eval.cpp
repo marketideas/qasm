@@ -5,6 +5,8 @@
 
 #define CLASS TEvaluator
 
+#define DEF_VAL 0
+
 std::ostream& operator<<(std::ostream& os, const Token& token)
 {
     os << token.str;
@@ -226,14 +228,16 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                     sym = assembler.findSymbol(token.str);
                     if (sym != NULL)
                     {
-                        sym->used=true;
+                        sym->used = true;
                         //printf("symbol found\n");
                         sprintf(buff, "%d", sym->value);
                         token.str = buff;
                     }
                     else
                     {
-                        token.str = "-1";
+                        setError(Token::unknownSymbolErr);
+                        badsymbol = token.str;
+                        token.str = "0";
                     }
                 }
                 queue.push_back(token);
@@ -314,12 +318,15 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                     // If the stack runs out without finding a left parenthesis,
                     // then there are mismatched parentheses.
                     printf("RightParen error (%s)\n", token.str.c_str());
+                    setError(Token::operatorErr);
                     return queue;
                 }
             }
             break;
 
             default:
+                setError(Token::syntaxErr);
+
                 printf("error (%s)\n", token.str.c_str());
                 return queue;
                 break;
@@ -336,7 +343,8 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
         // then there are mismatched parentheses.
         if (stack.back().type == Token::Type::LeftParen)
         {
-            printf("Mismatched parentheses error\n");
+            setError(Token::parenErr);
+            //printf("Mismatched parentheses error\n");
             return queue;
         }
 
@@ -353,7 +361,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
 
 int CLASS::parseNumber(std::string n, int64_t &val)
 {
-    int res = -1;
+    int res = DEF_VAL;
     int state = 0;
     char c;
     std::string s;
@@ -460,6 +468,8 @@ int CLASS::parseNumber(std::string n, int64_t &val)
                 break;
 
             case 99:
+                setError(Token::syntaxErr);
+
                 // if you get into this state there is an error
                 break;
         }
@@ -467,15 +477,13 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
     if (tval > (int64_t)0xFFFFFFFF)
     {
-        err = true;
+        setError(Token::overflowErr);
     }
 
 
     if ((state == 99) || (err))
     {
-        valid = false;
-        err = true;
-        val = -1;
+        val = DEF_VAL;
     }
 
     if ((valid) && (!err))
@@ -490,13 +498,26 @@ int CLASS::parseNumber(std::string n, int64_t &val)
     return (res);
 }
 
+void CLASS::setError(int ecode)
+{
+    if ((evalerror == Token::noError) || (ecode == Token::noError))
+    {
+        evalerror = ecode;
+    }
+    if (evalerror == Token::noError)
+    {
+        badsymbol = "";
+    }
+}
+
 int CLASS::evaluate(std::string & e, int64_t &res)
 {
     // const std::string expr = "3+4*2/(1-5)^2^3"; // Wikipedia's example
     // const std::string expr = "20-30/3+4*2^3";
-    int errcode = -1;
 
-    res = -1;
+    res = DEF_VAL;
+    setError(Token::noError);
+
     int u;
     int64_t val;
     std::string expr = Poco::trim(e);
@@ -513,7 +534,7 @@ int CLASS::evaluate(std::string & e, int64_t &res)
 
     while (! queue.empty())
     {
-        std::string op;
+        //std::string op;
 
         const auto token = queue.front();
         queue.pop_front();
@@ -521,7 +542,7 @@ int CLASS::evaluate(std::string & e, int64_t &res)
         {
             case Token::Type::Symbol:
                 stack.push_back(std::stoi((char *)"0"));
-                op = "Push " + token.str;
+                //op = "Push " + token.str;
                 //printf("shouldn't get this kind of token\n");
                 break;
             case Token::Type::Number:
@@ -529,36 +550,50 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                 u = parseNumber(token.str, val);
                 if (u < 0)
                 {
-                    val = -1;
+                    setError(Token::numberErr);
+                    val = DEF_VAL;
                 }
                 stack.push_back(val);
-                op = "Push " + token.str;
+                //op = "Push " + token.str;
                 break;
 
             case Token::Type::Operator:
             {
-                // SGQ
-                // bug here if there isn't something on both stacks for the operator to work on
 
-                auto rhs = -1;
-                auto lhs = -1;
+                auto rhs = DEF_VAL;
+                auto lhs = DEF_VAL;
 
-                if (stack.size() > 1)
+                bool v = true;
+                if (stack.size() > 0)
                 {
                     rhs = stack.back();
                     stack.pop_back();
+                }
+                else
+                {
+                    v = false;
+                }
+                if (stack.size() > 0)
+                {
                     lhs = stack.back();
                     stack.pop_back();
                 }
                 else
                 {
-                    printf("not enough parameters for the operator\n");
+                    v = false;
+                }
+
+                if (!v)
+                {
+                    setError(Token::badParamErr);
+                    //printf("not enough parameters for the operator\n");
                 }
 
                 switch (token.str[0])
                 {
                     default:
-                        printf("Operator error [%s]\n", token.str.c_str());
+                        setError(Token::operatorErr);
+                        //printf("Operator error [%s]\n", token.str.c_str());
                         return (-1);
                         break;
                     case '^':
@@ -593,28 +628,26 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                         stack.push_back(lhs | rhs);
                         break;
                 }
-                op = "Push " + std::to_string(lhs) + " " + token.str + " " + std::to_string(rhs);
             }
             break;
 
             default:
                 //printf("Token error\n");
-                return (-1);
+                setError(Token::syntaxErr);
+                goto out;
         }
-
-        //debugReport(token, queue, stack, op);
     }
 
-    int64_t v = 700;
+out:
+    int64_t v = DEF_VAL;
     if (stack.size() > 0)
     {
         v = stack.back();
     }
-    errcode = 0;
-    res = v;
-    if (assembler.pass > 0)
+    else
     {
-        //printf("result = %16ld 0x%08lX  |%s|\n", v, v, e.c_str());
+        setError(Token::syntaxErr);
     }
-    return (errcode);
+    res = v;
+    return (evalerror);
 }

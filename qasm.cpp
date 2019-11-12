@@ -24,6 +24,7 @@ int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 	if (em != NULL)
 	{
 		PAL_BASEAPP::runServerApp(em);
+#if 0
 		PAL_HTTPSERVERTASK *server = new PAL_HTTPSERVERTASK("httptask");
 		if (server != NULL)
 		{
@@ -31,6 +32,7 @@ int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 			server->initServer(getConfig("http.listen", "0.0.0.0:9080"), false, 64);
 			res = 0;
 		}
+#endif
 	}
 	return (res);
 }

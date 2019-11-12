@@ -6,7 +6,10 @@
 *  Created by Lane Roathe on 8/26/19.
 *  Copyright © 2019 Ideas From the Deep. All rights reserved.
 *
-
+        xc      off
+        xc
+        xc
+        mx      %00
 exprdp  =       $A5
 expr  =         $6789
 exprL   =       $123456

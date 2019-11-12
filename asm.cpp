@@ -91,9 +91,10 @@ void CLASS::print(uint32_t lineno)
 			printf("    ");
 		}
 	}
-	if (isDebug())
+
+	if (isDebug()>1)
 	{
-		printf("%02X ", addressmode);
+		printf("%02X ", addressmode&0xFF);
 	}
 	printf("%6d  ", lineno + 1);
 
@@ -106,7 +107,7 @@ void CLASS::print(uint32_t lineno)
 		printf("%-12s %-8s %-10s ", lable.c_str(), opcode.c_str(), operand.c_str());
 		if (errorcode > 0)
 		{
-			printf(":[Error] %s", errStrings[errorcode].c_str());
+			printf(":[Error] %s %s", errStrings[errorcode].c_str(),errorText.c_str());
 		}
 		else
 		{
@@ -138,6 +139,7 @@ void CLASS::clear()
 	pass0bytect = 0;
 	startpc = 0;
 	errorcode = 0;
+	errorText = "";
 	outbytect = 0;
 	lineno = 0;
 	outbytes.clear();
@@ -164,7 +166,7 @@ void CLASS::set(std::string line)
 		switch (state)
 		{
 			case 0:  // start of line state
-				if ((c == ';') || (c == '*'))
+				if ((c == ';') || (c == '*') || (c == '/'))
 				{
 					comment += c;
 					state = 7;
@@ -191,6 +193,11 @@ void CLASS::set(std::string line)
 				break;
 			case 2:  // read whitespace between label and opcode
 				if (c == ';')
+				{
+					comment += c;
+					state = 7;
+				}
+				else if (((c == '*') || (c == '/')) && (lable.length() == 0))
 				{
 					comment += c;
 					state = 7;
@@ -266,6 +273,8 @@ void CLASS::set(std::string line)
 				{
 					operand += c;
 				}
+				break;
+			case 9:
 				break;
 		}
 	}
@@ -489,7 +498,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	s.namelc = Poco::toLower(sym);
 	s.stype = 0;
 	s.value = val;
-	s.used=false;
+	s.used = false;
 	s.cb = NULL;
 	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 	symbols.insert(p);
@@ -586,7 +595,12 @@ typedef struct
 
 // ^([_,a-z,A-Z,0-9:\]].+)\,[s,S]{1}$ // might be a better syn_s
 
-TaddrMode addrRegEx[] =
+// "^([:-~][0-Z_-~]*)$"  // this is a valid identifier
+// "^([$][0-9A-Fa-f]+)$" // hex digit
+// "^([%][0-1][0-1_]+[0-1])$" - binary numbera
+// "^([0-9]+)$" - decimal number
+// "^([:-~][^\],()]*)$" - valid expression
+const TaddrMode addrRegEx[] =
 {
 	{ "^(?'expr'.+)\\,[s,S]{1}$", syn_s, "e,s"},    				// expr,s
 	{"^[(]{1}(?'expr'.+)[,]{1}[(S|s)]{1}[)]{1}[,]{1}[(Y|y)]{1}$", syn_sy, "(e,s),y"}, // (expr,s),y
@@ -594,7 +608,8 @@ TaddrMode addrRegEx[] =
 	{"^[(]{1}(?'expr'.+)[,]{1}[x,X]{1}\\)$", syn_diix, "(e,x)"},  			// (expr,x)
 	{"^[(]{1}(?'expr'.+)[\\)]{1}[\\,][(Y|y]{1}$", syn_diiy, "(e),y"}, 	//(expr),y
 	{"^[(]{1}(?'expr'.+)[\\)]{1}$", syn_di, "(e)"},					// (expr)
-	{"^\\[{1}(?'expr'.+)\\]{1}[,]{1}[(Y|y)]{1}$", syn_iyl, "[e],x"},	// [expr],y
+	{"^\\[{1}(?'expr'.+)\\]{1}[,]{1}[(Y|y)]{1}$", syn_iyl, "[e],y"},	// [expr],y
+	//{"^\\[{1}(?'expr'.+)\\]{1}[,]{1}[(X|x)]{1}$", syn_iyl, "[e],x"},	// [expr],x
 	{"^\\[(?'expr'.+)\\]$", syn_dil, "[e]"}, 						// [expr]
 	{"^(?'expr'.+)[,]{1}[(X|x)]{1}$", syn_absx, "e,x"},				// expr,x
 	{"^(?'expr'.+)[,]{1}[(Y|y)]{1}$", syn_absy, "e,y"},				// expr,y
@@ -602,6 +617,8 @@ TaddrMode addrRegEx[] =
 	{"^(?'expr'.+)$", syn_abs, "absolute"},  							// expr (MUST BE LAST)
 	{"", 0, ""}
 };
+
+const std::string valExpression = "^([$%:-~][^\\],()]*)$";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -632,6 +649,10 @@ uint8_t opCodeCompatibility[256] =
 
 void CLASS::init(void)
 {
+	uint8_t b = opCodeCompatibility[0];
+	if (b)
+	{
+	}
 	TFileProcessor::init();
 	lines.clear();
 
@@ -643,7 +664,7 @@ void CLASS::initpass(void)
 {
 	std::string s;
 
-	casesen = getBool("asm.casesen",true);
+	casesen = getBool("asm.casesen", true);
 	listing = getBool("asm.lst", true);
 	skiplist = false;
 
@@ -735,7 +756,15 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 		TEvaluator eval(*this);
 
 		res = eval.evaluate(expr, result);
-		//printf("res=%d %08lX\n",res,result);
+		if (res != 0)
+		{
+			if (isDebug()>2)
+			{
+				int c = SetColor(CL_RED);
+				printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
+				SetColor(c);
+			}
+		}
 		if (res == 0)
 		{
 			value = result;
@@ -746,7 +775,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 		value = 0;
 		res = 0;
 	}
-	return res;
+	return (res);
 }
 
 int CLASS::getAddrMode(MerlinLine & line)
@@ -765,6 +794,8 @@ int CLASS::getAddrMode(MerlinLine & line)
 	}
 
 	idx = 0;
+	RegularExpression valEx(valExpression, 0, true);
+
 	while (mode == syn_none)
 	{
 		s = addrRegEx[idx].regEx;
@@ -800,7 +831,17 @@ int CLASS::getAddrMode(MerlinLine & line)
 					{
 						if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
 						{
-							if (ct == 1)
+							bool v = true;
+							if (i > 0)
+							{
+								v = valEx.match(s, 0, 0);
+							}
+							if (!v)
+							{
+								//printf("invalid expression |%s|\n", s.c_str());
+								mode = syn_none;
+							}
+							else if (ct == 1)
 							{
 								line.operand_expr = s;
 							}
@@ -852,7 +893,7 @@ int CLASS::parseOperand(MerlinLine & line)
 void CLASS::process(void)
 {
 	uint32_t l;
-	int x;
+	int x, evalresult;
 	char c;
 	std::string op, operand;
 	//uint32_t operand_eval;
@@ -867,6 +908,7 @@ void CLASS::process(void)
 		l = lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
+			evalresult = 0;
 			line = &lines[lineno];
 
 			line->lineno = lineno + 1;
@@ -897,17 +939,19 @@ void CLASS::process(void)
 			{
 				line->addressmode = x;
 			}
+
 			int64_t value = -1;
 			x = evaluate(line->operand_expr, value);
+			evalresult = x;
+
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				//printf("OPERAND VALUE=%08X\n",value);
 				line->expr_value = value;
 			}
 			else
 			{
-				line->expr_value = 0xFFFFFFFF;
+				line->expr_value = 0;
 			}
 
 			x = 0;
@@ -915,8 +959,14 @@ void CLASS::process(void)
 			{
 				x = callOpCode(op, *line);
 			}
+
 			if (x > 0)
 			{
+				if (evalresult != 0)
+				{
+					line->setError(errBadOperand);
+					line->errorText=line->operand_expr;
+				}
 				line->bytect = x;
 				currentpc += x;
 				totalbytes += x;
