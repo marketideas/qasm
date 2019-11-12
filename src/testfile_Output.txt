@@ -1,0 +1,313 @@
+------+----------------------+-------------+----+---------+------+-----------------------+----------------------------------------------------------------------
+ Line | # File          Line | Line Type   | MX |  Reloc  | Size | Address   Object Code |  Source Code
+------+----------------------+-------------+----+---------+------+-----------------------+----------------------------------------------------------------------
+    1 |  1 testfile.s      1 | Directive   | 11 |         |    0 | 00/8000               |             lst   off            
+    2 |  1 testfile.s      2 | Directive   | 11 |         |    0 | 00/8000               |             xc    off            
+    3 |  1 testfile.s      3 | Directive   | 11 |         |    0 | 00/8000               |             xc                   
+    4 |  1 testfile.s      4 | Directive   | 11 |         |    0 | 00/8000               |             xc                   
+    5 |  1 testfile.s      5 | Directive   | 00 |         |    0 | 00/8000               |             mx    %00            
+    6 |  1 testfile.s      6 | Directive   | 00 |         |    0 | 00/8000               |             org   $4000          
+    7 |  1 testfile.s      7 | Empty       | 00 |         |    0 | 00/4000               |                                  
+    8 |  1 testfile.s      8 | Equivalence | 00 |         |    0 | 00/4000               | dp          =     $A5            
+    9 |  1 testfile.s      9 | Equivalence | 00 |         |    0 | 00/4000               | expr        =     $0405          
+   10 |  1 testfile.s     10 | Equivalence | 00 |         |    0 | 00/4000               | lexpr       =     $010203        
+   11 |  1 testfile.s     11 | Equivalence | 00 |         |    0 | 00/4000               | immed       =     $123456        
+   12 |  1 testfile.s     12 | Equivalence | 00 |         |    0 | 00/4000               | neg         equ   -16            
+   13 |  1 testfile.s     13 | Empty       | 00 |         |    0 | 00/4000               |                                  
+   14 |  1 testfile.s     14 | Directive   | 00 |         |    0 | 00/4000               |             lst                  
+   15 |  1 testfile.s     15 | Empty       | 00 |         |    0 | 00/4000               | start00                          
+   16 |  1 testfile.s     16 | Code        | 00 |         |    1 | 00/4000 : 00          |             brk                  ;$00
+   17 |  1 testfile.s     17 | Code        | 00 |         |    2 | 00/4001 : 01 A5       |             ora   ({$A5},x)      
+   18 |  1 testfile.s     18 | Code        | 00 |         |    2 | 00/4003 : 02 BA       |             cop   $BA            
+   19 |  1 testfile.s     19 | Code        | 00 |         |    2 | 00/4005 : 03 BC       |             ora   $BC,S          
+   20 |  1 testfile.s     20 | Code        | 00 |         |    2 | 00/4007 : 04 A5       |             tsb   {$A5}          
+   21 |  1 testfile.s     21 | Code        | 00 |         |    2 | 00/4009 : 05 A5       |             ora   {$A5}          
+   22 |  1 testfile.s     22 | Code        | 00 |         |    2 | 00/400B : 06 A5       |             asl   {$A5}          
+   23 |  1 testfile.s     23 | Code        | 00 |         |    2 | 00/400D : 07 A5       |             ora   [{$A5}]        
+   24 |  1 testfile.s     24 | Code        | 00 |         |    1 | 00/400F : 08          |             php                  
+   25 |  1 testfile.s     25 | Code        | 00 |         |    3 | 00/4010 : 09 56 34    |             ora   #{$123456}     
+   26 |  1 testfile.s     26 | Code        | 00 |         |    1 | 00/4013 : 0A          |             asl                  
+   27 |  1 testfile.s     27 | Code        | 00 |         |    1 | 00/4014 : 0B          |             phd                  
+   28 |  1 testfile.s     28 | Code        | 00 |         |    3 | 00/4015 : 0C 05 04    |             tsb   {$0405}        
+   29 |  1 testfile.s     29 | Code        | 00 |         |    3 | 00/4018 : 0D 05 04    |             ora   {$0405}        
+   30 |  1 testfile.s     30 | Code        | 00 |         |    3 | 00/401B : 0E 05 04    |             asl   {$0405}        
+   31 |  1 testfile.s     31 | Code        | 00 |         |    4 | 00/401E : 0F 03 02 01 |             oral  {$010203}      
+   32 |  1 testfile.s     32 | Empty       | 00 |         |    0 | 00/4022               |                                  
+   33 |  1 testfile.s     33 | Empty       | 00 |         |    0 | 00/4022               | start10                          
+   34 |  1 testfile.s     34 | Code        | 00 |         |    2 | 00/4022 : 10 FE       |             bpl   start10        
+   35 |  1 testfile.s     35 | Code        | 00 |         |    2 | 00/4024 : 11 A5       |             ora   ({$A5}),y      
+   36 |  1 testfile.s     36 | Code        | 00 |         |    2 | 00/4026 : 12 A5       |             ora   ({$A5})        
+   37 |  1 testfile.s     37 | Code        | 00 |         |    2 | 00/4028 : 13 A5       |             ora   ({$A5},s),y    
+   38 |  1 testfile.s     38 | Code        | 00 |         |    2 | 00/402A : 14 A5       |             trb   {$A5}          
+   39 |  1 testfile.s     39 | Code        | 00 |         |    2 | 00/402C : 15 A5       |             ora   {$A5},x        
+   40 |  1 testfile.s     40 | Code        | 00 |         |    2 | 00/402E : 16 A5       |             asl   {$A5},x        
+   41 |  1 testfile.s     41 | Code        | 00 |         |    2 | 00/4030 : 17 A5       |             ora   [{$A5}],y      
+   42 |  1 testfile.s     42 | Code        | 00 |         |    1 | 00/4032 : 18          |             clc                  
+   43 |  1 testfile.s     43 | Code        | 00 |         |    3 | 00/4033 : 19 05 04    |             ora   {$0405},y      
+   44 |  1 testfile.s     44 | Code        | 00 |         |    1 | 00/4036 : 1A          |             inc                  
+   45 |  1 testfile.s     45 | Code        | 00 |         |    1 | 00/4037 : 1B          |             tcs                  
+   46 |  1 testfile.s     46 | Code        | 00 |         |    3 | 00/4038 : 1C 05 04    |             trb   {$0405}        
+   47 |  1 testfile.s     47 | Code        | 00 |         |    3 | 00/403B : 1D 05 04    |             ora   {$0405},x      
+   48 |  1 testfile.s     48 | Code        | 00 |         |    3 | 00/403E : 1E 05 04    |             asl   {$0405},x      
+   49 |  1 testfile.s     49 | Code        | 00 |         |    4 | 00/4041 : 1F 03 02 01 |             oral  {$010203},x    
+   50 |  1 testfile.s     50 | Empty       | 00 |         |    0 | 00/4045               |                                  
+   51 |  1 testfile.s     51 | Empty       | 00 |         |    0 | 00/4045               | start20                          
+   52 |  1 testfile.s     52 | Code        | 00 |         |    3 | 00/4045 : 20 05 04    |             jsr   {$0405}        
+   53 |  1 testfile.s     53 | Code        | 00 |         |    2 | 00/4048 : 21 A5       |             and   ({$A5},x)      
+   54 |  1 testfile.s     54 | Code        | 00 |         |    4 | 00/404A : 22 03 02 01 |             jsl   {$010203}      
+   55 |  1 testfile.s     55 | Code        | 00 |         |    2 | 00/404E : 23 A5       |             and   {$A5},s        
+   56 |  1 testfile.s     56 | Code        | 00 |         |    2 | 00/4050 : 24 A5       |             bit   {$A5}          
+   57 |  1 testfile.s     57 | Code        | 00 |         |    2 | 00/4052 : 25 A5       |             and   {$A5}          
+   58 |  1 testfile.s     58 | Code        | 00 |         |    2 | 00/4054 : 26 A5       |             rol   {$A5}          
+   59 |  1 testfile.s     59 | Code        | 00 |         |    2 | 00/4056 : 27 A5       |             and   [{$A5}]        
+   60 |  1 testfile.s     60 | Code        | 00 |         |    1 | 00/4058 : 28          |             plp                  
+   61 |  1 testfile.s     61 | Code        | 00 |         |    3 | 00/4059 : 29 56 34    |             and   #{$123456}     
+   62 |  1 testfile.s     62 | Code        | 00 |         |    1 | 00/405C : 2A          |             rol                  
+   63 |  1 testfile.s     63 | Code        | 00 |         |    1 | 00/405D : 2B          |             pld                  
+   64 |  1 testfile.s     64 | Code        | 00 |         |    3 | 00/405E : 2C 05 04    |             bit   {$0405}        
+   65 |  1 testfile.s     65 | Code        | 00 |         |    3 | 00/4061 : 2D 05 04    |             and   {$0405}        
+   66 |  1 testfile.s     66 | Code        | 00 |         |    3 | 00/4064 : 2E 05 04    |             rol   {$0405}        
+   67 |  1 testfile.s     67 | Code        | 00 |         |    4 | 00/4067 : 2F 03 02 01 |             andl  {$010203}      
+   68 |  1 testfile.s     68 | Empty       | 00 |         |    0 | 00/406B               |                                  
+   69 |  1 testfile.s     69 | Empty       | 00 |         |    0 | 00/406B               | start30                          
+   70 |  1 testfile.s     70 | Code        | 00 |         |    2 | 00/406B : 30 FE       |             bmi   start30        
+   71 |  1 testfile.s     71 | Code        | 00 |         |    2 | 00/406D : 31 A5       |             and   ({$A5}),y      
+   72 |  1 testfile.s     72 | Code        | 00 |         |    2 | 00/406F : 32 A5       |             and   ({$A5})        
+   73 |  1 testfile.s     73 | Code        | 00 |         |    2 | 00/4071 : 33 A5       |             and   ({$A5},s),y    
+   74 |  1 testfile.s     74 | Code        | 00 |         |    2 | 00/4073 : 34 A5       |             bit   {$A5},x        
+   75 |  1 testfile.s     75 | Code        | 00 |         |    2 | 00/4075 : 35 A5       |             and   {$A5},x        
+   76 |  1 testfile.s     76 | Code        | 00 |         |    2 | 00/4077 : 36 A5       |             rol   {$A5},x        
+   77 |  1 testfile.s     77 | Code        | 00 |         |    2 | 00/4079 : 37 A5       |             and   [{$A5}],y      
+   78 |  1 testfile.s     78 | Code        | 00 |         |    1 | 00/407B : 38          |             sec                  
+   79 |  1 testfile.s     79 | Code        | 00 |         |    3 | 00/407C : 39 05 04    |             and   {$0405},y      
+   80 |  1 testfile.s     80 | Code        | 00 |         |    1 | 00/407F : 3A          |             dec                  
+   81 |  1 testfile.s     81 | Code        | 00 |         |    1 | 00/4080 : 3B          |             tsc                  
+   82 |  1 testfile.s     82 | Code        | 00 |         |    3 | 00/4081 : 3C 05 04    |             bit   {$0405},x      
+   83 |  1 testfile.s     83 | Code        | 00 |         |    3 | 00/4084 : 3D 05 04    |             and   {$0405},x      
+   84 |  1 testfile.s     84 | Code        | 00 |         |    3 | 00/4087 : 3E 05 04    |             rol   {$0405},x      
+   85 |  1 testfile.s     85 | Code        | 00 |         |    4 | 00/408A : 3F 03 02 01 |             andl  {$010203},x    
+   86 |  1 testfile.s     86 | Empty       | 00 |         |    0 | 00/408E               |                                  
+   87 |  1 testfile.s     87 | Empty       | 00 |         |    0 | 00/408E               | start40                          
+   88 |  1 testfile.s     88 | Code        | 00 |         |    1 | 00/408E : 40          |             rti                  
+   89 |  1 testfile.s     89 | Code        | 00 |         |    2 | 00/408F : 41 A5       |             eor   ({$A5},x)      
+   90 |  1 testfile.s     90 | Code        | 00 |         |    1 | 00/4091 : 42          |             wdm                  
+   91 |  1 testfile.s     91 | Code        | 00 |         |    2 | 00/4092 : 43 A5       |             eor   {$A5},s        
+   92 |  1 testfile.s     92 | Code        | 00 |         |    3 | 00/4094 : 44 A6 A5    |             mvp   {$A5},{$A5}+1  
+   93 |  1 testfile.s     93 | Code        | 00 |         |    2 | 00/4097 : 45 A5       |             eor   {$A5}          
+   94 |  1 testfile.s     94 | Code        | 00 |         |    2 | 00/4099 : 46 A5       |             lsr   {$A5}          
+   95 |  1 testfile.s     95 | Code        | 00 |         |    2 | 00/409B : 47 A5       |             eor   [{$A5}]        
+   96 |  1 testfile.s     96 | Code        | 00 |         |    1 | 00/409D : 48          |             pha                  
+   97 |  1 testfile.s     97 | Code        | 00 |         |    3 | 00/409E : 49 56 34    |             eor   #{$123456}     
+   98 |  1 testfile.s     98 | Code        | 00 |         |    1 | 00/40A1 : 4A          |             lsr                  
+   99 |  1 testfile.s     99 | Code        | 00 |         |    1 | 00/40A2 : 4B          |             phk                  
+  100 |  1 testfile.s    100 | Code        | 00 |         |    3 | 00/40A3 : 4C 05 04    |             jmp   {$0405}        
+  101 |  1 testfile.s    101 | Code        | 00 |         |    3 | 00/40A6 : 4D 05 04    |             eor   {$0405}        
+  102 |  1 testfile.s    102 | Code        | 00 |         |    3 | 00/40A9 : 4E 05 04    |             lsr   {$0405}        
+  103 |  1 testfile.s    103 | Code        | 00 |         |    4 | 00/40AC : 4F 03 02 01 |             eorl  {$010203}      
+  104 |  1 testfile.s    104 | Empty       | 00 |         |    0 | 00/40B0               |                                  
+  105 |  1 testfile.s    105 | Empty       | 00 |         |    0 | 00/40B0               | start50                          
+  106 |  1 testfile.s    106 | Code        | 00 |         |    2 | 00/40B0 : 50 FE       |             bvc   start50        
+  107 |  1 testfile.s    107 | Code        | 00 |         |    2 | 00/40B2 : 51 A5       |             eor   ({$A5}),y      
+  108 |  1 testfile.s    108 | Code        | 00 |         |    2 | 00/40B4 : 52 A5       |             eor   ({$A5})        
+  109 |  1 testfile.s    109 | Code        | 00 |         |    2 | 00/40B6 : 53 A5       |             eor   ({$A5},s),y    
+  110 |  1 testfile.s    110 | Code        | 00 |         |    3 | 00/40B8 : 54 A6 A5    |             mvn   {$A5},{$A5}+1  
+  111 |  1 testfile.s    111 | Code        | 00 |         |    2 | 00/40BB : 55 A5       |             eor   {$A5},x        
+  112 |  1 testfile.s    112 | Code        | 00 |         |    2 | 00/40BD : 56 A5       |             lsr   {$A5},x        
+  113 |  1 testfile.s    113 | Code        | 00 |         |    2 | 00/40BF : 57 A5       |             eor   [{$A5}],y      
+  114 |  1 testfile.s    114 | Code        | 00 |         |    1 | 00/40C1 : 58          |             cli                  
+  115 |  1 testfile.s    115 | Code        | 00 |         |    3 | 00/40C2 : 59 05 04    |             eor   {$0405},y      
+  116 |  1 testfile.s    116 | Code        | 00 |         |    1 | 00/40C5 : 5A          |             phy                  
+  117 |  1 testfile.s    117 | Code        | 00 |         |    1 | 00/40C6 : 5B          |             tcd                  
+  118 |  1 testfile.s    118 | Code        | 00 |         |    4 | 00/40C7 : 5C 03 02 01 |             jml   {$010203}      
+  119 |  1 testfile.s    119 | Code        | 00 |         |    3 | 00/40CB : 5D 05 04    |             eor   {$0405},x      
+  120 |  1 testfile.s    120 | Code        | 00 |         |    3 | 00/40CE : 5E 05 04    |             lsr   {$0405},x      
+  121 |  1 testfile.s    121 | Code        | 00 |         |    4 | 00/40D1 : 5F 03 02 01 |             eorl  {$010203},x    
+  122 |  1 testfile.s    122 | Empty       | 00 |         |    0 | 00/40D5               |                                  
+  123 |  1 testfile.s    123 | Empty       | 00 |         |    0 | 00/40D5               | start60                          
+  124 |  1 testfile.s    124 | Code        | 00 |         |    1 | 00/40D5 : 60          |             rts                  
+  125 |  1 testfile.s    125 | Code        | 00 |         |    2 | 00/40D6 : 61 A5       |             adc   ({$A5},x)      
+  126 |  1 testfile.s    126 | Code        | 00 |         |    3 | 00/40D8 : 62 2A C3    |             per   {$0405}        
+  127 |  1 testfile.s    127 | Code        | 00 |         |    2 | 00/40DB : 63 A5       |             adc   {$A5},s        
+  128 |  1 testfile.s    128 | Code        | 00 |         |    2 | 00/40DD : 64 A5       |             stz   {$A5}          
+  129 |  1 testfile.s    129 | Code        | 00 |         |    2 | 00/40DF : 65 A5       |             adc   {$A5}          
+  130 |  1 testfile.s    130 | Code        | 00 |         |    2 | 00/40E1 : 66 A5       |             ror   {$A5}          
+  131 |  1 testfile.s    131 | Code        | 00 |         |    2 | 00/40E3 : 67 A5       |             adc   [{$A5}]        
+  132 |  1 testfile.s    132 | Code        | 00 |         |    1 | 00/40E5 : 68          |             pla                  
+  133 |  1 testfile.s    133 | Code        | 00 |         |    3 | 00/40E6 : 69 56 34    |             adc   #{$123456}     
+  134 |  1 testfile.s    134 | Code        | 00 |         |    1 | 00/40E9 : 6A          |             ror                  
+  135 |  1 testfile.s    135 | Code        | 00 |         |    1 | 00/40EA : 6B          |             rtl                  
+  136 |  1 testfile.s    136 | Code        | 00 |         |    3 | 00/40EB : 6C 05 04    |             jmp   ({$0405})      
+  137 |  1 testfile.s    137 | Code        | 00 |         |    3 | 00/40EE : 6D 05 04    |             adc   {$0405}        
+  138 |  1 testfile.s    138 | Code        | 00 |         |    3 | 00/40F1 : 6E 05 04    |             ror   {$0405}        
+  139 |  1 testfile.s    139 | Code        | 00 |         |    4 | 00/40F4 : 6F 03 02 01 |             adcl  {$010203}      
+  140 |  1 testfile.s    140 | Empty       | 00 |         |    0 | 00/40F8               |                                  
+  141 |  1 testfile.s    141 | Empty       | 00 |         |    0 | 00/40F8               | start70                          
+  142 |  1 testfile.s    142 | Code        | 00 |         |    2 | 00/40F8 : 70 FE       |             bvs   start70        
+  143 |  1 testfile.s    143 | Code        | 00 |         |    2 | 00/40FA : 71 A5       |             adc   ({$A5}),y      
+  144 |  1 testfile.s    144 | Code        | 00 |         |    2 | 00/40FC : 72 A5       |             adc   ({$A5})        
+  145 |  1 testfile.s    145 | Code        | 00 |         |    2 | 00/40FE : 73 A5       |             adc   ({$A5},s),y    
+  146 |  1 testfile.s    146 | Code        | 00 |         |    2 | 00/4100 : 74 A5       |             stz   {$A5},x        
+  147 |  1 testfile.s    147 | Code        | 00 |         |    2 | 00/4102 : 75 A5       |             adc   {$A5},x        
+  148 |  1 testfile.s    148 | Code        | 00 |         |    2 | 00/4104 : 76 A5       |             ror   {$A5},x        
+  149 |  1 testfile.s    149 | Code        | 00 |         |    2 | 00/4106 : 77 A5       |             adc   [{$A5}],y      
+  150 |  1 testfile.s    150 | Code        | 00 |         |    1 | 00/4108 : 78          |             sei                  
+  151 |  1 testfile.s    151 | Code        | 00 |         |    3 | 00/4109 : 79 05 04    |             adc   {$0405},y      
+  152 |  1 testfile.s    152 | Code        | 00 |         |    1 | 00/410C : 7A          |             ply                  
+  153 |  1 testfile.s    153 | Code        | 00 |         |    1 | 00/410D : 7B          |             tdc                  
+  154 |  1 testfile.s    154 | Code        | 00 |         |    3 | 00/410E : 7C 05 04    |             jmp   ({$0405},x)    
+  155 |  1 testfile.s    155 | Code        | 00 |         |    3 | 00/4111 : 7D 05 04    |             adc   {$0405},x      
+  156 |  1 testfile.s    156 | Code        | 00 |         |    3 | 00/4114 : 7E 05 04    |             ror   {$0405},x      
+  157 |  1 testfile.s    157 | Code        | 00 |         |    4 | 00/4117 : 7F 05 04 00 |             adcl  {$0405},x      
+  158 |  1 testfile.s    158 | Empty       | 00 |         |    0 | 00/411B               |                                  
+  159 |  1 testfile.s    159 | Empty       | 00 |         |    0 | 00/411B               | start80                          
+  160 |  1 testfile.s    160 | Code        | 00 |         |    2 | 00/411B : 80 FE       |             bra   start80        
+  161 |  1 testfile.s    161 | Code        | 00 |         |    2 | 00/411D : 81 A5       |             sta   ({$A5},x)      
+  162 |  1 testfile.s    162 | Code        | 00 |         |    3 | 00/411F : 82 F9 FF    |             brl   start80        
+  163 |  1 testfile.s    163 | Code        | 00 |         |    2 | 00/4122 : 83 A5       |             sta   {$A5},s        
+  164 |  1 testfile.s    164 | Code        | 00 |         |    2 | 00/4124 : 84 A5       |             sty   {$A5}          
+  165 |  1 testfile.s    165 | Code        | 00 |         |    2 | 00/4126 : 85 A5       |             sta   {$A5}          
+  166 |  1 testfile.s    166 | Code        | 00 |         |    2 | 00/4128 : 86 A5       |             stx   {$A5}          
+  167 |  1 testfile.s    167 | Code        | 00 |         |    2 | 00/412A : 87 A5       |             sta   [{$A5}]        
+  168 |  1 testfile.s    168 | Code        | 00 |         |    1 | 00/412C : 88          |             dey                  
+  169 |  1 testfile.s    169 | Code        | 00 |         |    3 | 00/412D : 89 56 34    |             bit   #{$123456}     
+  170 |  1 testfile.s    170 | Code        | 00 |         |    1 | 00/4130 : 8A          |             txa                  
+  171 |  1 testfile.s    171 | Code        | 00 |         |    1 | 00/4131 : 8B          |             phb                  
+  172 |  1 testfile.s    172 | Code        | 00 |         |    3 | 00/4132 : 8C 05 04    |             sty   {$0405}        
+  173 |  1 testfile.s    173 | Code        | 00 |         |    3 | 00/4135 : 8D 05 04    |             sta   {$0405}        
+  174 |  1 testfile.s    174 | Code        | 00 |         |    3 | 00/4138 : 8E 05 04    |             stx   {$0405}        
+  175 |  1 testfile.s    175 | Code        | 00 |         |    4 | 00/413B : 8F 03 02 01 |             stal  {$010203}      
+  176 |  1 testfile.s    176 | Empty       | 00 |         |    0 | 00/413F               |                                  
+  177 |  1 testfile.s    177 | Empty       | 00 |         |    0 | 00/413F               | start90                          
+  178 |  1 testfile.s    178 | Code        | 00 |         |    2 | 00/413F : 90 FE       |             bcc   start90        
+  179 |  1 testfile.s    179 | Code        | 00 |         |    2 | 00/4141 : 91 A5       |             sta   ({$A5}),y      
+  180 |  1 testfile.s    180 | Code        | 00 |         |    2 | 00/4143 : 92 A5       |             sta   ({$A5})        
+  181 |  1 testfile.s    181 | Code        | 00 |         |    2 | 00/4145 : 93 A5       |             sta   ({$A5},s),y    
+  182 |  1 testfile.s    182 | Code        | 00 |         |    2 | 00/4147 : 94 A5       |             sty   {$A5},x        
+  183 |  1 testfile.s    183 | Code        | 00 |         |    2 | 00/4149 : 95 A5       |             sta   {$A5},x        
+  184 |  1 testfile.s    184 | Code        | 00 |         |    2 | 00/414B : 96 A5       |             stx   {$A5},y        
+  185 |  1 testfile.s    185 | Code        | 00 |         |    2 | 00/414D : 97 A5       |             sta   [{$A5}],y      
+  186 |  1 testfile.s    186 | Code        | 00 |         |    1 | 00/414F : 98          |             tya                  
+  187 |  1 testfile.s    187 | Code        | 00 |         |    3 | 00/4150 : 99 05 04    |             sta   {$0405},y      
+  188 |  1 testfile.s    188 | Code        | 00 |         |    1 | 00/4153 : 9A          |             txs                  
+  189 |  1 testfile.s    189 | Code        | 00 |         |    1 | 00/4154 : 9B          |             txy                  
+  190 |  1 testfile.s    190 | Code        | 00 |         |    3 | 00/4155 : 9C 05 04    |             stz   {$0405}        
+  191 |  1 testfile.s    191 | Code        | 00 |         |    3 | 00/4158 : 9D 05 04    |             sta   {$0405},x      
+  192 |  1 testfile.s    192 | Code        | 00 |         |    3 | 00/415B : 9E 05 04    |             stz   {$0405},x      
+  193 |  1 testfile.s    193 | Code        | 00 |         |    4 | 00/415E : 9F 03 02 01 |             stal  {$010203},x    
+  194 |  1 testfile.s    194 | Empty       | 00 |         |    0 | 00/4162               |                                  
+  195 |  1 testfile.s    195 | Empty       | 00 |         |    0 | 00/4162               | startA0                          
+  196 |  1 testfile.s    196 | Code        | 00 |         |    3 | 00/4162 : A0 56 34    |             ldy   #{$123456}     
+  197 |  1 testfile.s    197 | Code        | 00 |         |    2 | 00/4165 : A1 A5       |             lda   ({$A5},x)      
+  198 |  1 testfile.s    198 | Code        | 00 |         |    3 | 00/4167 : A2 56 34    |             ldx   #{$123456}     
+  199 |  1 testfile.s    199 | Code        | 00 |         |    2 | 00/416A : A3 A5       |             lda   {$A5},s        
+  200 |  1 testfile.s    200 | Code        | 00 |         |    2 | 00/416C : A4 A5       |             ldy   {$A5}          
+  201 |  1 testfile.s    201 | Code        | 00 |         |    2 | 00/416E : A5 A5       |             lda   {$A5}          
+  202 |  1 testfile.s    202 | Code        | 00 |         |    2 | 00/4170 : A6 A5       |             ldx   {$A5}          
+  203 |  1 testfile.s    203 | Code        | 00 |         |    2 | 00/4172 : A7 A5       |             lda   [{$A5}]        
+  204 |  1 testfile.s    204 | Code        | 00 |         |    1 | 00/4174 : A8          |             tay                  
+  205 |  1 testfile.s    205 | Code        | 00 |         |    3 | 00/4175 : A9 56 34    |             lda   #{$123456}     
+  206 |  1 testfile.s    206 | Code        | 00 |         |    1 | 00/4178 : AA          |             tax                  
+  207 |  1 testfile.s    207 | Code        | 00 |         |    1 | 00/4179 : AB          |             plb                  
+  208 |  1 testfile.s    208 | Code        | 00 |         |    3 | 00/417A : AC 05 04    |             ldy   {$0405}        
+  209 |  1 testfile.s    209 | Code        | 00 |         |    3 | 00/417D : AD 05 04    |             lda   {$0405}        
+  210 |  1 testfile.s    210 | Code        | 00 |         |    3 | 00/4180 : AE 05 04    |             ldx   {$0405}        
+  211 |  1 testfile.s    211 | Code        | 00 |         |    4 | 00/4183 : AF 03 02 01 |             ldal  {$010203}      
+  212 |  1 testfile.s    212 | Empty       | 00 |         |    0 | 00/4187               |                                  
+  213 |  1 testfile.s    213 | Empty       | 00 |         |    0 | 00/4187               | startB0                          
+  214 |  1 testfile.s    214 | Code        | 00 |         |    2 | 00/4187 : B0 FE       |             bcs   startB0        
+  215 |  1 testfile.s    215 | Code        | 00 |         |    2 | 00/4189 : B1 A5       |             lda   ({$A5}),y      
+  216 |  1 testfile.s    216 | Code        | 00 |         |    2 | 00/418B : B2 A5       |             lda   ({$A5},s)      
+  217 |  1 testfile.s    217 | Code        | 00 |         |    2 | 00/418D : B3 A5       |             lda   ({$A5},s),y    
+  218 |  1 testfile.s    218 | Code        | 00 |         |    2 | 00/418F : B4 A5       |             ldy   {$A5},x        
+  219 |  1 testfile.s    219 | Code        | 00 |         |    2 | 00/4191 : B5 A5       |             lda   {$A5},x        
+  220 |  1 testfile.s    220 | Code        | 00 |         |    2 | 00/4193 : B6 A5       |             ldx   {$A5},y        
+  221 |  1 testfile.s    221 | Code        | 00 |         |    2 | 00/4195 : B7 A5       |             lda   [{$A5}],y      
+  222 |  1 testfile.s    222 | Code        | 00 |         |    1 | 00/4197 : B8          |             clv                  
+  223 |  1 testfile.s    223 | Code        | 00 |         |    3 | 00/4198 : B9 05 04    |             lda   {$0405},y      
+  224 |  1 testfile.s    224 | Code        | 00 |         |    1 | 00/419B : BA          |             tsx                  
+  225 |  1 testfile.s    225 | Code        | 00 |         |    1 | 00/419C : BB          |             tyx                  
+  226 |  1 testfile.s    226 | Code        | 00 |         |    3 | 00/419D : BC 05 04    |             ldy   {$0405},x      
+  227 |  1 testfile.s    227 | Code        | 00 |         |    3 | 00/41A0 : BD 05 04    |             lda   {$0405},x      
+  228 |  1 testfile.s    228 | Code        | 00 |         |    3 | 00/41A3 : BE 05 04    |             ldx   {$0405},y      
+  229 |  1 testfile.s    229 | Code        | 00 |         |    4 | 00/41A6 : BF 03 02 01 |             ldal  {$010203},x    
+  230 |  1 testfile.s    230 | Empty       | 00 |         |    0 | 00/41AA               |                                  
+  231 |  1 testfile.s    231 | Empty       | 00 |         |    0 | 00/41AA               | startC0                          
+  232 |  1 testfile.s    232 | Code        | 00 |         |    3 | 00/41AA : C0 56 34    |             cpy   #{$123456}     
+  233 |  1 testfile.s    233 | Code        | 00 |         |    2 | 00/41AD : C1 A5       |             cmp   ({$A5},x)      
+  234 |  1 testfile.s    234 | Code        | 00 |         |    2 | 00/41AF : C2 FF       |             rep   #$FF           
+  235 |  1 testfile.s    235 | Code        | 00 |         |    2 | 00/41B1 : C3 A5       |             cmp   {$A5},s        
+  236 |  1 testfile.s    236 | Code        | 00 |         |    2 | 00/41B3 : C4 A5       |             cpy   {$A5}          
+  237 |  1 testfile.s    237 | Code        | 00 |         |    2 | 00/41B5 : C5 A5       |             cmp   {$A5}          
+  238 |  1 testfile.s    238 | Code        | 00 |         |    2 | 00/41B7 : C6 A5       |             dec   {$A5}          
+  239 |  1 testfile.s    239 | Code        | 00 |         |    2 | 00/41B9 : C7 A5       |             cmp   [{$A5}]        
+  240 |  1 testfile.s    240 | Code        | 00 |         |    1 | 00/41BB : C8          |             iny                  
+  241 |  1 testfile.s    241 | Code        | 00 |         |    3 | 00/41BC : C9 56 34    |             cmp   #{$123456}     
+  242 |  1 testfile.s    242 | Code        | 00 |         |    1 | 00/41BF : CA          |             dex                  
+  243 |  1 testfile.s    243 | Code        | 00 |         |    1 | 00/41C0 : CB          |             wai                  
+  244 |  1 testfile.s    244 | Code        | 00 |         |    3 | 00/41C1 : CC 05 04    |             cpy   {$0405}        
+  245 |  1 testfile.s    245 | Code        | 00 |         |    3 | 00/41C4 : CD 05 04    |             cmp   {$0405}        
+  246 |  1 testfile.s    246 | Code        | 00 |         |    3 | 00/41C7 : CE 05 04    |             dec   {$0405}        
+  247 |  1 testfile.s    247 | Code        | 00 |         |    4 | 00/41CA : CF 03 02 01 |             cmpl  {$010203}      
+  248 |  1 testfile.s    248 | Empty       | 00 |         |    0 | 00/41CE               |                                  
+  249 |  1 testfile.s    249 | Empty       | 00 |         |    0 | 00/41CE               | startD0                          
+  250 |  1 testfile.s    250 | Code        | 00 |         |    2 | 00/41CE : D0 FE       |             bne   startD0        
+  251 |  1 testfile.s    251 | Code        | 00 |         |    2 | 00/41D0 : D1 A5       |             cmp   ({$A5}),y      
+  252 |  1 testfile.s    252 | Code        | 00 |         |    2 | 00/41D2 : D2 A5       |             cmp   ({$A5})        
+  253 |  1 testfile.s    253 | Code        | 00 |         |    2 | 00/41D4 : D3 A5       |             cmp   ({$A5},s),y    
+  254 |  1 testfile.s    254 | Code        | 00 |         |    2 | 00/41D6 : D4 A5       |             pei   {$A5}          
+  255 |  1 testfile.s    255 | Code        | 00 |         |    2 | 00/41D8 : D5 A5       |             cmp   {$A5},x        
+  256 |  1 testfile.s    256 | Code        | 00 |         |    2 | 00/41DA : D6 A5       |             dec   {$A5},x        
+  257 |  1 testfile.s    257 | Code        | 00 |         |    2 | 00/41DC : D7 A5       |             cmp   [{$A5}],y      
+  258 |  1 testfile.s    258 | Code        | 00 |         |    1 | 00/41DE : D8          |             cld                  
+  259 |  1 testfile.s    259 | Code        | 00 |         |    3 | 00/41DF : D9 05 04    |             cmp   {$0405},y      
+  260 |  1 testfile.s    260 | Code        | 00 |         |    1 | 00/41E2 : DA          |             phx                  
+  261 |  1 testfile.s    261 | Code        | 00 |         |    1 | 00/41E3 : DB          |             stp                  
+  262 |  1 testfile.s    262 | Code        | 00 |         |    3 | 00/41E4 : DC 03 02    |             jml   [{$010203}]    
+  263 |  1 testfile.s    263 | Code        | 00 |         |    3 | 00/41E7 : DD 05 04    |             cmp   {$0405},x      
+  264 |  1 testfile.s    264 | Code        | 00 |         |    3 | 00/41EA : DE 05 04    |             dec   {$0405},x      
+  265 |  1 testfile.s    265 | Code        | 00 |         |    4 | 00/41ED : DF 03 02 01 |             cmpl  {$010203},x    
+  266 |  1 testfile.s    266 | Empty       | 00 |         |    0 | 00/41F1               |                                  
+  267 |  1 testfile.s    267 | Empty       | 00 |         |    0 | 00/41F1               | startE0                          
+  268 |  1 testfile.s    268 | Code        | 00 |         |    3 | 00/41F1 : E0 56 34    |             cpx   #{$123456}     
+  269 |  1 testfile.s    269 | Code        | 00 |         |    2 | 00/41F4 : E1 A5       |             sbc   ({$A5},x)      
+  270 |  1 testfile.s    270 | Code        | 11 |         |    2 | 00/41F6 : E2 FF       |             sep   #$FF           
+  271 |  1 testfile.s    271 | Code        | 11 |         |    2 | 00/41F8 : E3 A5       |             sbc   {$A5},s        
+  272 |  1 testfile.s    272 | Code        | 11 |         |    2 | 00/41FA : E4 A5       |             cpx   {$A5}          
+  273 |  1 testfile.s    273 | Code        | 11 |         |    2 | 00/41FC : E5 A5       |             sbc   {$A5}          
+  274 |  1 testfile.s    274 | Code        | 11 |         |    2 | 00/41FE : E6 A5       |             inc   {$A5}          
+  275 |  1 testfile.s    275 | Code        | 11 |         |    2 | 00/4200 : E7 A5       |             sbc   [{$A5}]        
+  276 |  1 testfile.s    276 | Code        | 11 |         |    1 | 00/4202 : E8          |             inx                  
+  277 |  1 testfile.s    277 | Code        | 11 |         |    2 | 00/4203 : E9 56       |             sbc   #{$123456}     
+  278 |  1 testfile.s    278 | Code        | 11 |         |    1 | 00/4205 : EA          |             nop                  
+  279 |  1 testfile.s    279 | Code        | 11 |         |    1 | 00/4206 : EB          |             xba                  
+  280 |  1 testfile.s    280 | Code        | 11 |         |    3 | 00/4207 : EC 05 04    |             cpx   {$0405}        
+  281 |  1 testfile.s    281 | Code        | 11 |         |    3 | 00/420A : ED 05 04    |             sbc   {$0405}        
+  282 |  1 testfile.s    282 | Code        | 11 |         |    3 | 00/420D : EE 05 04    |             inc   {$0405}        
+  283 |  1 testfile.s    283 | Code        | 11 |         |    4 | 00/4210 : EF 03 02 01 |             sbcl  {$010203}      
+  284 |  1 testfile.s    284 | Empty       | 11 |         |    0 | 00/4214               |                                  
+  285 |  1 testfile.s    285 | Empty       | 11 |         |    0 | 00/4214               | startF0                          
+  286 |  1 testfile.s    286 | Code        | 11 |         |    2 | 00/4214 : F0 FE       |             beq   startF0        
+  287 |  1 testfile.s    287 | Code        | 11 |         |    2 | 00/4216 : F0 03       |             beq   down           
+  288 |  1 testfile.s    288 | Code        | 11 |         |    3 | 00/4218 : 82 F9 FF    |             brl   startF0        
+  289 |  1 testfile.s    289 | Empty       | 11 |         |    0 | 00/421B               | down                             
+  290 |  1 testfile.s    290 | Code        | 11 |         |    2 | 00/421B : F1 A5       |             sbc   ({$A5}),y      
+  291 |  1 testfile.s    291 | Code        | 11 |         |    2 | 00/421D : F2 A5       |             sbc   ({$A5})        
+  292 |  1 testfile.s    292 | Code        | 11 |         |    2 | 00/421F : F3 A5       |             sbc   ({$A5},s),y    
+  293 |  1 testfile.s    293 | Code        | 11 |         |    3 | 00/4221 : F4 14 42    |             pea   startF0        
+  294 |  1 testfile.s    294 | Code        | 11 |         |    2 | 00/4224 : F5 A5       |             sbc   {$A5},x        
+  295 |  1 testfile.s    295 | Code        | 11 |         |    2 | 00/4226 : F6 A5       |             inc   {$A5},x        
+  296 |  1 testfile.s    296 | Code        | 11 |         |    2 | 00/4228 : F7 A5       |             sbc   [{$A5}],y      
+  297 |  1 testfile.s    297 | Code        | 11 |         |    1 | 00/422A : F8          |             sed                  
+  298 |  1 testfile.s    298 | Code        | 11 |         |    3 | 00/422B : F9 05 04    |             sbc   {$0405},y      
+  299 |  1 testfile.s    299 | Code        | 11 |         |    1 | 00/422E : FA          |             plx                  
+  300 |  1 testfile.s    300 | Code        | 11 |         |    1 | 00/422F : FB          |             xce                  
+  301 |  1 testfile.s    301 | Code        | 11 |         |    3 | 00/4230 : FC 05 04    |             jsr   ({$0405},x)    
+  302 |  1 testfile.s    302 | Code        | 11 |         |    3 | 00/4233 : FD 05 04    |             sbc   {$0405},x      
+  303 |  1 testfile.s    303 | Code        | 11 |         |    3 | 00/4236 : FE 05 04    |             inc   {$0405},x      
+  304 |  1 testfile.s    304 | Code        | 11 |         |    4 | 00/4239 : FF 03 02 01 |             sbcl  {$010203},x    
+  305 |  1 testfile.s    305 | Empty       | 11 |         |    0 | 00/423D               |                                  
+  306 |  1 testfile.s    306 | Comment     | 11 |         |    0 | 00/423D               | 	;lst
+  307 |  1 testfile.s    307 | Comment     | 11 |         |    0 | 00/423D               | 	;chk
+  308 |  1 testfile.s    308 | Directive   | 11 |         |    0 | 00/423D               |             lst   off            
+  309 |  1 testfile.s    309 | Empty       | 11 |         |    0 | 00/423D               |                                  
+------+----------------------+-------------+----+---------+------+-----------------------+----------------------------------------------------------------------

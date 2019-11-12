@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 set(CMAKE_BUILD_TYPE Debug)
 set(APPVERSION "1.0.0")
@@ -18,6 +19,9 @@ include_directories(BEFORE
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
 )
 
+find_package(OpenSSL REQUIRED)
+find_package(Poco REQUIRED NetSSL)
+
 add_subdirectory(${PROJECT_ROOT}/lib${LIBRARY_NAME})
 
 include(${PROJECT_ROOT}/lib${LIBRARY_NAME}/cmake/CMakeApp.txt)
@@ -28,11 +32,7 @@ target_link_libraries (
 ${PROJECT_NAME}
 ${LIBRARY_NAME}
 pthread
-PocoFoundation
-PocoNet
-PocoUtil
-PocoNetSSL
-PocoCrypto
+${Poco_LIBRARIES}
 )
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeCommands.txt)

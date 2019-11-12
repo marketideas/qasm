@@ -37,6 +37,9 @@ enum asmErrors
 	errBadOpcode,
 	errIncompatibleOpcode,
 	errBadByteCount,
+	errBadBranch,
+	errUnimplemented,
+	errForwardReference,
 	errMAX
 };
 
@@ -48,8 +51,11 @@ std::string errStrings[errMAX] = {
 	"Fatal",
 	"Unsupported Addressing Mode",
 	"Unknown Opcode",
-	"Opcode not available under CPU selecton",
+	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
+	"Relative branch offset too large"
+	"Unimplemented Instruction",
+	"Forward Reference to symbol"
 };
 #else
 extern std::string errStrings[errMAX];
@@ -90,13 +96,15 @@ public:
 	std::string opcodelower;
 	std::string operand;
 	std::string operand_expr;
+	std::string operand_expr2;
 	std::string comment;
 	std::string addrtext;
+	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
-	uint32_t startpc;
+	int32_t startpc;
 	uint32_t addressmode;
-	uint32_t expr_value;
+	int32_t expr_value;
 	uint32_t errorcode;
 	uint8_t inbytect;
 	uint8_t inbytes[256];
@@ -119,6 +127,7 @@ class TFileProcessor
 {
 protected:
 	uint8_t syntax;
+	uint64_t starttime;
 public:
 
 	TFileProcessor();
@@ -160,6 +169,8 @@ protected:
 	bool casesen;
 	bool relocatable;
 	bool listing;
+	bool skiplist; // used if lst is on, but LST opcode turns it off
+	uint32_t errorct;
 	uint32_t totalbytes;
 	uint32_t lineno;
 	uint32_t origin;
@@ -206,6 +217,7 @@ public:
 	int doJMP(MerlinLine &line, TSymbol &sym);
 	int doAddress(MerlinLine &line, TSymbol &sym);
 	int doNoPattern(MerlinLine &line, TSymbol &sym);
+	int doMVN(MerlinLine &line, TSymbol &sym);
 
 	int doEQU(MerlinLine &line, TSymbol &sym);
 	int doXC(MerlinLine &line, TSymbol &sym);

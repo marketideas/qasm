@@ -3,22 +3,20 @@
 	xc
 	xc
 	mx %00
+	org $4000
+
 dp	=	$A5
 expr = $0405
 lexpr = $010203
 immed = $123456
 neg	equ	-16
 
-	ldx
-	stx
-	tsb	#$DE
-
-	jmp	[lexpr]
+	lst 
 start00
 	brk				;$00
 	ora	(dp,x)
-	cop	#$00
-	ora $00,S
+	cop	$BA
+	ora $BC,S
 	tsb dp
 	ora dp
 	asl dp
@@ -31,9 +29,6 @@ start00
 	ora expr
 	asl expr
 	oral lexpr
-
-	;lst off
-	;;end	
 
 start10
 	bpl start10
@@ -289,6 +284,9 @@ startE0
 
 startF0
 	beq	startF0
+	beq down
+	brl startF0
+down
 	sbc (dp),y
 	sbc (dp)
 	sbc (dp,s),y
@@ -305,4 +303,6 @@ startF0
 	inc expr,x
 	sbcl lexpr,x
 
+	;lst
+	;chk
 	lst off

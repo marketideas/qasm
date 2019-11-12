@@ -2,6 +2,14 @@
 
 #define CLASS T65816Asm
 
+enum
+{
+	P_ORG = 1,
+	P_LST,
+
+	P_MAX
+};
+
 void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 {
 	if (pass > 0)
@@ -23,7 +31,37 @@ void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 
 int CLASS::doPSEUDO(MerlinLine &line, TSymbol &sym)
 {
-	return (0);
+	std::string s;
+	int res = 0;
+	switch (sym.opcode)
+	{
+		case P_ORG:
+			currentpc = line.expr_value;
+			break;
+		case P_LST:
+			if (pass > 0)
+			{
+				s = Poco::toUpper(Poco::trim(line.operand));
+				//printf("lst %d |%s| %08X \n", line.lineno, s.c_str(),line.expr_value);
+				if ((s == "") || (s == "ON") || (line.expr_value > 0))
+				{
+					//printf("ON\n");
+					skiplist = true;
+					listing = true;
+				}
+				else if ((s == "OFF") || (line.expr_value == 0))
+				{
+					//printf("OFF\n");
+					skiplist = true;
+					listing = false;
+				}
+			}
+			break;
+		default:
+			line.setError(errUnimplemented);
+			break;
+	}
+	return (res);
 }
 
 int CLASS::doXC(MerlinLine &line, TSymbol &sym)
@@ -89,6 +127,51 @@ int CLASS::doUNK(MerlinLine &line, TSymbol &sym)
 	return (res);
 }
 
+int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
+{
+	int res;
+	uint8_t op;
+
+	if (line.addressmode == syn_bm)
+	{
+		res = 3;
+		if (pass > 0)
+		{
+			if (sym.opcode == 0)
+			{
+				op = 0x54;    // MVN
+			}
+			else
+			{
+				op = 0x44;    // MVP
+			}
+
+			int64_t value = -1;
+			int x = evaluate(line.operand_expr2, value);
+			if (x == 0)
+			{
+				value &= 0xFFFFFFFF;
+			}
+			else
+			{
+				value = 0xFFFFFFFF;
+			}
+
+			setOpcode(line, op);
+			line.outbytes.push_back(value & 0xFF);
+			line.outbytes.push_back(line.expr_value & 0xFF);
+
+			line.outbytect = res;
+		}
+	}
+	else
+	{
+		line.setError(errBadAddressMode);
+		res = 0;
+	}
+	return (res);
+}
+
 int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 {
 	// this handles a few opcodes that don't fit mathmatically in the opcode table
@@ -97,7 +180,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 	// TSB = 2
 	// TRB = 3
 
-	int res,i;
+	int res, i;
 	uint8_t err;
 	uint8_t op;
 	uint8_t m = line.addressmode;
@@ -105,7 +188,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 	res = 1;
 
 	op = 0x00;
-	err=errBadAddressMode;
+	err = errBadAddressMode;
 
 	switch (sym.opcode)
 	{
@@ -140,8 +223,8 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 			}
 			break;
 		default:
-			op=0;
-			err=errBadOpcode;
+			op = 0;
+			err = errBadOpcode;
 			break;
 	}
 
@@ -274,10 +357,14 @@ int CLASS::doBRANCH(MerlinLine & line, TSymbol & sym)
 
 	if ((pass > 0) && (res > 0))
 	{
+		int64_t o64 = line.expr_value;
+		int32_t o32 = (int32_t)(o64 & 0xFFFFFFFF);
+		int32_t offset = o32 - line.startpc - res;
+		//printf("offset %d\n", offset);
 		setOpcode(line, op);
 		for (i = 0; i < (res - 1); i++)
 		{
-			line.outbytes.push_back(0x00);
+			line.outbytes.push_back(offset >> (i * 8));
 		}
 		line.outbytect = res;
 	}
@@ -295,6 +382,8 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	uint8_t op, amode;
 	uint16_t opflags;
 	bool err = false;
+	uint16_t m = line.addressmode;
+
 	//std::string opcode = Poco::toUpper(line.opcode);
 
 	line.opflags = opflags = sym.stype;
@@ -305,7 +394,6 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	if ((sym.stype & OP_C0) == OP_C0)
 	{
 		uint8_t cc = 0;
-		uint8_t m = line.addressmode;
 		uint8_t bbb = 0xFF;
 		bbb = (m == syn_imm ? 0 : bbb);
 		bbb = (m == syn_abs ? 1 : bbb);
@@ -317,20 +405,51 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			cc = 0x01;
 			op = 0x80;
 			bbb = 0x02;
+			//if ((mx&0x02)==0)
+			//{
+			//	bytelen++;
+			//}
+
 		}
 
 		else if ((bbb > 0) && (line.expr_value >= 0x100))
 		{
 			bbb |= 0x02;
+			bytelen++;
 		}
 		op |= (bbb << 2) | cc;
+
+		if (m == syn_imm)
+		{
+			int add = 0;
+			switch (sym.opcode)
+			{
+				case 7:  // CPX
+				case 6:  // CPY
+				case 5:  // LDY
+				case 4:  // STY
+					if ((mx & 0x01) == 0)
+					{
+						add = 1;
+					}
+					break;
+				case 1:  // BIT
+					if ((mx & 0x02) == 0)
+					{
+						add = 1;
+					}
+					break;
+
+			}
+			bytelen += add;
+		}
 		goto out;
 	}
 
 
 	if (cc == 0x01)
 	{
-		switch (line.addressmode)
+		switch (m)
 		{
 			case syn_diix: amode = 0; break;
 			case syn_abs: amode = 1; break;
@@ -345,11 +464,11 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	}
 	else if (cc == 0x02)
 	{
-		switch (line.addressmode)
+		switch (m)
 		{
 			case syn_imm: amode = 0; break;
 			case syn_abs: amode = 1; break;
-			case syn_implied: amode = 2; break;
+			case syn_implied: amode = 2; bytelen = 0; break;
 			case syn_absy:
 				if ((opflags & OP_STX) == OP_STX)
 				{
@@ -365,17 +484,17 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 		if ((opflags & OP_STX) == OP_STX)
 			//if ((opcode == "STX") || (opcode == "LDX") || (opcode == "DEC") || (opcode == "INC"))
 		{
-			if (line.addressmode == syn_implied)
+			if (m == syn_implied)
 			{
 				err = true;
 			}
-			if (line.addressmode == syn_absx)
+			if (m == syn_absx)
 			{
 				//err = true;
 			}
 			if (cpumode >= MODE_65C02)
 			{
-				if (line.addressmode == syn_implied)
+				if (m == syn_implied)
 				{
 					if ((opflags & (OP_STX | OP_SPECIAL)) == (OP_STX | OP_SPECIAL))
 					{
@@ -401,7 +520,7 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 		}
 	}
 
-	if (line.addressmode == syn_imm)
+	if (m == syn_imm)
 	{
 		uint8_t  mask = 0x02;
 		if (cc == 0x02) // the non accumulator
@@ -413,15 +532,13 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			bytelen++;
 		}
 	}
-	else if ((line.addressmode == syn_abs) || (line.addressmode == syn_absx)
-	         || (line.addressmode == syn_absy))
+	else if ((m == syn_abs) || (m == syn_absx)
+	         || (m == syn_absy))
 	{
 		// check here for zero page or not and adjust amode
-		//printf("addrmode=%d\n",line.addressmode);
 		if (line.expr_value >= 0x100)
 		{
 			bytelen++;
-			//if ((line.addressmode != syn_absy) && (amode != 6))
 			if (amode != 6)
 			{
 				amode += 2;
@@ -437,10 +554,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	{
 		if (cpumode >= MODE_65816)
 		{
-			//printf("816\n");
 			cc = 0x03;
 			err = false;
-			switch (line.addressmode)
+			switch (m)
 			{
 				case syn_s: amode = 0; break;
 				case syn_sy: amode = 4; break;
@@ -450,17 +566,17 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 				case syn_absx: amode = 7; break;
 				case syn_abs: amode = 3; break;
 				default:
-					//printf("bad syn_mode=%d\n", line.addressmode);
+					//printf("bad syn_mode=%d\n", m);
 					err = true;
 					break;
 			}
 			if (!err)
 			{
-				if (line.addressmode == syn_abs)
+				if ((m == syn_abs) || (m == syn_absx))
 				{
 					if (line.flags & FLAG_LONGADDR)
 					{
-						//amode=7;
+						bytelen++;
 					}
 				}
 			}
@@ -523,7 +639,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("EQU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
 	pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ENT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("ORG", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("ORG", P_ORG, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DSK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SAV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DS",  0x00, OP_PSUEDO,  OPHANDLER(&CLASS::doPSEUDO));
@@ -541,7 +657,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("CYC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DAT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("EXP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("LST", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("LST", P_LST, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("LSTDO", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("PAG", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TTL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -612,8 +728,8 @@ void CLASS::insertOpcodes(void)
 	pushopcode("DEY", 0x88, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("EOR", 0x02, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("INC", 0x07, OP_STX | OP_SPECIAL, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("INX", 0xE8, OP_6502| OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
-	pushopcode("INY", 0xC8, OP_6502| OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("INX", 0xE8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("INY", 0xC8, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("JML", 0x00, OP_65816, OPHANDLER(&CLASS::doJMP));
 	pushopcode("JMP", 0x01, OP_6502, OPHANDLER(&CLASS::doJMP));
 	pushopcode("JSL", 0x02, OP_65816, OPHANDLER(&CLASS::doJMP));
@@ -622,8 +738,8 @@ void CLASS::insertOpcodes(void)
 	pushopcode("LDX", 0x05, OP_STX, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("LDY", 0x05, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("LSR", 0x02, OP_ASL, OPHANDLER(&CLASS::doBase6502));
-	pushopcode("MVN", 0x00, OP_6502, OPHANDLER(&CLASS::doUNK));
-	pushopcode("MVP", 0x00, OP_6502, OPHANDLER(&CLASS::doUNK));
+	pushopcode("MVN", 0x00, OP_6502, OPHANDLER(&CLASS::doMVN));
+	pushopcode("MVP", 0x01, OP_6502, OPHANDLER(&CLASS::doMVN));
 	pushopcode("NOP", 0xEA, OP_6502 | OP_ONEBYTE, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("ORA", 0x00, OP_STD, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("PEA", 0xF4, 2, OPHANDLER(&CLASS::doAddress));

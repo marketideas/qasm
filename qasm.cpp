@@ -39,7 +39,6 @@ int CLASS::runCommandLineApp(void)
 {
 	TFileProcessor *t = NULL;
 	std::string line;
-	uint64_t startticks,n;
 
 	// only called if SERVERAPP not defined
 	int res = -1;
@@ -68,16 +67,12 @@ int CLASS::runCommandLineApp(void)
 		}
 		if (t != NULL)
 		{
-			startticks=GetTickCount();
 			t->init();
 
-			std::string f=path.toString();
+			std::string f = path.toString();
 			t->processfile(f);
 			t->process();
 			t->complete();
-			n=GetTickCount();
-			printf("Operation time: %lu ms\n",n-startticks);
-
 			delete t;
 			t = NULL;
 		}

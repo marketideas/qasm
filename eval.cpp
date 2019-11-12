@@ -499,6 +499,8 @@ int CLASS::evaluate(std::string & e, int64_t &res)
     std::string expr = Poco::trim(e);
     expr += " "; // add a space at end to make parsing easier
 
+    //printf("expression: |%s|\n",expr.c_str());
+
     const auto tokens = exprToTokens(expr);
     auto queue = shuntingYard(tokens);
     std::vector<int64_t> stack;
