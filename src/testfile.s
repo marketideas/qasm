@@ -1,24 +1,26 @@
-	lst off
+	;lst off
 	xc off
 	xc
 	xc
-	mx %00
+
+MXX  =  $00
+
+	mx 	MXX
+	org $4000
+
 dp	=	$A5
 expr = $0405
 lexpr = $010203
 immed = $123456
 neg	equ	-16
 
-	ldx
-	stx
-	tsb	#$DE
 
-	jmp	[lexpr]
+	;lst off
 start00
 	brk				;$00
 	ora	(dp,x)
-	cop	#$00
-	ora $00,S
+	cop	$BA
+	ora $BC,S
 	tsb dp
 	ora dp
 	asl dp
@@ -31,9 +33,6 @@ start00
 	ora expr
 	asl expr
 	oral lexpr
-
-	;lst off
-	;;end	
 
 start10
 	bpl start10
@@ -92,7 +91,7 @@ start30
 start40
 	rti
 	eor (dp,x)
-	wdm 
+	wdm $01 
 	eor dp,s
 	mvp dp,dp+1
 	eor dp
@@ -128,7 +127,7 @@ start50
 start60
 	rts
 	adc (dp,x)
-	per expr
+	per start60
 	adc dp,s
 	stz dp
 	adc dp
@@ -218,7 +217,7 @@ startA0
 startB0
 	bcs startB0
 	lda (dp),y
-	lda (dp,s)
+	lda dp,s
 	lda (dp,s),y
 	ldy dp,x
 	lda dp,x
@@ -237,6 +236,7 @@ startC0
 	cpy #immed
 	cmp (dp,x)
 	rep #$FF
+	mx  MXX
 	cmp dp,s
 	cpy dp
 	cmp dp
@@ -273,6 +273,7 @@ startE0
 	cpx #immed
 	sbc (dp,x)
 	sep #$FF
+	mx  MXX
 	sbc dp,s
 	cpx dp
 	sbc dp
@@ -289,6 +290,9 @@ startE0
 
 startF0
 	beq	startF0
+	beq down
+	brl startF0
+down
 	sbc (dp),y
 	sbc (dp)
 	sbc (dp,s),y
@@ -304,5 +308,8 @@ startF0
 	sbc expr,x
 	inc expr,x
 	sbcl lexpr,x
-
+	;lst
+	;chk
 	lst off
+
+	sav ./test.bin

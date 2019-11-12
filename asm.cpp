@@ -60,11 +60,11 @@ void CLASS::print(uint32_t lineno)
 	}
 	int b = 4;
 
-	printf("%02X ", addressmode);
-	printf("%6d", lineno + 1);
+	//printf("%02X ", addressmode);
+	//printf("%6d", lineno + 1);
 	if (!empty)
 	{
-		printf(" %06X:", startpc);
+		printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
 	}
 	else
 	{
@@ -79,6 +79,23 @@ void CLASS::print(uint32_t lineno)
 	{
 		printf("   ");
 	}
+
+	if ((getBool("asm.showmx", false)))
+	{
+		if (outbytect > 0)
+		{
+			printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
+		}
+		else
+		{
+			printf("    ");
+		}
+	}
+	if (isDebug())
+	{
+		printf("%02X ", addressmode);
+	}
+	printf("%6d  ", lineno + 1);
 
 	if (empty)
 	{
@@ -113,14 +130,16 @@ void CLASS::clear()
 	operand = "";
 	comment = "";
 	operand_expr = "";
+	operand_expr2 = "";
 	addrtext = "";
+	linemx = 0;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
 	startpc = 0;
 	errorcode = 0;
-	inbytect = 0;
 	outbytect = 0;
+	lineno = 0;
 	outbytes.clear();
 	addressmode = 0;
 	expr_value = 0;
@@ -133,7 +152,7 @@ void CLASS::set(std::string line)
 	int state = 0;
 	int l = line.length();
 	int i = 0;
-	char c,delim;
+	char c, delim;
 
 	clear();
 
@@ -212,9 +231,9 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 5:
-				if ((c == '\'') || (c=='"'))
+				if ((c == '\'') || (c == '"'))
 				{
-					delim=c;
+					delim = c;
 					operand += c;
 					state = 8;
 				}
@@ -271,11 +290,19 @@ void CLASS::errorOut(uint16_t code)
 
 void CLASS::init(void)
 {
+	starttime = GetTickCount();
+
 	syntax = SYNTAX_MERLIN;
 }
 
 void CLASS::complete(void)
 {
+
+	uint64_t n = GetTickCount();
+	if (isDebug())
+	{
+		printf("Processing Time: %lu ms\n", n - starttime);
+	}
 }
 
 void CLASS::process(void)
@@ -346,11 +373,6 @@ int CLASS::processfile(std::string &p)
 					c = 0x00; // ignore
 				}
 				c &= 0x7F;
-#if 0
-				//printf("%02X ",c&0x7F);
-
-				printf("%c", c);
-#else
 				int x;
 				switch (c)
 				{
@@ -379,7 +401,6 @@ int CLASS::processfile(std::string &p)
 						}
 						break;
 				}
-#endif
 			}
 			if ( (f.eof()))
 			{
@@ -431,9 +452,11 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
+	//printf("finding: %s\n",symname.c_str());
 	auto itr = symbols.find(Poco::toUpper(symname));
 	if (itr != symbols.end())
 	{
+		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
 		res = &itr->second;
 
 		return (res);
@@ -455,6 +478,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 
 	if (fnd != NULL)
 	{
+		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
 		fnd->value = val;
 		return (fnd);
 	}
@@ -465,6 +489,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	s.namelc = Poco::toLower(sym);
 	s.stype = 0;
 	s.value = val;
+	s.used=false;
 	s.cb = NULL;
 	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 	symbols.insert(p);
@@ -472,13 +497,39 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	return (res);
 }
 
-void CLASS::showSymbolTable(void)
+// set alpha to true to print table sorted by name or
+// false to print by value;
+void CLASS::showSymbolTable(bool alpha)
 {
-//	Poco::HashTable::Iterator itr;
+	std::map<std::string, uint32_t> alphamap;
+	std::map<uint32_t, std::string> nummap;
+
+
 	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 	{
 		TSymbol ptr = itr->second;
-		printf("Sym: %-24s 0x%08X\n", ptr.name.c_str(), ptr.value);
+		alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
+		nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
+
+		//printf("Sym: %-24s 0x%08X\n", ptr.name.c_str(), ptr.value);
+	}
+
+	if (alpha)
+	{
+		printf("\nSymbol table sorted alphabetically:\n");
+
+		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+		{
+			printf("%-16s 0x%08X\n", itr->first.c_str(), itr->second);
+		}
+	}
+	else
+	{
+		printf("\nSymbol table sorted numerically:\n");
+		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
+		{
+			printf("0x%08X %-16s\n", itr->first, itr->second.c_str());
+		}
 	}
 }
 
@@ -501,7 +552,6 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		}
 
 	}
-	//Poco::HashMap<std::string, TSymbol>::ConstIterator ptr;
 
 	auto itr = opcodes.find(Poco::toUpper(op));
 	if (itr != opcodes.end())
@@ -509,11 +559,6 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		TSymbol s = itr->second;
 		if (s.cb != NULL)
 		{
-			if (s.stype & OP_ONEBYTE)
-			{
-				line.inbytes[0] = (s.opcode);
-				line.inbytect = 1;
-			}
 			res = s.cb(line, s);
 			if (res == -1)
 			{
@@ -528,31 +573,6 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 	return (res);
 }
 
-//imp = <no operand>
-//imm = #$00
-//sr = $00,S
-//dp = $00
-//dpx = $00,X
-//dpy = $00,Y
-//idp = ($00)
-//idx = ($00,X)
-//idy = ($00),Y
-//idl = [$00]
-//idly = [$00],Y
-//isy = ($00,S),Y
-//abs = $0000
-//abx = $0000,X
-//aby = $0000,Y
-//abl = $000000
-//alx = $000000,X
-//ind = ($0000)
-//iax = ($0000,X)
-//ial = [$000000]
-//rel = $0000 (8 bits PC-relative)
-//rell = $0000 (16 bits PC-relative)
-//bm = $00,$00
-
-
 typedef struct
 {
 	std::string regEx;
@@ -560,6 +580,11 @@ typedef struct
 	std::string text;
 	std::string expression;
 } TaddrMode;
+
+// these are the regular expressions that determine the addressing mode
+// and extract the 'expr' part of the addr-mode
+
+// ^([_,a-z,A-Z,0-9:\]].+)\,[s,S]{1}$ // might be a better syn_s
 
 TaddrMode addrRegEx[] =
 {
@@ -578,28 +603,31 @@ TaddrMode addrRegEx[] =
 	{"", 0, ""}
 };
 
-// opcodes that are only 65C02 (27) - also in 65816
+// opcode check. emitted opcodes are compared against this
+// table, and if the XC status doesn't meet the requirements
+// an error is thrown
 
-// 0x01 = 6502
-// 0x02 = 65C02
-// 0x03 = 65816
-uint8_t opCodeCompatibility[256] = {
-	0x00,0x00,0x02,0x02,0x01,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x01,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,
-	0x00,0x00,0x02,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,
-	0x00,0x00,0x02,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02,
-	0x00,0x00,0x02,0x02,0x01,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x01,0x00,0x00,0x02,
-	0x01,0x00,0x02,0x02,0x00,0x00,0x00,0x02,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x01,0x00,0x01,0x02,
-	0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x02,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02,
-	0x00,0x00,0x02,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,
-	0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02,0x00,0x00,0x01,0x02,0x02,0x00,0x00,0x02
+// 0x00 = 6502
+// 0x01 = 65C02
+// 0x02 = 65816
+uint8_t opCodeCompatibility[256] =
+{
+	0x00, 0x00, 0x02, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x02, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x01, 0x00, 0x00, 0x02,
+	0x01, 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x01, 0x02,
+	0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0x01, 0x02, 0x02, 0x00, 0x00, 0x02
 };
 
 void CLASS::init(void)
@@ -613,28 +641,87 @@ void CLASS::init(void)
 
 void CLASS::initpass(void)
 {
-	casesen = true;
-	relocatable = false;
-	listing = true;
+	std::string s;
 
-	origin = 0;
-	currentpc = 0;
+	casesen = getBool("asm.casesen",true);
+	listing = getBool("asm.lst", true);
+	skiplist = false;
+
+	origin = 0x8000;
+	currentpc = origin;
+
+	s = getConfig("asm.cpu", "M65816");
+	s = Poco::trim(Poco::toUpper(s));
+
 	cpumode = MODE_65816;
 	mx = 0x00;
+
+	if (s == "M65816")
+	{
+		cpumode = MODE_65816;
+		mx = 0x00;
+	}
+	else if (s == "M65C02")
+	{
+		cpumode = MODE_65C02;
+		mx = 0x03;
+	}
+	else if (s == "M6502")
+	{
+		cpumode = MODE_6502;
+		mx = 0x03;
+	}
+	else
+	{
+		printf("Unknown CPU type in .ini\n");
+	}
+	relocatable = false;
 	currentsym = NULL;
 	totalbytes = 0;
 	lineno = 0;
+	errorct = 0;
 	passcomplete = false;
+
+	savepath = "";
 }
 
 void CLASS::complete(void)
 {
-	printf("=== Assembly Complete: %d bytes\n", totalbytes);
+	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", totalbytes, errorct);
+
+	if (savepath != "")
+	{
+		if (errorct == 0)
+		{
+			MerlinLine *line;
+			std::ofstream f(savepath);
+
+			uint32_t lineno = 0;
+			uint32_t l = lines.size();
+			while (lineno < l)
+			{
+				line = &lines[lineno++];
+				if (line->outbytect > 0)
+				{
+					for (uint32_t i = 0; i < line->outbytect; i++)
+					{
+						f.put(line->outbytes[i]);
+					}
+				}
+			}
+		}
+		else
+		{
+			printf("\nErrors in assembly. Output not SAVED.\n\n");
+		}
+	}
 
 	if (listing)
 	{
-		showSymbolTable();
+		showSymbolTable(true);
+		showSymbolTable(false);
 	}
+	TFileProcessor::complete();
 }
 
 int CLASS::evaluate(std::string expr, int64_t &value)
@@ -662,7 +749,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 	return res;
 }
 
-int CLASS::getAddrMode(MerlinLine &line)
+int CLASS::getAddrMode(MerlinLine & line)
 {
 	int  res = -1;
 	uint16_t mode = syn_none;
@@ -703,17 +790,31 @@ int CLASS::getAddrMode(MerlinLine &line)
 				mode = addrRegEx[idx].addrMode;
 				line.addrtext = addrRegEx[idx].text;
 				//cout << "mode: " << line.addrtext << endl;
+				int ct = 0;
 				for (uint32_t i = 0; i < groups.size(); i++)
 				{
 					s = groups[i];
-					if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
+					//printf("ct=%zu idx=%d group: |%s|\n", groups.size(), i, s.c_str());
+
+					if (s != "")
 					{
-						line.operand_expr = s;
-						//printf("line expression=|%s|\n", s.c_str());
-					}
-					else
-					{
-						// SGQ need to set a flag for a shift and process it after eval
+						if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
+						{
+							if (ct == 1)
+							{
+								line.operand_expr = s;
+							}
+							else if (ct == 2)
+							{
+								line.operand_expr2 = s;
+							}
+							ct++;
+							//printf("line expression=|%s|\n", s.c_str());
+						}
+						else
+						{
+							// SGQ need to set a flag for a shift and process it after eval
+						}
 					}
 				}
 			}
@@ -730,7 +831,7 @@ int CLASS::getAddrMode(MerlinLine &line)
 	return (res);
 }
 
-int CLASS::parseOperand(MerlinLine &line)
+int CLASS::parseOperand(MerlinLine & line)
 {
 
 	int res = -1;
@@ -768,11 +869,13 @@ void CLASS::process(void)
 		{
 			line = &lines[lineno];
 
+			line->lineno = lineno + 1;
 			//printf("lineno: %d %d |%s|\n",lineno,l,line->operand.c_str());
 
 			op = Poco::toLower(line->opcode);
 			operand = Poco::toLower(line->operand);
 			line->startpc = currentpc;
+			line->linemx = mx;
 			line->bytect = 0;
 
 			if ((line->lable != "") && (pass == 0))
@@ -795,7 +898,6 @@ void CLASS::process(void)
 				line->addressmode = x;
 			}
 			int64_t value = -1;
-			x=-1;
 			x = evaluate(line->operand_expr, value);
 			if (x == 0)
 			{
@@ -832,23 +934,15 @@ void CLASS::process(void)
 					line->setError(errBadByteCount);
 				}
 
-				bool skip = false;
-				if (op == "lst")
+				if (line->errorcode != 0)
 				{
-					if ((operand == "") || (operand == "on"))
-					{
-						listing = true;
-					}
-					else
-					{
-						skip = true;
-						listing = false;
-					}
+					errorct++;
 				}
-				if ((!skip) && (listing) && (pass == 1))
+				if (((!skiplist) && (listing) && (pass == 1)) || (line->errorcode != 0))
 				{
 					line->print(lineno);
 				}
+				skiplist = false;
 			}
 			lineno++;
 		}
