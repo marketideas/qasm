@@ -1,9 +1,9 @@
 #pragma once
-#include <palPoco.h>
+#include "palPoco.h"
 #include "pallogger.h"
-#include <eventtask.h>
-#include <baseapp.h>
-#include <httpserver.h>
+#include "eventtask.h"
+#include "baseapp.h"
+#include "httpserver.h"
 
 #define CLASS PAL_APPCLASS
 using namespace PAL_NAMESPACE;
