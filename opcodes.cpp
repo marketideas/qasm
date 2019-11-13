@@ -696,8 +696,8 @@ void CLASS::insertOpcodes(void)
 	pushopcode("SAV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TYP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
-	pushopcode("DUM", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("DEND", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("DUM", P_DUM, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("DEND",P_DEND, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("AST", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("CYC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DAT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

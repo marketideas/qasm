@@ -25,7 +25,8 @@ void CLASS::setError(uint32_t ecode)
 
 void CLASS::print(uint32_t lineno)
 {
-	int i, l;
+	int i, l, pcol;
+	int commentcol = 40;
 
 
 	l = outbytect;
@@ -56,58 +57,78 @@ void CLASS::print(uint32_t lineno)
 	}
 	int b = 4;
 
-	//printf("%02X ", addressmode);
-	//printf("%6d", lineno + 1);
+	pcol = 0;
 	if (!empty)
 	{
-		printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
+		pcol += printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
 	}
 	else
 	{
-		printf("        ");
+		pcol += printf("        ");
 	}
 
 	for (i = 0; i < l; i++)
 	{
-		printf("%02X ", outbytes[i]);
+		pcol += printf("%02X ", outbytes[i]);
 	}
 	for (i = l; i < b; i++)
 	{
-		printf("   ");
+		pcol += printf("   ");
 	}
 
 	if (showmx)
 	{
 		if (outbytect > 0)
 		{
-			printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
+			pcol += printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
 		}
 		else
 		{
-			printf("    ");
+			pcol += printf("    ");
 		}
 	}
 
 	if (isDebug() > 1)
 	{
-		printf("%02X ", addressmode & 0xFF);
+		pcol += printf("%02X ", addressmode & 0xFF);
 	}
-	printf("%6d  ", lineno + 1);
+	pcol += printf("%6d  ", lineno + 1);
+
+	pcol = 0; // reset pcol here because this is where source code starts
 
 	if (empty)
 	{
-		printf("%s", comment.c_str());
+		if (comment.length() > 0)
+		{
+			if (comment[0] == ';')
+			{
+				while (pcol < commentcol)
+				{
+					pcol += printf(" ");
+				}
+			}
+			pcol += printf("%s", comment.c_str());
+		}
 	}
 	else
 	{
-		printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
+		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 		if (errorcode > 0)
 		{
-			printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
+
+			while (pcol < commentcol)
+			{
+				pcol += printf(" ");
+			}
+			pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
 		}
 		else
 		{
-			printf("%s", comment.c_str());
+			while (pcol < commentcol)
+			{
+				pcol += printf(" ");
+			}
+			pcol += printf("%s", comment.c_str());
 		}
 	}
 	if (errorcode > 0)
@@ -448,30 +469,30 @@ CLASS::~CLASS()
 void CLASS::init(void)
 {
 	std::string s;
-	int ts,tabpos;
+	int ts, tabpos;
 	lines.clear();
 
-	std::string tabstr=getConfig("reformat.tabs","8,16,32");
-	tabstr=Poco::trim(tabstr);
+	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
+	tabstr = Poco::trim(tabstr);
 
 	memset(tabs, 0x00, sizeof(tabs));
 
-	Poco::StringTokenizer t(tabstr,",;",0);
-	tabpos=0;
-	for (auto itr=t.begin(); itr!=t.end(); ++itr)
+	Poco::StringTokenizer t(tabstr, ",;", 0);
+	tabpos = 0;
+	for (auto itr = t.begin(); itr != t.end(); ++itr)
 	{
-		s=Poco::trim(*itr);
+		s = Poco::trim(*itr);
 		try
 		{
-			ts=Poco::NumberParser::parse(s);
+			ts = Poco::NumberParser::parse(s);
 		}
-		catch(...)
+		catch (...)
 		{
-			ts=0;
+			ts = 0;
 		}
-		if ((ts>=0) && (ts<240))
+		if ((ts >= 0) && (ts < 240))
 		{
-			tabs[tabpos++]=ts;
+			tabs[tabpos++] = ts;
 		}
 	}
 }
@@ -486,7 +507,7 @@ int CLASS::doline(int lineno, std::string line)
 
 void CLASS::process(void)
 {
-	uint32_t len, t,pos;
+	uint32_t len, t, pos;
 
 	uint32_t ct = lines.size();
 
@@ -494,38 +515,62 @@ void CLASS::process(void)
 	{
 		MerlinLine &line = lines[lineno];
 
-		pos=0;
+		pos = 0;
 		len = 0;
-
-		t = tabs[pos++];
-		len = printf("%s ", line.printlable.c_str());
-		while (len < t)
+		if ((line.lable.length() == 0)
+		        && (line.opcode.length() == 0)
+		        && (line.operand.length() == 0))
 		{
-			len += printf(" ");
+			if (line.comment.length() > 0)
+			{
+				char c = line.comment[0];
+				if ((c == '*') || (c == '/'))
+				{
+					printf("%s", line.comment.c_str());
+				}
+				else
+				{
+					t = tabs[2];
+					while (len < t)
+					{
+						len += printf(" ");
+					}
+					printf("%s", line.comment.c_str());
+				}
+			}
+			printf("\n");
 		}
-
-		t = tabs[pos++];
-		len = printf("%s ", line.opcode.c_str());
-		while (len < t)
+		else
 		{
-			len += printf(" ");
-		}
+			t = tabs[pos++];
+			len = printf("%s ", line.printlable.c_str());
+			while (len < t)
+			{
+				len += printf(" ");
+			}
 
-		t = tabs[pos++];
-		len = printf("%s ", line.operand.c_str());
-		while (len < t)
-		{
-			len += printf(" ");
-		}
+			t = tabs[pos++];
+			len += printf("%s ", line.opcode.c_str());
+			while (len < t)
+			{
+				len += printf(" ");
+			}
 
-		t = tabs[pos++];
-		len = printf("%s", line.comment.c_str());
-		while (len < t)
-		{
-			len += printf(" ");
-		}
-		len+=printf("\n");
+			t = tabs[pos++];
+			len += printf("%s ", line.operand.c_str());
+			while (len < t)
+			{
+				len += printf(" ");
+			}
 
+			t = tabs[pos++];
+			len += printf("%s", line.comment.c_str());
+			while (len < t)
+			{
+				len += printf(" ");
+			}
+			len += printf("\n");
+		}
 	}
 }
 
@@ -848,8 +893,8 @@ void CLASS::initpass(void)
 
 	skiplist = false;
 
-	origin = 0x8000;
-	currentpc = origin;
+	PC.origin = 0x8000;
+	PC.currentpc = PC.origin;
 
 	s = getConfig("asm.cpu", "M65816");
 	s = Poco::trim(Poco::toUpper(s));
@@ -878,18 +923,22 @@ void CLASS::initpass(void)
 	}
 	relocatable = false;
 	currentsym = NULL;
-	totalbytes = 0;
+	PC.totalbytes = 0;
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
 
 	variables.clear(); // clear the variables for each pass
+	while (!PCstack.empty())
+	{
+		PCstack.pop();
+	}
 	savepath = "";
 }
 
 void CLASS::complete(void)
 {
-	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", totalbytes, errorct);
+	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", PC.totalbytes, errorct);
 
 	if (savepath != "")
 	{
@@ -1014,9 +1063,12 @@ int CLASS::getAddrMode(MerlinLine & line)
 						if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
 						{
 							bool v = true;
-							if (i > 0)
+							if (mode == syn_abs)
 							{
-								v = valEx.match(s, 0, 0);
+								if (i > 0)
+								{
+									v = valEx.match(s, 0, 0);
+								}
 							}
 							if (!v)
 							{
@@ -1098,7 +1150,7 @@ void CLASS::process(void)
 
 			op = Poco::toLower(line->opcode);
 			operand = Poco::toLower(line->operand);
-			line->startpc = currentpc;
+			line->startpc = PC.currentpc;
 			line->linemx = mx;
 			line->bytect = 0;
 			line->showmx = showmx;
@@ -1118,7 +1170,7 @@ void CLASS::process(void)
 					case ':':
 						break;
 					default:
-						sym = addSymbol(line->lable, currentpc, false);
+						sym = addSymbol(line->lable, PC.currentpc, false);
 						if (sym == NULL) { dupsym = true; }
 						break;
 				}
@@ -1161,8 +1213,8 @@ void CLASS::process(void)
 					line->errorText = line->operand_expr;
 				}
 				line->bytect = x;
-				currentpc += x;
-				totalbytes += x;
+				PC.currentpc += x;
+				PC.totalbytes += x;
 			}
 			if (pass == 0)
 			{

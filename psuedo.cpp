@@ -12,6 +12,13 @@ CLASS::~CLASS()
 
 }
 
+int CLASS::doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	int res=-1;
+	//bool isdend=((opinfo.opcode==P_DEND)?true:false);
+	return(res);
+}
+
 int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	std::string s;
@@ -43,10 +50,12 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		default:
 			res = -1; // undefined p-op
 			line.setError(errUnimplemented);
-
 			break;
+		case P_DUM:
+		case P_DEND:
+			res=doDUM(a,line,opinfo);
 		case P_ORG:
-			a.currentpc = line.expr_value;
+			a.PC.currentpc = line.expr_value;
 			break;
 		case P_SAV:
 			a.savepath = line.operand;

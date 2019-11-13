@@ -8,6 +8,8 @@ enum
 	P_ORG = 1,
 	P_LST,
 	P_SAV,
+	P_DUM,
+	P_DEND,
 
 	P_MAX
 };
@@ -19,6 +21,8 @@ public:
 	~CLASS();
 	int ProcessOpcode(T65816Asm  &a, MerlinLine &line, TSymbol &opinfo);
 	int doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+	int doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+
 
 
 };
