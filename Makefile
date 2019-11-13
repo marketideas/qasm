@@ -33,7 +33,7 @@ install:
 	-cd ./build && cmake -P cmake_install.cmake
 
 reformat:
-	qasm -r src/main.s
+	qasm -x REFORMAT  src/main.s
 	
 asm:
 	

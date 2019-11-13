@@ -38,10 +38,14 @@ enum asmErrors
 	errBadByteCount,
 	errBadBranch,
 	errUnimplemented,
-	errForwardReference,
+	errForwardRef,
 	errNoRedefinition,
 	errBadOperand,
 	errDupSymbol,
+	errBadDUMop,
+	errOverflow,
+	errRecursiveOp,
+    errOpcodeNotStarted,
 	errMAX
 };
 
@@ -62,7 +66,10 @@ const std::string errStrings[errMAX + 1] =
 	"Unable to redefine symbol",
 	"Unable to evaluate",
 	"Duplicate Symbol",
-
+	"Invalid use of DUM/DEND",
+	"Overflow detected",
+	"Recursive Operand",
+    "Opcode without start",
 	""
 };
 #else
@@ -96,10 +103,42 @@ enum
 
 class TOriginSection
 {
+// SGQ - if you do something unusual here, be aware of copy constructor
+// may be needed
 public:
 	uint32_t origin;
 	uint32_t currentpc;
 	uint32_t totalbytes;
+	uint32_t orgsave;
+#if 0
+	TOriginSection(const TOriginSection &old)
+	{
+		origin = old.origin;
+		currentpc = old.currentpc;
+		orgsave=old.orgsave;
+		totalbytes = old.totalbytes;
+	};
+
+	TOriginSection& operator=(const TOriginSection &other)
+	{
+		origin = other.origin;
+		currentpc = other.currentpc;
+		totalbytes = other.totalbytes;
+		orgsave=other.orgsave;
+		return (*this);
+	};
+
+	TOriginSection()
+	{
+		origin = 0;
+		currentpc = 0;
+		totalbytes = 0;
+		orgsave=0;
+	};
+	~TOriginSection()
+	{
+	}
+#endif
 };
 
 class MerlinLine
@@ -124,6 +163,7 @@ public:
 	int32_t startpc;
 	uint32_t addressmode;
 	int32_t expr_value;
+	int32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
 	uint32_t errorcode;
 	std::string errorText;
 
@@ -223,10 +263,10 @@ public:
 
 	bool passcomplete;
 	bool relocatable;
+	int dumstart; // must be signed
+	uint32_t dumstartaddr;
 	bool skiplist; // used if lst is on, but LST opcode turns it off
 	uint32_t lineno;
-	//uint32_t origin;
-	//uint32_t currentpc;
 
 	std::string savepath;
 	TSymbol *currentsym;

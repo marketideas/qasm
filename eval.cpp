@@ -118,11 +118,19 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                     numexpect = false;
 
                 }
+                else if ((numexpect) && ( (c == '^') || (c == '<') || (c == '>') || (c == '|')))
+                {
+                    ident = c;
+                    tokens.push_back(Token{Token::Type::Shift, ident, 1, true});
+                    ident = "";
+                }
                 else if ((c == '*') && (numexpect))
                 {
                     numexpect = false;
-                    state = 20;
+                    state = 0;
                     ident += c;
+                    tokens.push_back(Token{Token::Type::Symbol, ident, 1, false});
+                    ident = "";
                 }
                 else if ((c == '%') && (numexpect))
                 {
@@ -155,14 +163,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                     numexpect = false;
 
                 }
-                else if ((c >= 'a') && (c <= 'z'))
-                {
-                    state = 20;
-                    ident += c;
-                    numexpect = false;
-
-                }
-                else if ((c >= 'A') && (c <= 'Z'))
+                else if (c >= ':')
                 {
                     state = 20;
                     ident += c;
@@ -229,7 +230,6 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                     if (sym != NULL)
                     {
                         sym->used = true;
-                        //printf("symbol found\n");
                         sprintf(buff, "%d", sym->value);
                         token.str = buff;
                     }
@@ -247,6 +247,9 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 queue.push_back(token);
                 break;
 
+            case Token::Type::Shift:
+                stack.push_back(token);
+                break;
             case Token::Type::Operator:
             {
                 // If the token is operator, o1, then:
@@ -317,7 +320,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 {
                     // If the stack runs out without finding a left parenthesis,
                     // then there are mismatched parentheses.
-                    printf("RightParen error (%s)\n", token.str.c_str());
+                    //printf("RightParen error (%s)\n", token.str.c_str());
                     setError(Token::operatorErr);
                     return queue;
                 }
@@ -327,7 +330,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
             default:
                 setError(Token::syntaxErr);
 
-                printf("error (%s)\n", token.str.c_str());
+                //printf("error (%s)\n", token.str.c_str());
                 return queue;
                 break;
         }
@@ -518,11 +521,12 @@ void CLASS::setError(int ecode)
     }
 }
 
-int CLASS::evaluate(std::string & e, int64_t &res)
+int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
 {
     // const std::string expr = "3+4*2/(1-5)^2^3"; // Wikipedia's example
     // const std::string expr = "20-30/3+4*2^3";
 
+    _shiftmode=shiftmode=0;
     res = DEF_VAL;
     setError(Token::noError);
 
@@ -531,8 +535,10 @@ int CLASS::evaluate(std::string & e, int64_t &res)
     std::string expr = Poco::trim(e);
     expr += " "; // add a space at end to make parsing easier
 
-    //printf("expression: |%s|\n",expr.c_str());
-
+    if (isDebug() >= 4)
+    {
+        printf("eval: expression: |%s|\n", expr.c_str());
+    }
     const auto tokens = exprToTokens(expr);
     auto queue = shuntingYard(tokens);
     std::vector<int64_t> stack;
@@ -565,6 +571,41 @@ int CLASS::evaluate(std::string & e, int64_t &res)
                 //op = "Push " + token.str;
                 break;
 
+            case Token::Type::Shift:
+            {
+                auto rhs = DEF_VAL;
+
+                if (stack.size() > 0)
+                {
+                    rhs = stack.back();
+                    stack.pop_back();
+                    shiftmode=token.str[0];
+
+                    if (token.str=="^")
+                    {
+                        //rhs = (rhs >> 16) &0xFFFF ;
+                    }
+                    else if (token.str=="|")
+                    {
+                        //rhs = (rhs >> 16) & 0xFFFF;
+                    }
+                    else if (token.str=="<")
+                    {
+                        //rhs = (rhs << 8 ) & 0xFFFF;
+                    }
+                    else if (token.str==">")
+                    {
+                        //rhs=(rhs>>8) & 0xFFFF;
+                    }
+
+                    stack.push_back(rhs);
+                }
+                else
+                {
+                    //printf("nothing on stack\n");
+                }
+            }
+            break;
             case Token::Type::Operator:
             {
 
@@ -656,6 +697,7 @@ out:
     {
         setError(Token::syntaxErr);
     }
+    _shiftmode=shiftmode;
     res = v;
     return (evalerror);
 }

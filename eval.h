@@ -41,6 +41,7 @@ public:
         Unknown = 0,
         Number,
         Symbol,
+        Shift,
         Operator,
         LeftParen,
         RightParen,
@@ -62,6 +63,7 @@ protected:
     T65816Asm &assembler;
     int evalerror;
     void setError(int ecode);
+    uint8_t shiftmode;
 public:
     CLASS(T65816Asm &_asm);
     ~CLASS();
@@ -69,7 +71,7 @@ public:
     std::deque<Token> shuntingYard(const std::deque<Token>& tokens);
     std::deque<Token> exprToTokens(const std::string& expr);
     int parseNumber(std::string n, int64_t &val);
-    int evaluate(std::string &expr, int64_t &res);
+    int evaluate(std::string &expr, int64_t &res, uint8_t &_shiftmode);
 
 };
 

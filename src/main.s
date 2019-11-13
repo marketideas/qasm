@@ -1,4 +1,4 @@
-        ;lst on
+        lst off
 *
 *  main.s
 *  Merlin32 Test
@@ -83,6 +83,7 @@ START
 
 ;adc (ZP,x)
 	adc (0,x)
+
         adc ($80,x)
         adc	(_tmp,x)
         adc	(_tmp+0,x)
@@ -162,7 +163,7 @@ myQuit
 
         org	;return to ongoing address
         
-
+        lst
 ;Issue #16 (fadden) - Byte reference modifiers are ignored (no way to force DP)
         lda	<$fff0			;zp
         lda	>$fff0			;ABS (lo word)
@@ -181,6 +182,8 @@ myQuit
         lda	#<$fff0			;byte
         lda	#>$fff0			;page
         lda #^$fff0			;bank
+
+        lst off
 
         lda	$0008           ;ZP
         lda	$08             ;ZP
@@ -201,3 +204,5 @@ L00BC   bit	L00BC
         stx	L00BC,y
 
 //]XCODEEND       ; Keep this at the end and put your code above this
+    lst off
+
