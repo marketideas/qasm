@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
+project(QAsm)
+
 set(CMAKE_BUILD_TYPE Debug)
 set(APPVERSION "1.0.1")
 set(LIBRARY_NAME pal)
+set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeHeader.txt)
 
@@ -21,6 +24,7 @@ find_package(Poco REQUIRED Foundation Util XML JSON NetSSL)
 include_directories(BEFORE 
   ${PROJECT_ROOT}
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
+  ${OPENSSL_INCLUDE_DIR}
   ${Poco_INCLUDE_DIRS}
 )
 
