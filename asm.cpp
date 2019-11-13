@@ -27,6 +27,7 @@ void CLASS::print(uint32_t lineno)
 {
 	int i, l, pcol;
 	int commentcol = 40;
+	bool nc = false;
 
 
 	l = outbytect;
@@ -35,20 +36,24 @@ void CLASS::print(uint32_t lineno)
 		l = 4;
 	}
 
-	if (errorcode > 0)
+	nc = getBool("option.nocolor", false);
+	if (!nc)
 	{
-		if (errorcode >= errFatal)
+		if (errorcode > 0)
 		{
-			SetColor(CL_WHITE | CL_BOLD | BG_RED);
+			if (errorcode >= errFatal)
+			{
+				SetColor(CL_WHITE | CL_BOLD | BG_RED);
+			}
+			else
+			{
+				SetColor(CL_YELLOW | CL_BOLD | BG_NORMAL);
+			}
 		}
 		else
 		{
-			SetColor(CL_YELLOW | CL_BOLD | BG_NORMAL);
+			SetColor(CL_WHITE | CL_BOLD | BG_NORMAL);
 		}
-	}
-	else
-	{
-		SetColor(CL_WHITE | CL_BOLD | BG_NORMAL);
 	}
 	bool empty = false;
 	if ((printlable == "") && (opcode == "") && (operand == ""))
@@ -131,7 +136,7 @@ void CLASS::print(uint32_t lineno)
 			pcol += printf("%s", comment.c_str());
 		}
 	}
-	if (errorcode > 0)
+	if ((!nc) && (errorcode > 0))
 	{
 		SetColor(CL_NORMAL | BG_NORMAL);
 	}
@@ -374,6 +379,8 @@ int CLASS::processfile(std::string &p)
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
 
+
+
 	valid = true;
 	p1 = tp.toString();
 	Poco::File fn(p1);
@@ -397,6 +404,9 @@ int CLASS::processfile(std::string &p)
 
 	if (valid)
 	{
+
+
+
 		std::ifstream f(p1);
 		if (f.is_open())
 		{
@@ -452,7 +462,7 @@ int CLASS::processfile(std::string &p)
 	}
 	else
 	{
-		fprintf(stderr,"File <%s> does not exist.\n\n", p.c_str());
+		fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
 	}
 
 	//printf("\n\nfile read result: %d\n", res);
@@ -717,14 +727,15 @@ TSymbol *CLASS::findVariable(std::string symname)
 
 void CLASS::showVariables(void)
 {
-
-	printf("\nVariables:\n");
-
-	for (auto itr = variables.begin(); itr != variables.end(); ++itr)
+	if (variables.size() > 0)
 	{
-		printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
-	}
+		printf("\nVariables:\n");
 
+		for (auto itr = variables.begin(); itr != variables.end(); ++itr)
+		{
+			printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
+		}
+	}
 }
 
 // set alpha to true to print table sorted by name or
@@ -734,16 +745,14 @@ void CLASS::showSymbolTable(bool alpha)
 	std::map<std::string, uint32_t> alphamap;
 	std::map<uint32_t, std::string> nummap;
 
-    int columns = 4;
-    int column = columns;
+	int columns = 4;
+	int column = columns;
 
 	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 	{
 		TSymbol ptr = itr->second;
 		alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
 		nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
-
-		//printf("Sym: %-24s 0x%08X\n", ptr.name.c_str(), ptr.value);
 	}
 
 	if (alpha)
@@ -752,12 +761,12 @@ void CLASS::showSymbolTable(bool alpha)
 
 		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
 		{
-			printf("%16s 0x%08X", itr->first.c_str(), itr->second);
-            if( !--column )
-            {
-                printf("\n");
-                column = columns;
-            }
+			printf("%-16s 0x%08X ", itr->first.c_str(), itr->second);
+			if ( !--column )
+			{
+				printf("\n");
+				column = columns;
+			}
 		}
 	}
 	else
@@ -765,12 +774,12 @@ void CLASS::showSymbolTable(bool alpha)
 		printf("\n\nSymbol table sorted numerically:\n\n");
 		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 		{
-			printf("0x%08X %-16s", itr->first, itr->second.c_str());
-            if( !--column )
-            {
-                printf("\n");
-                column = columns;
-            }
+			printf("0x%08X %-16s ", itr->first, itr->second.c_str());
+			if ( !--column )
+			{
+				printf("\n");
+				column = columns;
+			}
 		}
 	}
 }
@@ -782,18 +791,49 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 
 	if (op.length() == 4) // check for 4 digit 'L' opcodes
 	{
-		c = op[3];
-		if ((c >= 'a') || (c <= 'z'))
+		c = op[3] & 0x7F;
+		if ((c >= 'a') && (c <= 'z'))
 		{
 			c = c - 0x20;
 		}
-		if (c == 'L')
+		switch (c)
 		{
-			op = op.substr(0, 3);
-			line.flags |= FLAG_LONGADDR;
+			case 'L':
+				op = op.substr(0, 3);
+				line.flags |= FLAG_FORCELONG; // 3 byte address
+				break;
+			default:  // any char but 'L' as in Merlin 16+
+				if ((c != 'D') || (Poco::toUpper(op) != "DEND"))
+				{
+					op = op.substr(0, 3);
+					line.flags |= FLAG_FORCEABS; // 2 byte address
+				}
+				break;
+			case 'Z':
+				op = op.substr(0, 3);
+				line.flags |= FLAG_FORCEDP; // one byte address
+				break;
 		}
-
 	}
+
+	switch (line.expr_shift)
+	{
+		case '<':
+			line.expr_value &= 0xFF;
+			line.flags |= FLAG_DP;
+			break;
+		case '>':
+			line.expr_value >>= 8;
+			line.expr_value &= 0xFFFF;
+			break;
+		case '^':
+			line.expr_value = (line.expr_value >> 16) & 0xFFFF;
+			break;
+		case '|':
+			line.flags |= FLAG_FORCELONG;
+			break;
+	}
+
 
 	auto itr = opcodes.find(Poco::toUpper(op));
 	if (itr != opcodes.end())
@@ -904,14 +944,15 @@ void CLASS::initpass(void)
 	listing = getBool("asm.lst", true);
 	showmx = getBool("asm.showmx", false);
 	trackrep = getBool("asm.trackrep", false);
-
+	merlincompat = getBool("asm.merlincompatible", true);
+	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
-	PC.totalbytes=0;
-	PC.orgsave=PC.origin;
+	PC.totalbytes = 0;
+	PC.orgsave = PC.origin;
 
 	s = getConfig("asm.cpu", "M65816");
 	s = Poco::trim(Poco::toUpper(s));
@@ -943,8 +984,8 @@ void CLASS::initpass(void)
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
-	dumstartaddr=0;
-	dumstart=0;
+	dumstartaddr = 0;
+	dumstart = 0;
 
 
 	variables.clear(); // clear the variables for each pass
@@ -969,8 +1010,8 @@ void CLASS::complete(void)
 			uint32_t l = lines.size();
 			while (lineno < l)
 			{
-				MerlinLine &line=lines.at(lineno++);
-				if (line.outbytect > 0)
+				MerlinLine &line = lines.at(lineno++);
+				if ((line.outbytect > 0) && ((line.flags & FLAG_INDUM) == 0))
 				{
 					for (uint32_t i = 0; i < line.outbytect; i++)
 					{
@@ -994,7 +1035,7 @@ void CLASS::complete(void)
 	TFileProcessor::complete();
 }
 
-int CLASS::evaluate(std::string expr, int64_t &value)
+int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 {
 	int res = -1;
 	int64_t result = 0;
@@ -1003,8 +1044,9 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 	{
 
 		TEvaluator eval(*this);
+		line.eval_result = 0;
 
-		res = eval.evaluate(expr, result, mx);
+		res = eval.evaluate(expr, result, line.expr_shift);
 		if (res != 0)
 		{
 			if (isDebug() > 2)
@@ -1016,7 +1058,20 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 		}
 		if (res == 0)
 		{
+			uint64_t v1 = (uint64_t) result;
 			value = result;
+			if ((listing) && (pass > 0) && (isDebug() > 2))
+			{
+				printf("EV1=%08lX '%c'\n", v1, line.expr_shift);
+			}
+			if (v1 >= 0x10000)
+			{
+				line.flags |= FLAG_BIGNUM;
+			}
+			if (v1 < 0x100)
+			{
+				line.flags |= FLAG_DP;
+			}
 		}
 	}
 	else
@@ -1024,9 +1079,9 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 		value = 0;
 		res = 0;
 	}
-	if (isDebug()>=3)
+	if (isDebug() >= 3)
 	{
-		printf("Eval Result: %08lX (status=%d)\n",value,res);
+		printf("Eval Result: %08lX (status=%d)\n", value, res);
 	}
 	return (res);
 }
@@ -1164,9 +1219,9 @@ void CLASS::process(void)
 		l = lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
-			MerlinLine &line=lines[lineno];
+			MerlinLine &line = lines[lineno];
 
-			line.eval_result=0;
+			line.eval_result = 0;
 			line.lineno = lineno + 1;
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
@@ -1208,8 +1263,8 @@ void CLASS::process(void)
 			}
 
 			int64_t value = -1;
-			x = evaluate(line.operand_expr, value);
-			line.eval_result=x;
+			x = evaluate(line, line.operand_expr, value);
+			//line.eval_result=x;
 
 			if (x == 0)
 			{
@@ -1229,6 +1284,10 @@ void CLASS::process(void)
 
 			if (x > 0)
 			{
+				if (!PCstack.empty()) // are we inside a DUM section?
+				{
+					line.flags |= FLAG_INDUM;
+				}
 				if ((line.eval_result != 0) && (pass > 0))
 				{
 					line.setError(errBadOperand);
@@ -1243,20 +1302,20 @@ void CLASS::process(void)
 				line.pass0bytect = line.bytect;
 			}
 
-			if (dumstart>0) // starting a dummy section
+			if (dumstart > 0) // starting a dummy section
 			{
 				PCstack.push(PC);
-				PC.origin=dumstartaddr;
-				PC.currentpc=PC.origin;
-				dumstart=0;
-				dumstartaddr=0;
+				PC.origin = dumstartaddr;
+				PC.currentpc = PC.origin;
+				dumstart = 0;
+				dumstartaddr = 0;
 			}
-			if (dumstart<0)
+			if (dumstart < 0)
 			{
-				PC=PCstack.top();
+				PC = PCstack.top();
 				PCstack.pop();
-				dumstart=0;
-				dumstartaddr=0;
+				dumstart = 0;
+				dumstartaddr = 0;
 			}
 
 			if (pass == 1)

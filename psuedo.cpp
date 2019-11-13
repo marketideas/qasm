@@ -28,6 +28,16 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	else
 	{
 		res = v;
+
+		if (a.pass>0)
+		{
+			for (int i=0;i<v;i++)
+			{
+				line.outbytes.push_back(0x00);
+			}
+			line.outbytect=v;
+		}
+
 	}
 	return (res);
 }
@@ -89,6 +99,11 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_DS:
 			res = doDS(a, line, opinfo);
+			break;
+		case P_PUT:
+		case P_USE:
+			// both of these are handled by the input file processor, just allow them to be
+			// processed with no errors here
 			break;
 		case P_DUM:
 		case P_DEND:
