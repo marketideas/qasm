@@ -218,7 +218,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 token.type = Token::Type::Number;
                 if (token.str == "*")
                 {
-                    sprintf(buff, "%u", assembler.currentpc);
+                    sprintf(buff, "%u", assembler.PC.currentpc);
                     token.str = buff;
                 }
                 else

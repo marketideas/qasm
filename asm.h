@@ -94,6 +94,14 @@ enum
 
 #define FLAG_LONGADDR 0x01
 
+class TOriginSection
+{
+public:
+	uint32_t origin;
+	uint32_t currentpc;
+	uint32_t totalbytes;
+};
+
 class MerlinLine
 {
 public:
@@ -156,7 +164,7 @@ class TMerlinConverter : public TFileProcessor
 protected:
 	uint8_t tabs[10];
 	std::vector<MerlinLine> lines;
-	
+
 public:
 	TMerlinConverter();
 	virtual ~TMerlinConverter();
@@ -216,9 +224,10 @@ public:
 	bool passcomplete;
 	bool relocatable;
 	bool skiplist; // used if lst is on, but LST opcode turns it off
-	uint32_t totalbytes;
 	uint32_t lineno;
-	uint32_t origin;
+	//uint32_t origin;
+	//uint32_t currentpc;
+
 	std::string savepath;
 	TSymbol *currentsym;
 	std::vector<MerlinLine> lines;
@@ -227,10 +236,11 @@ public:
 	Poco::HashMap<std::string, TSymbol> symbols;
 	Poco::HashMap<std::string, TSymbol> variables;
 
+	TOriginSection PC;
+	std::stack<TOriginSection> PCstack;
 	TPsuedoOp *psuedoops;
 
 	uint16_t pass;
-	uint32_t currentpc;
 
 	T65816Asm();
 	virtual ~T65816Asm();

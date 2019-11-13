@@ -35,11 +35,13 @@ install:
 reformat:
 	qasm -r src/main.s
 	
+asm:
+	
 test1:
-	qasm src/main.s
+	-qasm src/main.s
 
 test2:
-	qasm src/testfile.s
+	-qasm src/testfile.s
 	
 	
 

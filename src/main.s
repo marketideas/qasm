@@ -10,33 +10,7 @@
         xc
         xc
         mx      %00
-exprdp  =       $A5
-expr  =         $6789
-exprL   =       $123456
 //]XCODESTART     ; Keep this at the start and put your code after this
-
-        lda     expr,S
-        lda     (expr,S),Y
-        lda     #expr
-        lda     (expr,X)
-        lda     (expr),y
-        lda     (expr)
-        lda     [exprL],x
-        lda     [exprL]
-        lda     expr,x
-        lda     expr,y
-        mvp     expr,expr1
-        lda     expr
-        lda     expr
-        ldal    expr
-        jmp     expr
-        jmp     (expr)
-        lda     #<exprL
-        lda     #>exprL
-        lda     #^exprL
-        lda     #|exprL
-
-        end
 
 *==========================================================
 * monitor addresses

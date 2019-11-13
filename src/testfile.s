@@ -208,13 +208,15 @@ startA0
 	ldx dp
 	lda [dp]
 	tay
-	lda #immed
+	lda #10
 	tax
 	plb
 	ldy expr
 	lda expr
 	ldx expr
 	ldal lexpr
+	lst off
+	end
 
 startB0
 	bcs startB0
