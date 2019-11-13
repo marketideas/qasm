@@ -17,6 +17,40 @@ int CLASS::doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int res=-1;
 	//bool isdend=((opinfo.opcode==P_DEND)?true:false);
 	return(res);
+
+//    int res = 0;
+//    switch (opinfo.opcode )
+//    {
+//        case P_DUM:
+//            if( a.inDUMSection )
+//        {
+//            line.setError(errRecursiveOp);
+//            res = -1;
+//        }
+//            else
+//        {
+//            a.inDUMSection = true;
+//            a.PCstack.push(a.PC);
+//            a.PC.origin = a.PC.currentpc = line.expr_value;
+//            a.PC.totalbytes = 0;
+//        }
+//            break;
+//
+//        case P_DEND:
+//            if( ! a.inDUMSection )
+//        {
+//            line.setError(errOpcodeNotStarted);
+//            res = -1;
+//        }
+//            else
+//        {
+//            a.PC = a.PCstack.top();
+//            a.PCstack.pop();
+//            a.inDUMSection = false;
+//        }
+//            break;
+//    }
+//    return res;
 }
 
 int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
@@ -51,18 +85,23 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = -1; // undefined p-op
 			line.setError(errUnimplemented);
 			break;
+
 		case P_DUM:
 		case P_DEND:
-			res=doDUM(a,line,opinfo);
-		case P_ORG:
+ 			res = doDUM(a,line,opinfo);
+
+        case P_ORG:
 			a.PC.currentpc = line.expr_value;
 			break;
+
 		case P_SAV:
 			a.savepath = line.operand;
 			break;
+
 		case P_LST:
 			res = doLST(a, line, opinfo);
 			break;
+
 	}
 	return (res);
 }

@@ -42,6 +42,9 @@ enum asmErrors
 	errNoRedefinition,
 	errBadOperand,
 	errDupSymbol,
+    errRecursiveOp,
+    errOpcodeNotStarted,
+
 	errMAX
 };
 
@@ -62,6 +65,8 @@ const std::string errStrings[errMAX + 1] =
 	"Unable to redefine symbol",
 	"Unable to evaluate",
 	"Duplicate Symbol",
+    "Recursive Operand",
+    "Opcode without start",
 
 	""
 };
@@ -241,6 +246,8 @@ public:
 	TPsuedoOp *psuedoops;
 
 	uint16_t pass;
+
+    bool inDUMSection;		// yes if we are in a DUM/DEND section
 
 	T65816Asm();
 	virtual ~T65816Asm();

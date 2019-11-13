@@ -687,7 +687,6 @@ void CLASS::insertOpcodes(void)
 	pushopcode("ORG", P_ORG, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DSK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SAV", P_SAV, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("DS",  0x00, OP_PSUEDO,  OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("REL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("OBJ", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("PUT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -697,7 +696,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("TYP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
 	pushopcode("DUM", P_DUM, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("DEND",P_DEND, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("DEND", P_DEND, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("AST", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("CYC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DAT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

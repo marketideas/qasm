@@ -585,6 +585,7 @@ void CLASS::complete(void)
 CLASS::CLASS() : TFileProcessor()
 {
 	lines.clear();
+    inDUMSection = false;
 	psuedoops = new TPsuedoOp();
 }
 
@@ -734,6 +735,8 @@ void CLASS::showSymbolTable(bool alpha)
 	std::map<std::string, uint32_t> alphamap;
 	std::map<uint32_t, std::string> nummap;
 
+    int columns = 4;
+    int column = columns;
 
 	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 	{
@@ -746,19 +749,29 @@ void CLASS::showSymbolTable(bool alpha)
 
 	if (alpha)
 	{
-		printf("\nSymbol table sorted alphabetically:\n");
+		printf("\n\nSymbol table sorted alphabetically:\n\n");
 
 		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
 		{
-			printf("%-16s 0x%08X\n", itr->first.c_str(), itr->second);
+			printf("%16s 0x%08X", itr->first.c_str(), itr->second);
+            if( !--column )
+            {
+                printf("\n");
+                column = columns;
+            }
 		}
 	}
 	else
 	{
-		printf("\nSymbol table sorted numerically:\n");
+		printf("\n\nSymbol table sorted numerically:\n\n");
 		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 		{
-			printf("0x%08X %-16s\n", itr->first, itr->second.c_str());
+			printf("0x%08X %-16s", itr->first, itr->second.c_str());
+            if( !--column )
+            {
+                printf("\n");
+                column = columns;
+            }
 		}
 	}
 }
