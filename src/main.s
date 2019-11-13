@@ -6,11 +6,12 @@
 *  Created by Lane Roathe on 8/26/19.
 *  Copyright © 2019 Ideas From the Deep. All rights reserved.
 *
-        xc      off
-        xc
-        xc
-        mx      %00
 //]XCODESTART     ; Keep this at the start and put your code after this
+
+    	xc	off
+        xc
+        xc
+        mx	%00
 
 *==========================================================
 * monitor addresses

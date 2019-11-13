@@ -15,7 +15,7 @@ CLASS::~CLASS()
 int CLASS::doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	int res=-1;
-	bool isdend=((opinfo.opcode==P_DEND)?true:false);
+	//bool isdend=((opinfo.opcode==P_DEND)?true:false);
 	return(res);
 }
 

@@ -1,0 +1,484 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2F5E54C2237BAE370091163D /* libPocoJSON.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */; };
+		2F5E54C3237BAE370091163D /* libPocoEncodings.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */; };
+		2F5E54C4237BAE370091163D /* libPocoMongoDB.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */; };
+		2F5E54C5237BAE370091163D /* libPocoDataSQLite.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */; };
+		2F5E54C6237BAE370091163D /* libPocoNetSSL.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */; };
+		2F5E54C7237BAE370091163D /* libPocoData.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BA237BAE370091163D /* libPocoData.64.dylib */; };
+		2F5E54C8237BAE370091163D /* libPocoCrypto.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */; };
+		2F5E54C9237BAE370091163D /* libPocoRedis.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */; };
+		2F5E54CA237BAE370091163D /* libPocoUtil.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */; };
+		2F5E54CB237BAE370091163D /* libPocoFoundation.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */; };
+		2F5E54CC237BAE370091163D /* libPocoZip.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */; };
+		2F5E54CD237BAE370091163D /* libPocoNet.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */; };
+		2F5E54CE237BAE370091163D /* libPocoXML.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */; };
+		2F5E54D0237BAE3F0091163D /* libboringssl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54CF237BAE3F0091163D /* libboringssl.tbd */; };
+		2F5E550B237BB3090091163D /* eval.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E54FE237BB3090091163D /* eval.cpp */; };
+		2F5E550C237BB3090091163D /* asm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5500237BB3090091163D /* asm.cpp */; };
+		2F5E550D237BB3090091163D /* qasm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5501237BB3090091163D /* qasm.cpp */; };
+		2F5E550E237BB3090091163D /* opcodes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5504237BB3090091163D /* opcodes.cpp */; };
+		2F5E550F237BB3090091163D /* psuedo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5505237BB3090091163D /* psuedo.cpp */; };
+		2F5E5536237BB3190091163D /* palutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E552D237BB3190091163D /* palutils.cpp */; };
+		2F5E5537237BB3190091163D /* httpserver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E552E237BB3190091163D /* httpserver.cpp */; };
+		2F5E5538237BB3190091163D /* eventtask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E552F237BB3190091163D /* eventtask.cpp */; };
+		2F5E5539237BB3190091163D /* baseapp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5530237BB3190091163D /* baseapp.cpp */; };
+		2F5E553A237BB3190091163D /* httpclient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5531237BB3190091163D /* httpclient.cpp */; };
+		2F5E553B237BB3190091163D /* pallogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5532237BB3190091163D /* pallogger.cpp */; };
+		2F5E553C237BB3190091163D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5533237BB3190091163D /* main.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2F5E5495237BAC9A0091163D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2F5E5497237BAC9A0091163D /* qasm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = qasm; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoJSON.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoJSON.64.dylib; sourceTree = "<group>"; };
+		2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoEncodings.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoEncodings.64.dylib; sourceTree = "<group>"; };
+		2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoMongoDB.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoMongoDB.64.dylib; sourceTree = "<group>"; };
+		2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoDataSQLite.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoDataSQLite.64.dylib; sourceTree = "<group>"; };
+		2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoNetSSL.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoNetSSL.64.dylib; sourceTree = "<group>"; };
+		2F5E54BA237BAE370091163D /* libPocoData.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoData.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoData.64.dylib; sourceTree = "<group>"; };
+		2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoCrypto.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoCrypto.64.dylib; sourceTree = "<group>"; };
+		2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoRedis.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoRedis.64.dylib; sourceTree = "<group>"; };
+		2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoUtil.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoUtil.64.dylib; sourceTree = "<group>"; };
+		2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoFoundation.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoFoundation.64.dylib; sourceTree = "<group>"; };
+		2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoZip.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoZip.64.dylib; sourceTree = "<group>"; };
+		2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoNet.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoNet.64.dylib; sourceTree = "<group>"; };
+		2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoXML.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoXML.64.dylib; sourceTree = "<group>"; };
+		2F5E54CF237BAE3F0091163D /* libboringssl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libboringssl.tbd; path = usr/lib/libboringssl.tbd; sourceTree = SDKROOT; };
+		2F5E54FE237BB3090091163D /* eval.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = eval.cpp; sourceTree = SOURCE_ROOT; };
+		2F5E54FF237BB3090091163D /* eval.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eval.h; sourceTree = SOURCE_ROOT; };
+		2F5E5500237BB3090091163D /* asm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asm.cpp; sourceTree = SOURCE_ROOT; };
+		2F5E5501237BB3090091163D /* qasm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = qasm.cpp; sourceTree = SOURCE_ROOT; };
+		2F5E5502237BB3090091163D /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = SOURCE_ROOT; };
+		2F5E5503237BB3090091163D /* opcodes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opcodes.h; sourceTree = SOURCE_ROOT; };
+		2F5E5504237BB3090091163D /* opcodes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = opcodes.cpp; sourceTree = SOURCE_ROOT; };
+		2F5E5505237BB3090091163D /* psuedo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = psuedo.cpp; sourceTree = SOURCE_ROOT; };
+		2F5E5506237BB3090091163D /* qasm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = qasm.h; sourceTree = SOURCE_ROOT; };
+		2F5E5507237BB3090091163D /* asm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asm.h; sourceTree = SOURCE_ROOT; };
+		2F5E5508237BB3090091163D /* psuedo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = psuedo.h; sourceTree = SOURCE_ROOT; };
+		2F5E5509237BB3090091163D /* qasm.ini */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = qasm.ini; sourceTree = SOURCE_ROOT; };
+		2F5E550A237BB3090091163D /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = SOURCE_ROOT; };
+		2F5E551A237BB3190091163D /* palPoco.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = palPoco.h; sourceTree = "<group>"; };
+		2F5E551B237BB3190091163D /* pallogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pallogger.h; sourceTree = "<group>"; };
+		2F5E551C237BB3190091163D /* eventtask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eventtask.h; sourceTree = "<group>"; };
+		2F5E551D237BB3190091163D /* baseapp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = baseapp.h; sourceTree = "<group>"; };
+		2F5E551E237BB3190091163D /* pal_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pal_config.h; sourceTree = "<group>"; };
+		2F5E551F237BB3190091163D /* httpserver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = httpserver.h; sourceTree = "<group>"; };
+		2F5E5520237BB3190091163D /* httpclient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = httpclient.h; sourceTree = "<group>"; };
+		2F5E5521237BB3190091163D /* palutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = palutils.h; sourceTree = "<group>"; };
+		2F5E5522237BB3190091163D /* pal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pal.h; sourceTree = "<group>"; };
+		2F5E552D237BB3190091163D /* palutils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = palutils.cpp; sourceTree = "<group>"; };
+		2F5E552E237BB3190091163D /* httpserver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = httpserver.cpp; sourceTree = "<group>"; };
+		2F5E552F237BB3190091163D /* eventtask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = eventtask.cpp; sourceTree = "<group>"; };
+		2F5E5530237BB3190091163D /* baseapp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = baseapp.cpp; sourceTree = "<group>"; };
+		2F5E5531237BB3190091163D /* httpclient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = httpclient.cpp; sourceTree = "<group>"; };
+		2F5E5532237BB3190091163D /* pallogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pallogger.cpp; sourceTree = "<group>"; };
+		2F5E5533237BB3190091163D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2F5E553E237BB3730091163D /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; path = src; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2F5E5494237BAC9A0091163D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2F5E54D0237BAE3F0091163D /* libboringssl.tbd in Frameworks */,
+				2F5E54C2237BAE370091163D /* libPocoJSON.64.dylib in Frameworks */,
+				2F5E54C3237BAE370091163D /* libPocoEncodings.64.dylib in Frameworks */,
+				2F5E54C4237BAE370091163D /* libPocoMongoDB.64.dylib in Frameworks */,
+				2F5E54C5237BAE370091163D /* libPocoDataSQLite.64.dylib in Frameworks */,
+				2F5E54C6237BAE370091163D /* libPocoNetSSL.64.dylib in Frameworks */,
+				2F5E54C7237BAE370091163D /* libPocoData.64.dylib in Frameworks */,
+				2F5E54C8237BAE370091163D /* libPocoCrypto.64.dylib in Frameworks */,
+				2F5E54C9237BAE370091163D /* libPocoRedis.64.dylib in Frameworks */,
+				2F5E54CA237BAE370091163D /* libPocoUtil.64.dylib in Frameworks */,
+				2F5E54CB237BAE370091163D /* libPocoFoundation.64.dylib in Frameworks */,
+				2F5E54CC237BAE370091163D /* libPocoZip.64.dylib in Frameworks */,
+				2F5E54CD237BAE370091163D /* libPocoNet.64.dylib in Frameworks */,
+				2F5E54CE237BAE370091163D /* libPocoXML.64.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2F5E548E237BAC9A0091163D = {
+			isa = PBXGroup;
+			children = (
+				2F5E5510237BB3190091163D /* libpal */,
+				2F5E5499237BAC9A0091163D /* qasm */,
+				2F5E553D237BB3490091163D /* Test */,
+				2F5E5498237BAC9A0091163D /* Products */,
+				2F5E54B4237BAE370091163D /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		2F5E5498237BAC9A0091163D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E5497237BAC9A0091163D /* qasm */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2F5E5499237BAC9A0091163D /* qasm */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E5500237BB3090091163D /* asm.cpp */,
+				2F5E5507237BB3090091163D /* asm.h */,
+				2F5E550A237BB3090091163D /* config.h */,
+				2F5E54FE237BB3090091163D /* eval.cpp */,
+				2F5E54FF237BB3090091163D /* eval.h */,
+				2F5E5504237BB3090091163D /* opcodes.cpp */,
+				2F5E5503237BB3090091163D /* opcodes.h */,
+				2F5E5505237BB3090091163D /* psuedo.cpp */,
+				2F5E5508237BB3090091163D /* psuedo.h */,
+				2F5E5501237BB3090091163D /* qasm.cpp */,
+				2F5E5506237BB3090091163D /* qasm.h */,
+				2F5E5509237BB3090091163D /* qasm.ini */,
+				2F5E5502237BB3090091163D /* README */,
+			);
+			path = qasm;
+			sourceTree = "<group>";
+		};
+		2F5E54B4237BAE370091163D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E54CF237BAE3F0091163D /* libboringssl.tbd */,
+				2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */,
+				2F5E54BA237BAE370091163D /* libPocoData.64.dylib */,
+				2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */,
+				2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */,
+				2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */,
+				2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */,
+				2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */,
+				2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */,
+				2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */,
+				2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */,
+				2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */,
+				2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */,
+				2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2F5E5510237BB3190091163D /* libpal */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E5518237BB3190091163D /* include */,
+				2F5E552C237BB3190091163D /* src */,
+			);
+			name = libpal;
+			path = ../../libpal;
+			sourceTree = "<group>";
+		};
+		2F5E5518237BB3190091163D /* include */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E5519237BB3190091163D /* pal */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		2F5E5519237BB3190091163D /* pal */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E551A237BB3190091163D /* palPoco.h */,
+				2F5E551B237BB3190091163D /* pallogger.h */,
+				2F5E551C237BB3190091163D /* eventtask.h */,
+				2F5E551D237BB3190091163D /* baseapp.h */,
+				2F5E551E237BB3190091163D /* pal_config.h */,
+				2F5E551F237BB3190091163D /* httpserver.h */,
+				2F5E5520237BB3190091163D /* httpclient.h */,
+				2F5E5521237BB3190091163D /* palutils.h */,
+				2F5E5522237BB3190091163D /* pal.h */,
+			);
+			path = pal;
+			sourceTree = "<group>";
+		};
+		2F5E552C237BB3190091163D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E552D237BB3190091163D /* palutils.cpp */,
+				2F5E552E237BB3190091163D /* httpserver.cpp */,
+				2F5E552F237BB3190091163D /* eventtask.cpp */,
+				2F5E5530237BB3190091163D /* baseapp.cpp */,
+				2F5E5531237BB3190091163D /* httpclient.cpp */,
+				2F5E5532237BB3190091163D /* pallogger.cpp */,
+				2F5E5533237BB3190091163D /* main.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		2F5E553D237BB3490091163D /* Test */ = {
+			isa = PBXGroup;
+			children = (
+				2F5E553E237BB3730091163D /* src */,
+			);
+			path = Test;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2F5E5496237BAC9A0091163D /* qasm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2F5E549E237BAC9A0091163D /* Build configuration list for PBXNativeTarget "qasm" */;
+			buildPhases = (
+				2F5E5493237BAC9A0091163D /* Sources */,
+				2F5E5494237BAC9A0091163D /* Frameworks */,
+				2F5E5495237BAC9A0091163D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = qasm;
+			productName = qasm;
+			productReference = 2F5E5497237BAC9A0091163D /* qasm */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2F5E548F237BAC9A0091163D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1020;
+				ORGANIZATIONNAME = "Lane Roathe";
+				TargetAttributes = {
+					2F5E5496237BAC9A0091163D = {
+						CreatedOnToolsVersion = 10.2.1;
+					};
+				};
+			};
+			buildConfigurationList = 2F5E5492237BAC9A0091163D /* Build configuration list for PBXProject "qasm" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 2F5E548E237BAC9A0091163D;
+			productRefGroup = 2F5E5498237BAC9A0091163D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2F5E5496237BAC9A0091163D /* qasm */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2F5E5493237BAC9A0091163D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2F5E550F237BB3090091163D /* psuedo.cpp in Sources */,
+				2F5E550B237BB3090091163D /* eval.cpp in Sources */,
+				2F5E550E237BB3090091163D /* opcodes.cpp in Sources */,
+				2F5E5538237BB3190091163D /* eventtask.cpp in Sources */,
+				2F5E553C237BB3190091163D /* main.cpp in Sources */,
+				2F5E5537237BB3190091163D /* httpserver.cpp in Sources */,
+				2F5E5536237BB3190091163D /* palutils.cpp in Sources */,
+				2F5E553A237BB3190091163D /* httpclient.cpp in Sources */,
+				2F5E550C237BB3090091163D /* asm.cpp in Sources */,
+				2F5E550D237BB3090091163D /* qasm.cpp in Sources */,
+				2F5E553B237BB3190091163D /* pallogger.cpp in Sources */,
+				2F5E5539237BB3190091163D /* baseapp.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2F5E549C237BAC9A0091163D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"/usr/local/opt/openssl\\@1.0/include/",
+				);
+				VALID_ARCHS = x86_64;
+			};
+			name = Debug;
+		};
+		2F5E549D237BAC9A0091163D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					/usr/local/include,
+					"/usr/local/opt/openssl\\@1.0/include/",
+				);
+				VALID_ARCHS = x86_64;
+			};
+			name = Release;
+		};
+		2F5E549F237BAC9A0091163D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 32JVURPAZ7;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/poco/1.9.4/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		2F5E54A0237BAC9A0091163D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 32JVURPAZ7;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/poco/1.9.4/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2F5E5492237BAC9A0091163D /* Build configuration list for PBXProject "qasm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2F5E549C237BAC9A0091163D /* Debug */,
+				2F5E549D237BAC9A0091163D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2F5E549E237BAC9A0091163D /* Build configuration list for PBXNativeTarget "qasm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2F5E549F237BAC9A0091163D /* Debug */,
+				2F5E54A0237BAC9A0091163D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2F5E548F237BAC9A0091163D /* Project object */;
+}
