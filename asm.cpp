@@ -171,10 +171,10 @@ void CLASS::clear()
 void CLASS::set(std::string line)
 {
 	int state = 0;
-	int l = line.length();
+	int l = (int)line.length();
 	int i = 0;
 	int x;
-	char c, delim;
+	char c, delim = 0;
 
 	clear();
 
@@ -299,7 +299,7 @@ void CLASS::set(std::string line)
 		}
 	}
 	printlable = lable;
-	x = lable.length();
+	x = (int)lable.length();
 	if (x > 1)
 	{
 		while ((x > 1) && (lable[x - 1] == ':'))
@@ -343,7 +343,7 @@ void CLASS::complete(void)
 	uint64_t n = GetTickCount();
 	if (isDebug())
 	{
-		printf("Processing Time: %lu ms\n", n - starttime);
+        printf("Processing Time: %llu ms\n", n - starttime);
 	}
 }
 
@@ -509,7 +509,7 @@ void CLASS::process(void)
 {
 	uint32_t len, t, pos;
 
-	uint32_t ct = lines.size();
+	uint32_t ct = (uint32_t)lines.size();
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
@@ -967,7 +967,7 @@ void CLASS::complete(void)
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
-			uint32_t l = lines.size();
+			uint32_t l = (uint32_t)lines.size();
 			while (lineno < l)
 			{
 				MerlinLine &line=lines.at(lineno++);
@@ -1011,7 +1011,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
-				printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
+                printf("eval Error=%d %08llX |%s|\n", res, result, eval.badsymbol.c_str());
 				SetColor(c);
 			}
 		}
@@ -1027,7 +1027,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 	}
 	if (isDebug()>=3)
 	{
-		printf("Eval Result: %08lX (status=%d)\n",value,res);
+        printf("Eval Result: %08llX (status=%d)\n",value,res);
 	}
 	return (res);
 }
@@ -1162,7 +1162,7 @@ void CLASS::process(void)
 	{
 		initpass();
 
-		l = lines.size();
+		l = (uint32_t)lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
 			MerlinLine &line=lines[lineno];
@@ -1215,7 +1215,7 @@ void CLASS::process(void)
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				line.expr_value = value;
+				line.expr_value = (int32_t)value;
 			}
 			else
 			{
