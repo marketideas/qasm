@@ -29,7 +29,7 @@ For example:
 mkdir workdir
 cd workdir
 git clone git://github.com/marketideas/libpal libpal
-git clone git:://github.com/marketideas/qasm qasm
+git clone git://github.com/marketideas/qasm qasm
 
 cd qasm
 make clean
@@ -37,5 +37,3 @@ make
 
 To test:
 ./qasm src/testfile.s
-
-
