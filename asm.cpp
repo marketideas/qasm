@@ -163,6 +163,7 @@ void CLASS::clear()
 	outbytes.clear();
 	addressmode = 0;
 	expr_value = 0;
+	eval_result = 0;
 	flags = 0;
 	outbytes.clear();
 }
@@ -451,7 +452,7 @@ int CLASS::processfile(std::string &p)
 	}
 	else
 	{
-		printf("file %s does not exist\n", p.c_str());
+		fprintf(stderr,"File <%s> does not exist.\n\n", p.c_str());
 	}
 
 	//printf("\n\nfile read result: %d\n", res);
@@ -499,7 +500,6 @@ void CLASS::init(void)
 
 int CLASS::doline(int lineno, std::string line)
 {
-
 	MerlinLine l(line);
 	lines.push_back(l);
 	return 0;
@@ -513,7 +513,7 @@ void CLASS::process(void)
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
-		MerlinLine &line = lines[lineno];
+		MerlinLine &line = lines.at(lineno);
 
 		pos = 0;
 		len = 0;
@@ -838,12 +838,11 @@ const TaddrMode addrRegEx[] =
 {
 	{ "^(?'expr'.+)\\,[s,S]{1}$", syn_s, "e,s"},    				// expr,s
 	{"^[(]{1}(?'expr'.+)[,]{1}[(S|s)]{1}[)]{1}[,]{1}[(Y|y)]{1}$", syn_sy, "(e,s),y"}, // (expr,s),y
-	{"^#{1}(?'shift'[<,>,^,|]?)(.+)$", syn_imm, "immediate"}, 				//#expr,#^expr,#|expr,#<expr,#>expr
+	{"^#{1}(.+)$", syn_imm, "immediate"}, 				//#expr,#^expr,#|expr,#<expr,#>expr
 	{"^[(]{1}(?'expr'.+)[,]{1}[x,X]{1}\\)$", syn_diix, "(e,x)"},  			// (expr,x)
 	{"^[(]{1}(?'expr'.+)[\\)]{1}[\\,][(Y|y]{1}$", syn_diiy, "(e),y"}, 	//(expr),y
 	{"^[(]{1}(?'expr'.+)[\\)]{1}$", syn_di, "(e)"},					// (expr)
 	{"^\\[{1}(?'expr'.+)\\]{1}[,]{1}[(Y|y)]{1}$", syn_iyl, "[e],y"},	// [expr],y
-	//{"^\\[{1}(?'expr'.+)\\]{1}[,]{1}[(X|x)]{1}$", syn_iyl, "[e],x"},	// [expr],x
 	{"^\\[(?'expr'.+)\\]$", syn_dil, "[e]"}, 						// [expr]
 	{"^(?'expr'.+)[,]{1}[(X|x)]{1}$", syn_absx, "e,x"},				// expr,x
 	{"^(?'expr'.+)[,]{1}[(Y|y)]{1}$", syn_absy, "e,y"},				// expr,y
@@ -852,7 +851,11 @@ const TaddrMode addrRegEx[] =
 	{"", 0, ""}
 };
 
-const std::string valExpression = "^([$%\\+\\-:-~][^\\],()]*)$";
+// keep this next line for awhile
+//	{"^#{1}(?'shift'[<,>,^,|]?)(.+)$", syn_imm, "immediate"}, 				//#expr,#^expr,#|expr,#<expr,#>expr
+
+//	one or more of any character except ][,();
+const std::string valExpression = "^([^\\]\\[,();]+)$";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -908,6 +911,8 @@ void CLASS::initpass(void)
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
+	PC.totalbytes=0;
+	PC.orgsave=PC.origin;
 
 	s = getConfig("asm.cpu", "M65816");
 	s = Poco::trim(Poco::toUpper(s));
@@ -936,10 +941,12 @@ void CLASS::initpass(void)
 	}
 	relocatable = false;
 	currentsym = NULL;
-	PC.totalbytes = 0;
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
+	dumstartaddr=0;
+	dumstart=0;
+
 
 	variables.clear(); // clear the variables for each pass
 	while (!PCstack.empty())
@@ -957,19 +964,18 @@ void CLASS::complete(void)
 	{
 		if (errorct == 0)
 		{
-			MerlinLine *line;
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
 			uint32_t l = lines.size();
 			while (lineno < l)
 			{
-				line = &lines[lineno++];
-				if (line->outbytect > 0)
+				MerlinLine &line=lines.at(lineno++);
+				if (line.outbytect > 0)
 				{
-					for (uint32_t i = 0; i < line->outbytect; i++)
+					for (uint32_t i = 0; i < line.outbytect; i++)
 					{
-						f.put(line->outbytes[i]);
+						f.put(line.outbytes[i]);
 					}
 				}
 			}
@@ -999,7 +1005,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 
 		TEvaluator eval(*this);
 
-		res = eval.evaluate(expr, result);
+		res = eval.evaluate(expr, result, mx);
 		if (res != 0)
 		{
 			if (isDebug() > 2)
@@ -1018,6 +1024,10 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 	{
 		value = 0;
 		res = 0;
+	}
+	if (isDebug()>=3)
+	{
+		printf("Eval Result: %08lX (status=%d)\n",value,res);
 	}
 	return (res);
 }
@@ -1140,13 +1150,13 @@ int CLASS::parseOperand(MerlinLine & line)
 void CLASS::process(void)
 {
 	uint32_t l;
-	int x, evalresult;
+	int x;;
 	char c;
 	std::string op, operand;
 	//uint32_t operand_eval;
 	//uint16_t addrmode;
 
-	MerlinLine *line;
+	//MerlinLine *line;
 	pass = 0;
 	while (pass < 2)
 	{
@@ -1155,100 +1165,115 @@ void CLASS::process(void)
 		l = lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
-			evalresult = 0;
-			line = &lines[lineno];
+			MerlinLine &line=lines[lineno];
 
-			line->lineno = lineno + 1;
-			//printf("lineno: %d %d |%s|\n",lineno,l,line->operand.c_str());
+			line.eval_result=0;
+			line.lineno = lineno + 1;
+			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
-			op = Poco::toLower(line->opcode);
-			operand = Poco::toLower(line->operand);
-			line->startpc = PC.currentpc;
-			line->linemx = mx;
-			line->bytect = 0;
-			line->showmx = showmx;
+			op = Poco::toLower(line.opcode);
+			operand = Poco::toLower(line.operand);
+			line.startpc = PC.currentpc;
+			line.linemx = mx;
+			line.bytect = 0;
+			line.showmx = showmx;
 
-			if ((line->lable != "") && (pass == 0))
+			if ((line.lable != "") && (pass == 0))
 			{
-				std::string lable = Poco::trim(line->lable);
+				std::string lable = Poco::trim(line.lable);
 				TSymbol *sym = NULL;
 				bool dupsym = false;
-				c = line->lable[0];
+				c = line.lable[0];
 				switch (c)
 				{
 					case ']':
-						sym = addVariable(line->lable, "", true);
+						sym = addVariable(line.lable, "", true);
 						if (sym == NULL) { dupsym = true; }
 						break;
 					case ':':
 						break;
 					default:
-						sym = addSymbol(line->lable, PC.currentpc, false);
+						sym = addSymbol(line.lable, PC.currentpc, false);
 						if (sym == NULL) { dupsym = true; }
 						break;
 				}
 				if (dupsym)
 				{
-					line->setError(errDupSymbol);
+					line.setError(errDupSymbol);
 				}
 			}
-			x = parseOperand(*line);
+			x = parseOperand(line);
 			if (x >= 0)
 			{
-				line->addressmode = x;
+				line.addressmode = x;
 			}
 
 			int64_t value = -1;
-			x = evaluate(line->operand_expr, value);
-			evalresult = x;
+			x = evaluate(line.operand_expr, value);
+			line.eval_result=x;
 
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				line->expr_value = value;
+				line.expr_value = value;
 			}
 			else
 			{
-				line->expr_value = 0;
+				line.expr_value = 0;
 			}
 
 			x = 0;
 			if (op.length() > 0)
 			{
-				x = callOpCode(op, *line);
+				x = callOpCode(op, line);
 			}
 
 			if (x > 0)
 			{
-				if ((evalresult != 0) && (pass > 0))
+				if ((line.eval_result != 0) && (pass > 0))
 				{
-					line->setError(errBadOperand);
-					line->errorText = line->operand_expr;
+					line.setError(errBadOperand);
+					line.errorText = line.operand_expr;
 				}
-				line->bytect = x;
+				line.bytect = x;
 				PC.currentpc += x;
 				PC.totalbytes += x;
 			}
 			if (pass == 0)
 			{
-				line->pass0bytect = line->bytect;
+				line.pass0bytect = line.bytect;
 			}
 
+			if (dumstart>0) // starting a dummy section
+			{
+				PCstack.push(PC);
+				PC.origin=dumstartaddr;
+				PC.currentpc=PC.origin;
+				dumstart=0;
+				dumstartaddr=0;
+			}
+			if (dumstart<0)
+			{
+				PC=PCstack.top();
+				PCstack.pop();
+				dumstart=0;
+				dumstartaddr=0;
+			}
 
 			if (pass == 1)
 			{
-				if ((line->pass0bytect != line->bytect) && (line->errorcode == 0))
+				if ((line.pass0bytect != line.bytect) && (line.errorcode == 0))
 				{
-					line->setError(errBadByteCount);
+					line.setError(errBadByteCount);
 				}
 
-				if (line->errorcode != 0)
+				if (line.errorcode != 0)
 				{
 					errorct++;
 				}
-				if (((!skiplist) && (listing) && (pass == 1)) || (line->errorcode != 0))
+				if (((!skiplist) && (listing) && (pass == 1)) || (line.errorcode != 0))
 				{
-					line->print(lineno);
+					line.print(lineno);
 				}
 				skiplist = false;
 			}

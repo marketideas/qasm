@@ -13,9 +13,8 @@ PAL_BASEAPP *PAL::appFactory(void)
 programOption PAL::appOptions[] =
 {
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
-	{ "config-file", "f", "load configuration data from a <file>", "file", false, false},
-	{ "tomerlin", "m", "convert file to merlin format ", "", false, false},
-	{ "reformat", "r", "convert to readable ascii", "", false, false},
+	{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
+	{ "exec", "x", "execute a command", "<command>", false, false},
 
 	{ "", "", "", "", false, false}
 };
@@ -49,6 +48,12 @@ int CLASS::runCommandLineApp(void)
 	int res = -1;
 
 	//LOG_DEBUG << "command line mode" << endl;
+	if (commandargs.size()==0)
+	{
+		fprintf(stderr,"No files given (--help for help)\n\n");
+		return(res);
+	}
+
 	for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
 	{
 		Poco::File fn(*it);
@@ -59,53 +64,60 @@ int CLASS::runCommandLineApp(void)
 
 		std::string e = toUpper(path.getExtension());
 
-		int x = getInt("option.reformat", 0);
+		std::string cmd = Poco::toUpper(getConfig("option.exec", "asm"));
 
-		if (x != 0)
+		if (cmd.length() > 0)
 		{
-			res=0;
-			t = new TMerlinConverter();
-			if (t != NULL)
+			if (cmd == "REFORMAT")
 			{
+				res = 0;
+				t = new TMerlinConverter();
+				if (t != NULL)
+				{
 
-				t->init();
-				std::string f = path.toString();
-				t->processfile(f);
-				t->process();
-				t->complete();
-				res = (t->errorct > 0) ? -1 : 0;
-				
-				delete t;
-				t = NULL;
-			}
-		}
-		else
-		{
-			if (e == "S")
-			{
-				//logger().information("ASM: " + path.toString());
+					t->init();
+					std::string f = path.toString();
+					t->processfile(f);
+					t->process();
+					t->complete();
+					res = (t->errorct > 0) ? -1 : 0;
 
-				t = new T65816Asm();
+					delete t;
+					t = NULL;
+				}
 			}
-			if (e == "LNK")
+			else if (cmd == "ASM")
 			{
-				//logger().information("LNK: " + path.toString());
-				t = new T65816Link();
-			}
-			if (t != NULL)
-			{
-				t->init();
-				std::string f = path.toString();
-				t->processfile(f);
-				t->process();
-				t->complete();
-				res = (t->errorct > 0) ? -1 : 0;
-				delete t;
-				t = NULL;
+				if (e == "S")
+				{
+					//logger().information("ASM: " + path.toString());
+
+					t = new T65816Asm();
+				}
+				if (e == "LNK")
+				{
+					//logger().information("LNK: " + path.toString());
+					t = new T65816Link();
+				}
+				if (t != NULL)
+				{
+					t->init();
+					std::string f = path.toString();
+					t->processfile(f);
+					t->process();
+					t->complete();
+					res = (t->errorct > 0) ? -1 : 0;
+					delete t;
+					t = NULL;
+				}
+				else
+				{
+					printf("not supported type\n");
+				}
 			}
 			else
 			{
-				printf("not supported type\n");
+				fprintf(stderr,"Invalid command: <%s>\n\n", cmd.c_str());
 			}
 		}
 	}
