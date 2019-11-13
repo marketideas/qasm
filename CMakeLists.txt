@@ -12,15 +12,17 @@ set(SOURCE
   ${PROJECT_ROOT}/asm.cpp
   ${PROJECT_ROOT}/opcodes.cpp
   ${PROJECT_ROOT}/eval.cpp
+  ${PROJECT_ROOT}/psuedo.cpp
 )
+
+find_package(OpenSSL REQUIRED)
+find_package(Poco REQUIRED Foundation Util XML JSON NetSSL)
 
 include_directories(BEFORE 
   ${PROJECT_ROOT}
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
+  ${Poco_INCLUDE_DIRS}
 )
-
-find_package(OpenSSL REQUIRED)
-find_package(Poco REQUIRED NetSSL)
 
 add_subdirectory(${PROJECT_ROOT}/lib${LIBRARY_NAME})
 

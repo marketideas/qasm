@@ -41,11 +41,13 @@ enum asmErrors
 	errForwardReference,
 	errNoRedefinition,
 	errBadOperand,
+	errDupSymbol,
 	errMAX
 };
 
 #ifdef ADD_ERROR_STRINGS
-const std::string errStrings[errMAX+1] = {
+const std::string errStrings[errMAX + 1] =
+{
 	"No Error",
 	"Warning",
 	"Unfinished Opcode",
@@ -59,6 +61,7 @@ const std::string errStrings[errMAX+1] = {
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Unable to evaluate",
+	"Duplicate Symbol",
 
 	""
 };
@@ -97,6 +100,7 @@ public:
 
 	uint8_t syntax;
 	std::string lable;
+	std::string printlable;
 	std::string opcode;
 	std::string opcodelower;
 	std::string operand;
@@ -105,6 +109,7 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
+	bool showmx;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -134,6 +139,7 @@ protected:
 	uint8_t syntax;
 	uint64_t starttime;
 public:
+	uint32_t errorct;
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
@@ -145,6 +151,21 @@ public:
 	virtual void errorOut(uint16_t code);
 };
 
+class TMerlinConverter : public TFileProcessor
+{
+protected:
+	uint8_t tabs[10];
+	std::vector<MerlinLine> lines;
+	
+public:
+	TMerlinConverter();
+	virtual ~TMerlinConverter();
+	virtual void init(void);
+	virtual int doline(int lineno, std::string line);
+	virtual void process(void);
+	virtual void complete(void);
+};
+
 class TSymbol;
 typedef int (*TOpCB)(MerlinLine &line, TSymbol &sym);
 typedef std::function<int (MerlinLine &line, TSymbol &sym)> TOpCallback;
@@ -154,6 +175,7 @@ class TSymbol
 public:
 	std::string namelc;
 	std::string name;
+	std::string text;
 	uint32_t value;
 	uint16_t stype;
 	uint8_t opcode;
@@ -163,33 +185,50 @@ public:
 
 	TSymbol()
 	{
-		used=false;
-		locals.clear();
+		clear();
 	};
+	void clear(void)
+	{
+		value = 0;
+		used = false;
+		text = "";
+		name = "";
+		namelc = "";
+		stype = 0;
+		opcode = 0;
+		locals.clear();
+	}
 };
 
+class TPsuedoOp;
 
 class T65816Asm : public TFileProcessor
 {
-protected:
-	bool passcomplete;
+public:
+	// options
 	bool casesen;
-	bool relocatable;
 	bool listing;
+	bool showmx;
+	bool trackrep;
+	uint8_t mx;
+	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816
+
+	bool passcomplete;
+	bool relocatable;
 	bool skiplist; // used if lst is on, but LST opcode turns it off
-	uint32_t errorct;
 	uint32_t totalbytes;
 	uint32_t lineno;
 	uint32_t origin;
-	uint8_t mx;
-	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816
 	std::string savepath;
 	TSymbol *currentsym;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;
 	Poco::HashMap<std::string, TSymbol> symbols;
-public:
+	Poco::HashMap<std::string, TSymbol> variables;
+
+	TPsuedoOp *psuedoops;
+
 	uint16_t pass;
 	uint32_t currentpc;
 
@@ -207,10 +246,13 @@ public:
 	int callOpCode(std::string op, MerlinLine &line);
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
+	TSymbol *findVariable(std::string sym);
+	TSymbol *addVariable(std::string sym, std::string val, bool replace);
+
 
 	void initpass(void);
 	void showSymbolTable(bool alpha);
-
+	void showVariables(void);
 	int evaluate(std::string expr, int64_t &value);
 
 	int parseOperand(MerlinLine &line);

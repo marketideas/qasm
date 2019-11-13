@@ -369,7 +369,6 @@ int CLASS::parseNumber(std::string n, int64_t &val)
     bool valid = false;
     bool err = false;
     bool neg = false;
-    int base = 10;
     int64_t tval = 0;
     val = 0;
 
@@ -392,9 +391,16 @@ int CLASS::parseNumber(std::string n, int64_t &val)
                 {
                     state = 20;
                 }
-                else if ((c == '-') && (!valid))
+                else if (c == '-')
                 {
-                    neg = !neg;
+                    if (!valid)
+                    {
+                        neg = !neg;
+                    }
+                    else
+                    {
+                        state = 99;
+                    }
                 }
                 else if (isdigit(c))
                 {
@@ -411,6 +417,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
             case 1:
                 if (isdigit(c))
                 {
+                    valid = true;
                     s += c;
                     tval *= 10;
                     tval += c - '0';
@@ -422,7 +429,6 @@ int CLASS::parseNumber(std::string n, int64_t &val)
                 break;
             case 10:
 
-                base = 16;
                 if ((c >= 'a') && (c <= 'f'))
                 {
                     c = c - 0x20; // make it uppercase
@@ -449,7 +455,6 @@ int CLASS::parseNumber(std::string n, int64_t &val)
                 else { state = 99; }
                 break;
             case 20:
-                base = 2;
                 if ((c >= '0') && (c <= '1'))
                 {
                     s += c;
@@ -468,8 +473,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
                 break;
 
             case 99:
-                setError(Token::syntaxErr);
-
+                err = true;
                 // if you get into this state there is an error
                 break;
         }
@@ -480,9 +484,12 @@ int CLASS::parseNumber(std::string n, int64_t &val)
         setError(Token::overflowErr);
     }
 
+    //printf("parsenumber: |%s|\n",s.c_str());
 
     if ((state == 99) || (err))
     {
+        setError(Token::syntaxErr);
+        valid = false;
         val = DEF_VAL;
     }
 
@@ -493,6 +500,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
             tval = -tval;
         }
         val = tval;
+        //printf("value=%08lX\n", val);
         res = 0;
     }
     return (res);

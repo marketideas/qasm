@@ -1,5 +1,5 @@
-export CC=/usr/bin/clang
-export CXX=/usr/bin/clang++
+#export CC=/usr/bin/clang
+#export CXX=/usr/bin/clang++
 
 
 V?=
@@ -15,7 +15,7 @@ all:
 	-cd ./build && cmake .. && $(MAKE) $S
 
 distclean:
-	rm -rf build app/build sgqlib/build
+	rm -rf ./build 
 
 clean:
 	-rm -rf ./build
@@ -26,18 +26,20 @@ depend:
 rebuild:
 	-cd ./build && $(MAKE) rebuild_cache
 
-lib:
-	-cd ./build && $(MAKE) sgq
-
 run:
 	-cd ./build && $(MAKE) run
 
 install:
 	-cd ./build && cmake -P cmake_install.cmake
 
-asm:
+reformat:
+	qasm -r src/main.s
+	
+test1:
 	qasm src/main.s
-	#qasm src/testfile.s
+
+test2:
+	qasm src/testfile.s
 	
 	
 

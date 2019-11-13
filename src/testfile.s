@@ -8,15 +8,16 @@ MXX  =  $00
 	mx 	MXX
 	org $4000
 
-dp	=	$A5
+dp:	=	$A5
 expr = $0405
 lexpr = $010203
 immed = $123456
 neg	equ	-16
 
+]var1	=	v1234
 
 	;lst off
-start00
+start00:
 	brk				;$00
 	ora	(dp,x)
 	cop	$BA
@@ -33,6 +34,7 @@ start00
 	ora expr
 	asl expr
 	oral lexpr
+	;end
 
 start10
 	bpl start10
@@ -313,3 +315,5 @@ down
 	lst off
 
 	sav ./test.bin
+	lst
+	

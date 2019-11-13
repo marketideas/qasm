@@ -1,15 +1,7 @@
 #include "asm.h"
+#include "psuedo.h"
 
 #define CLASS T65816Asm
-
-enum
-{
-	P_ORG = 1,
-	P_LST,
-	P_SAV,
-
-	P_MAX
-};
 
 void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 {
@@ -32,39 +24,9 @@ void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 
 int CLASS::doPSEUDO(MerlinLine &line, TSymbol &sym)
 {
-	std::string s;
-	int res = 0;
-	switch (sym.opcode)
-	{
-		case P_ORG:
-			currentpc = line.expr_value;
-			break;
-		case P_SAV:
-			savepath = line.operand;
-			break;
-		case P_LST:
-			if (pass > 0)
-			{
-				s = Poco::toUpper(Poco::trim(line.operand));
-				//printf("lst %d |%s| %08X \n", line.lineno, s.c_str(),line.expr_value);
-				if ((s == "") || (s == "ON") || (line.expr_value > 0))
-				{
-					//printf("ON\n");
-					skiplist = true;
-					listing = true;
-				}
-				else if ((s == "OFF") || (line.expr_value == 0))
-				{
-					//printf("OFF\n");
-					skiplist = true;
-					listing = false;
-				}
-			}
-			break;
-		default:
-			line.setError(errUnimplemented);
-			break;
-	}
+	int res;
+
+	res = psuedoops->ProcessOpcode(*this, line, sym);
 	return (res);
 }
 
@@ -106,14 +68,26 @@ int CLASS::doMX(MerlinLine &line, TSymbol &sym)
 int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 {
 	int res = 0;
-	if (pass == 0)
+	TSymbol *s;
+	if (line.lable.length() > 0)
 	{
-		res = -1;
-		TSymbol *s;
-		if (line.lable.length() > 0)
+		//printf("EQU: |%s|\n",line.operand.c_str());
+		bool isvar = (line.lable[0] == ']') ? true : false;
+
+		if ((pass == 0) && (!isvar))
 		{
+			res = -1;
 			//printf("EQU:  |%s| %08X\n", line.lable.c_str(), line.expr_value);
 			s = addSymbol(line.lable, line.expr_value, true);
+			if (s != NULL)
+			{
+				res = 0;
+			}
+		}
+		else if (isvar)
+		{
+			res = -1;
+			s = addVariable(line.lable, line.operand, true);
 			if (s != NULL)
 			{
 				res = 0;
@@ -198,7 +172,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			{
 				value = 0xFFFFFFFF;
 				line.setError(errBadOperand);
-				line.errorText=line.operand_expr2;
+				line.errorText = line.operand_expr2;
 			}
 
 			setOpcode(line, op);
@@ -306,6 +280,29 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 			line.outbytes.push_back(line.expr_value >> (i * 8));
 		}
 		line.outbytect = res;
+	}
+	// if these are REP or SEP, see if we need to track
+	if ((trackrep) && ((sym.opcode == 0xC2) || (sym.opcode == 0xE2)))
+	{
+		if (cpumode >= MODE_65816)
+		{
+			//printf("trackrep: %02X\n",line.expr_value&0xFF);
+			// SGQ - if evaluation has errors, this must cause an error here
+			// because expr_value won't be valid during pass 0 and will screw
+			// up MX
+			uint8_t newmx=(line.expr_value&0x30)>>4;
+			switch(sym.opcode)
+			{
+				case 0xC2: // REP
+					mx&=~newmx;
+					break;
+				case 0xE2: // SEP
+					mx|=newmx;
+					break;
+			}
+			line.linemx=mx;
+		}
+
 	}
 	return (res);
 }

@@ -14,6 +14,9 @@ programOption PAL::appOptions[] =
 {
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
 	{ "config-file", "f", "load configuration data from a <file>", "file", false, false},
+	{ "tomerlin", "m", "convert file to merlin format ", "", false, false},
+	{ "reformat", "r", "convert to readable ascii", "", false, false},
+
 	{ "", "", "", "", false, false}
 };
 
@@ -56,38 +59,56 @@ int CLASS::runCommandLineApp(void)
 
 		std::string e = toUpper(path.getExtension());
 
-		if (e == "S")
-		{
-			//logger().information("ASM: " + path.toString());
+		int x = getInt("option.reformat", 0);
 
-			t = new T65816Asm();
-		}
-		if (e == "LNK")
+		if (x != 0)
 		{
-			//logger().information("LNK: " + path.toString());
-			t = new T65816Link();
-		}
-		if (t != NULL)
-		{
-			t->init();
+			res=0;
+			t = new TMerlinConverter();
+			if (t != NULL)
+			{
 
-			std::string f = path.toString();
-			t->processfile(f);
-			t->process();
-			t->complete();
-			delete t;
-			t = NULL;
+				t->init();
+				std::string f = path.toString();
+				t->processfile(f);
+				t->process();
+				t->complete();
+				res = (t->errorct > 0) ? -1 : 0;
+				
+				delete t;
+				t = NULL;
+			}
 		}
 		else
 		{
-			printf("not supported type\n");
+			if (e == "S")
+			{
+				//logger().information("ASM: " + path.toString());
+
+				t = new T65816Asm();
+			}
+			if (e == "LNK")
+			{
+				//logger().information("LNK: " + path.toString());
+				t = new T65816Link();
+			}
+			if (t != NULL)
+			{
+				t->init();
+				std::string f = path.toString();
+				t->processfile(f);
+				t->process();
+				t->complete();
+				res = (t->errorct > 0) ? -1 : 0;
+				delete t;
+				t = NULL;
+			}
+			else
+			{
+				printf("not supported type\n");
+			}
 		}
-
-
-		//logger().information(*it);
-		res = 0;
 	}
-
 	return (res);
 }
 

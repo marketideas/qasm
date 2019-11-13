@@ -1,6 +1,7 @@
 #define ADD_ERROR_STRINGS
 #include "asm.h"
 #include "eval.h"
+#include "psuedo.h"
 
 #define CLASS MerlinLine
 
@@ -33,11 +34,6 @@ void CLASS::print(uint32_t lineno)
 		l = 4;
 	}
 
-	//if ((opflags&OP_STD)!=OP_STD)
-	if ((opcodelower != "inc") && (opcodelower != "ldx") && (opcodelower != "stx"))
-	{
-		//return;
-	}
 	if (errorcode > 0)
 	{
 		if (errorcode >= errFatal)
@@ -54,7 +50,7 @@ void CLASS::print(uint32_t lineno)
 		SetColor(CL_WHITE | CL_BOLD | BG_NORMAL);
 	}
 	bool empty = false;
-	if ((lable == "") && (opcode == "") && (operand == ""))
+	if ((printlable == "") && (opcode == "") && (operand == ""))
 	{
 		empty = true;
 	}
@@ -80,7 +76,7 @@ void CLASS::print(uint32_t lineno)
 		printf("   ");
 	}
 
-	if ((getBool("asm.showmx", false)))
+	if (showmx)
 	{
 		if (outbytect > 0)
 		{
@@ -92,9 +88,9 @@ void CLASS::print(uint32_t lineno)
 		}
 	}
 
-	if (isDebug()>1)
+	if (isDebug() > 1)
 	{
-		printf("%02X ", addressmode&0xFF);
+		printf("%02X ", addressmode & 0xFF);
 	}
 	printf("%6d  ", lineno + 1);
 
@@ -104,10 +100,10 @@ void CLASS::print(uint32_t lineno)
 	}
 	else
 	{
-		printf("%-12s %-8s %-10s ", lable.c_str(), opcode.c_str(), operand.c_str());
+		printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 		if (errorcode > 0)
 		{
-			printf(":[Error] %s %s", errStrings[errorcode].c_str(),errorText.c_str());
+			printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
 		}
 		else
 		{
@@ -126,6 +122,7 @@ void CLASS::clear()
 {
 	syntax = SYNTAX_MERLIN;
 	lable = "";
+	printlable = "";
 	opcode = "";
 	opcodelower = "";
 	operand = "";
@@ -154,6 +151,7 @@ void CLASS::set(std::string line)
 	int state = 0;
 	int l = line.length();
 	int i = 0;
+	int x;
 	char c, delim;
 
 	clear();
@@ -278,6 +276,18 @@ void CLASS::set(std::string line)
 				break;
 		}
 	}
+	printlable = lable;
+	x = lable.length();
+	if (x > 1)
+	{
+		while ((x > 1) && (lable[x - 1] == ':'))
+		{
+			lable = lable.substr(0, x - 1);
+			x--;
+		}
+		//printf("linelable: |%s|\n", lable.c_str());
+	}
+
 	opcodelower = Poco::toLower(opcode);
 }
 
@@ -286,6 +296,7 @@ void CLASS::set(std::string line)
 
 CLASS::CLASS()
 {
+	errorct = 0;
 }
 
 CLASS::~CLASS()
@@ -427,18 +438,120 @@ int CLASS::processfile(std::string &p)
 }
 
 #undef CLASS
-
-#define CLASS T65816Asm
-
-CLASS::CLASS()
+#define CLASS TMerlinConverter
+CLASS::CLASS() : TFileProcessor()
 {
+}
+CLASS::~CLASS()
+{
+}
+void CLASS::init(void)
+{
+	std::string s;
+	int ts,tabpos;
 	lines.clear();
+
+	std::string tabstr=getConfig("reformat.tabs","8,16,32");
+	tabstr=Poco::trim(tabstr);
+
+	memset(tabs, 0x00, sizeof(tabs));
+
+	Poco::StringTokenizer t(tabstr,",;",0);
+	tabpos=0;
+	for (auto itr=t.begin(); itr!=t.end(); ++itr)
+	{
+		s=Poco::trim(*itr);
+		try
+		{
+			ts=Poco::NumberParser::parse(s);
+		}
+		catch(...)
+		{
+			ts=0;
+		}
+		if ((ts>=0) && (ts<240))
+		{
+			tabs[tabpos++]=ts;
+		}
+	}
 }
 
-#define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
+int CLASS::doline(int lineno, std::string line)
+{
+
+	MerlinLine l(line);
+	lines.push_back(l);
+	return 0;
+}
+
+void CLASS::process(void)
+{
+	uint32_t len, t,pos;
+
+	uint32_t ct = lines.size();
+
+	for (uint32_t lineno = 0; lineno < ct; lineno++)
+	{
+		MerlinLine &line = lines[lineno];
+
+		pos=0;
+		len = 0;
+
+		t = tabs[pos++];
+		len = printf("%s ", line.printlable.c_str());
+		while (len < t)
+		{
+			len += printf(" ");
+		}
+
+		t = tabs[pos++];
+		len = printf("%s ", line.opcode.c_str());
+		while (len < t)
+		{
+			len += printf(" ");
+		}
+
+		t = tabs[pos++];
+		len = printf("%s ", line.operand.c_str());
+		while (len < t)
+		{
+			len += printf(" ");
+		}
+
+		t = tabs[pos++];
+		len = printf("%s", line.comment.c_str());
+		while (len < t)
+		{
+			len += printf(" ");
+		}
+		len+=printf("\n");
+
+	}
+}
+
+void CLASS::complete(void)
+{
+}
+
+
+#undef CLASS
+#define CLASS T65816Asm
+
+CLASS::CLASS() : TFileProcessor()
+{
+	lines.clear();
+	psuedoops = new TPsuedoOp();
+}
+
+//#define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
 CLASS::~CLASS()
 {
+	if (psuedoops != NULL)
+	{
+		delete(psuedoops);
+		psuedoops = NULL;
+	}
 }
 
 void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallback cb)
@@ -454,23 +567,6 @@ void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallba
 	std::pair<std::string, TSymbol> p(Poco::toUpper(op), sym);
 
 	opcodes.insert(p);
-}
-
-
-TSymbol *CLASS::findSymbol(std::string symname)
-{
-	TSymbol *res = NULL;
-
-	//printf("finding: %s\n",symname.c_str());
-	auto itr = symbols.find(Poco::toUpper(symname));
-	if (itr != symbols.end())
-	{
-		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
-		res = &itr->second;
-
-		return (res);
-	}
-	return (res);
 }
 
 TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
@@ -492,6 +588,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 		return (fnd);
 	}
 
+	//printf("addSymbol |%s|\n",sym.c_str());
 	TSymbol s;
 	s.name = sym;
 	s.opcode = 0;
@@ -504,6 +601,85 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	symbols.insert(p);
 	res = findSymbol(sym);
 	return (res);
+}
+
+TSymbol *CLASS::findSymbol(std::string symname)
+{
+	TSymbol *res = NULL;
+
+	//printf("finding: %s\n",symname.c_str());
+	auto itr = symbols.find(Poco::toUpper(symname));
+	if (itr != symbols.end())
+	{
+		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
+		res = &itr->second;
+
+		return (res);
+	}
+	return (res);
+}
+
+TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
+{
+	TSymbol *res = NULL;
+	TSymbol *fnd = NULL;
+
+	//printf("addvariable\n");
+	fnd = findVariable(sym);
+
+	if ((fnd != NULL) && (!replace))
+	{
+		return (NULL);  // it is a duplicate
+	}
+
+	if (fnd != NULL)
+	{
+		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
+		fnd->text = val;
+		return (fnd);
+	}
+
+	TSymbol s;
+	s.name = sym;
+	s.opcode = 0;
+	s.namelc = Poco::toLower(sym);
+	s.stype = 0;
+	s.value = 0;
+	s.text = val;
+	s.used = false;
+	s.cb = NULL;
+	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
+	variables.insert(p);
+	res = findVariable(sym);
+	return (res);
+}
+
+TSymbol *CLASS::findVariable(std::string symname)
+{
+	TSymbol *res = NULL;
+
+	//printf("finding: %s\n",symname.c_str());
+	auto itr = variables.find(Poco::toUpper(symname));
+	if (itr != variables.end())
+	{
+		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
+		res = &itr->second;
+
+		return (res);
+	}
+	return (res);
+}
+
+void CLASS::showVariables(void)
+{
+
+	printf("\nVariables:\n");
+
+	for (auto itr = variables.begin(); itr != variables.end(); ++itr)
+	{
+		printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
+	}
+
 }
 
 // set alpha to true to print table sorted by name or
@@ -618,7 +794,7 @@ const TaddrMode addrRegEx[] =
 	{"", 0, ""}
 };
 
-const std::string valExpression = "^([$%:-~][^\\],()]*)$";
+const std::string valExpression = "^([$%\\+\\-:-~][^\\],()]*)$";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -666,6 +842,10 @@ void CLASS::initpass(void)
 
 	casesen = getBool("asm.casesen", true);
 	listing = getBool("asm.lst", true);
+	showmx = getBool("asm.showmx", false);
+	trackrep = getBool("asm.trackrep", false);
+
+
 	skiplist = false;
 
 	origin = 0x8000;
@@ -703,6 +883,7 @@ void CLASS::initpass(void)
 	errorct = 0;
 	passcomplete = false;
 
+	variables.clear(); // clear the variables for each pass
 	savepath = "";
 }
 
@@ -741,6 +922,7 @@ void CLASS::complete(void)
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
+		showVariables();
 	}
 	TFileProcessor::complete();
 }
@@ -758,7 +940,7 @@ int CLASS::evaluate(std::string expr, int64_t &value)
 		res = eval.evaluate(expr, result);
 		if (res != 0)
 		{
-			if (isDebug()>2)
+			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
 				printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
@@ -919,19 +1101,30 @@ void CLASS::process(void)
 			line->startpc = currentpc;
 			line->linemx = mx;
 			line->bytect = 0;
+			line->showmx = showmx;
 
 			if ((line->lable != "") && (pass == 0))
 			{
+				std::string lable = Poco::trim(line->lable);
+				TSymbol *sym = NULL;
+				bool dupsym = false;
 				c = line->lable[0];
 				switch (c)
 				{
 					case ']':
+						sym = addVariable(line->lable, "", true);
+						if (sym == NULL) { dupsym = true; }
 						break;
 					case ':':
 						break;
 					default:
-						addSymbol(line->lable, currentpc, false);
+						sym = addSymbol(line->lable, currentpc, false);
+						if (sym == NULL) { dupsym = true; }
 						break;
+				}
+				if (dupsym)
+				{
+					line->setError(errDupSymbol);
 				}
 			}
 			x = parseOperand(*line);
@@ -962,10 +1155,10 @@ void CLASS::process(void)
 
 			if (x > 0)
 			{
-				if (evalresult != 0)
+				if ((evalresult != 0) && (pass > 0))
 				{
 					line->setError(errBadOperand);
-					line->errorText=line->operand_expr;
+					line->errorText = line->operand_expr;
 				}
 				line->bytect = x;
 				currentpc += x;
@@ -1033,7 +1226,7 @@ int CLASS::doline(int lineno, std::string line)
 
 #define CLASS T65816Link
 
-CLASS::CLASS()
+CLASS::CLASS() : TFileProcessor()
 {
 }
 

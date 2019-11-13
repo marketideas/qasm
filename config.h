@@ -3,6 +3,8 @@
 // define application options here
 #define PAL_APPCLASS TMyCustomApp
 
+//#define NO_SIGNAL_HANDLING
+
 //#define SERVERAPP
 #define ENABLE_SSL
 #define USE_LOGGER
