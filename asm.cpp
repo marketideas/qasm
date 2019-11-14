@@ -379,8 +379,6 @@ int CLASS::processfile(std::string &p)
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
 
-
-
 	valid = true;
 	p1 = tp.toString();
 	Poco::File fn(p1);
@@ -404,9 +402,6 @@ int CLASS::processfile(std::string &p)
 
 	if (valid)
 	{
-
-
-
 		std::ifstream f(p1);
 		if (f.is_open())
 		{
@@ -1063,7 +1058,7 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			value = result;
 			if ((listing) && (pass > 0) && (isDebug() > 2))
 			{
-				printf("EV1=%08lX '%c'\n", v1, line.expr_shift);
+                printf("EV1=%08llX '%c'\n", v1, line.expr_shift);
 			}
 			if (v1 >= 0x10000)
 			{
@@ -1082,7 +1077,7 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	}
 	if (isDebug() >= 3)
 	{
-		printf("Eval Result: %08lX (status=%d)\n", value, res);
+        printf("Eval Result: %08llX (status=%d)\n", value, res);
 	}
 	return (res);
 }
