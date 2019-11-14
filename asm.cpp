@@ -719,6 +719,9 @@ TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
 	s.text = val;
 	s.used = false;
 	s.cb = NULL;
+
+	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
+
 	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 	variables.insert(p);
 	res = findVariable(sym);
@@ -913,7 +916,7 @@ const TaddrMode addrRegEx[] =
 const std::string valExpression = "^([^\\]\\[,();]+)$";
 
 // this one looks for ]variables
-const std::string varExpression = "^^([\\]][:-~][0-9A-Z_a-z~]*)";
+const std::string varExpression = "([]]{1}[:0-9A-Z_a-z]{1}[0-9A-Z_a-z]*)";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -1220,20 +1223,62 @@ int CLASS::parseOperand(MerlinLine & line)
 	return (res);
 }
 
-
 int CLASS::substituteVariables(MerlinLine & line)
 {
 	int res = -1;
-	int idx;
+	int x;
+	std::string::size_type offset, slen;
 	std::string oper = line.operand;
-	if (oper.length() > 0)
+	std::string s;
+	TSymbol *sym;
+	uint32_t len, off,ct;
+
+	slen = oper.length();
+	if (slen > 0)
 	{
 		std::vector<std::string> groups;
 
-		idx = 0;
-		RegularExpression varEx(varExpression, 0, true);
+		offset = 0;
+		RegularExpression varEx(varExpression, Poco::RegularExpression::RE_EXTRA, true);
+		Poco::RegularExpression::MatchVec  mVec;
 
+		//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
 		groups.clear();
+		ct = 0;
+		while (offset < slen)
+		{
+			try
+			{
+				varEx.match(oper, offset, mVec, 0);
+			}
+			catch (...)
+			{
+				offset = slen;
+			}
+
+			x = mVec.size();
+			if (x > 0)
+			{
+				res = 0;
+				off = mVec[0].offset;
+				len = mVec[0].length;
+				s = oper.substr(off, len);
+				sym = findVariable(s);
+				if (sym != NULL)
+				{
+					ct++;
+					if (pass>0)
+					{
+						//printf("%d |%s|\n", ct, s.c_str());
+					}
+				}
+				offset += len;
+			}
+			else
+			{
+				offset = slen;
+			}
+		}
 
 	}
 	return (res);
@@ -1244,11 +1289,9 @@ void CLASS::process(void)
 	uint32_t l;
 	int x;;
 	char c;
-	std::string op, operand;
-	//uint32_t operand_eval;
-	//uint16_t addrmode;
+	char buff[256];
+	std::string op, operand, ls;
 
-	//MerlinLine *line;
 	pass = 0;
 	while (pass < 2)
 	{
@@ -1270,7 +1313,7 @@ void CLASS::process(void)
 			line.bytect = 0;
 			line.showmx = showmx;
 
-			if ((line.lable != "") && (pass == 0))
+			if ((line.lable != ""))
 			{
 				std::string lable = Poco::trim(line.lable);
 				TSymbol *sym = NULL;
@@ -1279,14 +1322,19 @@ void CLASS::process(void)
 				switch (c)
 				{
 					case ']':
-						sym = addVariable(line.lable, "", true);
+						sprintf(buff, "$%X", PC.currentpc);
+						ls = buff;
+						sym = addVariable(line.lable, ls, true);
 						if (sym == NULL) { dupsym = true; }
 						break;
 					case ':':
 						break;
 					default:
-						sym = addSymbol(line.lable, PC.currentpc, false);
-						if (sym == NULL) { dupsym = true; }
+						if (pass == 0)
+						{
+							sym = addSymbol(line.lable, PC.currentpc, false);
+							if (sym == NULL) { dupsym = true; }
+						}
 						break;
 				}
 				if (dupsym)
