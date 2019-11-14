@@ -11,20 +11,29 @@
 #define SYNTAX_APW	  1
 #define SYNTAX_ORCA	  2
 
-#define OP_6502  0x01
-#define OP_65C02 0x02
-#define OP_65816 0x04
-#define OP_PSUEDO 0x08
-#define OP_SPECIAL 0x20
-#define OP_CLASS0 0x0000
-#define OP_CLASS1 0x0100
-#define OP_CLASS2 0x0200
-#define OP_CLASS3 0x0300
-#define OP_CLASS4 0x0400
-#define OP_STD    (0x1000 | OP_CLASS1 | OP_6502)
-#define OP_ASL    (0x2000 | OP_CLASS2 | OP_6502)
-#define OP_STX    (0x3000 | OP_CLASS2 | OP_6502)
-#define OP_C0     (0x4000 | OP_CLASS0 | OP_6502)
+#define FLAG_FORCELONG 0x01
+#define FLAG_FORCEABS  0x02
+#define FLAG_FORCEDP   0x04
+#define FLAG_DP		   0x08
+#define FLAG_BIGNUM    0x10
+#define FLAG_INDUM     0x20
+
+
+#define OP_A       0x0001
+#define OP_XY      0x0002
+#define OP_PSUEDO  0x0004
+#define OP_SPECIAL 0x0008
+
+// these bits are actually the CC (last 2 bits) of opcode addressing
+#define OP_CLASS0  0x0000  
+#define OP_CLASS1  0x0100
+#define OP_CLASS2  0x0200
+#define OP_CLASS3  0x0300
+// these ORd bits specify specific classes of opcodes and subgroups
+#define OP_STD     (0x1000 | OP_CLASS1)
+#define OP_ASL     (0x2000 | OP_CLASS2)
+#define OP_STX     (0x3000 | OP_CLASS2)
+#define OP_C0      (0x4000 | OP_CLASS0)
 
 enum asmErrors
 {
@@ -99,8 +108,6 @@ enum
 	syn_MAX
 };
 
-#define FLAG_LONGADDR 0x01
-
 class TOriginSection
 {
 // SGQ - if you do something unusual here, be aware of copy constructor
@@ -110,6 +117,7 @@ public:
 	uint32_t currentpc;
 	uint32_t totalbytes;
 	uint32_t orgsave;
+// leave this code here in case we ever need a copy/assignment constructor
 #if 0
 	TOriginSection(const TOriginSection &old)
 	{
@@ -162,8 +170,9 @@ public:
 	uint16_t opflags;
 	int32_t startpc;
 	uint32_t addressmode;
-	int32_t expr_value;
-	int32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
+	uint32_t expr_value;
+	uint8_t expr_shift;  // after an eval, this byte will reflect any shift code on expr (|^<>)
+	uint32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
 	uint32_t errorcode;
 	std::string errorText;
 
@@ -258,6 +267,8 @@ public:
 	bool listing;
 	bool showmx;
 	bool trackrep;
+	bool merlincompat;
+	bool allowdup;
 	uint8_t mx;
 	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816
 
@@ -305,7 +316,7 @@ public:
 	void initpass(void);
 	void showSymbolTable(bool alpha);
 	void showVariables(void);
-	int evaluate(std::string expr, int64_t &value);
+	int evaluate(MerlinLine &line,std::string expr, int64_t &value);
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);

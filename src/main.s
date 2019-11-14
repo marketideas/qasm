@@ -40,11 +40,13 @@ TSTADDR	=	$1000		;absolute address for testing
 *==========================================================
 * Data Index DUM section test
 
+        lst
 		DUM	0
 dum0	ds	1			;fractional byte
 dum1	ds	1
 dumSize	=	*
 		DEND
+        ;lst off
 
 *==========================================================
 * zero page (all zp var names are prefixed with _)
@@ -82,7 +84,8 @@ START
       
 
 ;adc (ZP,x)
-	adc (0,x)
+	    adc (0,x)
+
 
         adc ($80,x)
         adc	(_tmp,x)
@@ -163,27 +166,60 @@ myQuit
 
         org	;return to ongoing address
         
-        lst
+        lst 
+        lda $FF
 ;Issue #16 (fadden) - Byte reference modifiers are ignored (no way to force DP)
         lda	<$fff0			;zp
         lda	>$fff0			;ABS (lo word)
         lda ^$fff0			;ABS (hi word)
         lda |$fff0			;ABS (long in 65816 mode)
 
+        lda $08
+        lda $0008
+        lda $FFFF-$FFF7
+        lda $FFF0+24
+        ldaz $FFF0+24       ; forced DP
+
+        
+        ldaz $FFFF          ; forced DP
+        lda: $FFFF          ; forced ABS (any char but 'L', 'D', and 'Z"
+        ldal $FFFF          ; forced long abs (3 byte address)
+
+        ldaz $05
+        lda: $05
+        ldal $05
+
+
         lda	<$fff0+24       ;zp
         lda	>$fff0+24       ;ABS (lo word)
         lda ^$fff0+24		;ABS (hi word)
         lda |$fff0+24		;ABS (long in 65816 mode)
 
+        mx %11
+
         lda	#<$fff0+24		;byte
         lda	#>$fff0+24		;page
         lda #^$fff0+24		;bank
 
-        lda	#<$fff0			;byte
-        lda	#>$fff0			;page
-        lda #^$fff0			;bank
+        lda	#<$1234			;byte
+        lda	#>$1234			;page
+        lda #^$1234			;bank
+        lda #^$A51234         ;bank
 
-        lst off
+
+        mx %00
+
+        lda #<$fff0+24      ;byte
+        lda #>$fff0+24      ;page
+        lda #^$fff0+24      ;bank
+
+        lda #<$1234         ;byte
+        lda #>$1234         ;page
+        lda #^$1234         ;bank
+        lda #^$A51234         ;bank
+
+
+        mx MX
 
         lda	$0008           ;ZP
         lda	$08             ;ZP
@@ -192,7 +228,7 @@ myQuit
 
 
 ;Issue #8 fadden) - STX zp,y fails to assemble
-        org	$00bc
+        org	$bc
 
 L00BC   bit	L00BC
 

@@ -3,7 +3,7 @@
 	xc
 	xc
 
-MXX  =  $00
+MXX  =  %00
 
 	mx 	MXX
 	org $4000
@@ -292,9 +292,6 @@ startE0
 
 startF0
 	beq	startF0
-	beq down
-	brl startF0
-down
 	sbc (dp),y
 	sbc (dp)
 	sbc (dp,s),y
@@ -310,10 +307,6 @@ down
 	sbc expr,x
 	inc expr,x
 	sbcl lexpr,x
-	;lst
-	;chk
 	lst off
-
 	sav ./test.bin
-	lst
 	

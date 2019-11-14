@@ -11,6 +11,8 @@ enum
 	P_DUM,
 	P_DEND,
 	P_DS,
+	P_PUT,
+	P_USE,
 
 	P_MAX
 };
