@@ -80,12 +80,8 @@ START
 
 ; --- Test all instructions in all their modes, with as many variants as possible ---
 
-
-      
-
 ;adc (ZP,x)
 	    adc (0,x)
-
 
         adc ($80,x)
         adc	(_tmp,x)
@@ -238,6 +234,14 @@ L00BC   bit	L00BC
 
         ldx	L00BC,y
         stx	L00BC,y
+
+
+* Data Storage Tests
+
+     	hex 11,22,33,44,55,66,77,88,99
+        hex 112233445566778899
+        hex aabb,cc,ddee,ff
+
 
 //]XCODEEND       ; Keep this at the end and put your code above this
     lst off
