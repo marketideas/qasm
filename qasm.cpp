@@ -39,6 +39,25 @@ int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 	return (res);
 }
 
+void CLASS::showerror(int ecode, std::string fname)
+{
+	std::string s;
+	switch (ecode)
+	{
+		case -2:
+			s = "Permission Denied";
+			break;
+		case -3:
+			s = "File not found";
+			break;
+		default:
+			s = "Unknown Error";
+			break;
+	}
+	std::string a = Poco::Util::Application::instance().config().getString("application.name", "");
+	fprintf(stderr, "%s: %s: %s\n", a.c_str(), fname.c_str(), s.c_str());
+}
+
 int CLASS::runCommandLineApp(void)
 {
 	TFileProcessor *t = NULL;
@@ -81,6 +100,7 @@ int CLASS::runCommandLineApp(void)
 					{
 						t->init();
 						std::string f = path.toString();
+						t->filename = f;
 						x = t->processfile(f);
 						if (x == 0)
 						{
@@ -89,21 +109,8 @@ int CLASS::runCommandLineApp(void)
 						}
 						else
 						{
-							std::string s;
-							switch (x)
-							{
-								case -2:
-									s = "Permission Denied";
-									break;
-								case -3:
-									s = "File not found";
-									break;
-								default:
-									s = "Unknown Error";
-									break;
-							}
-							fprintf(stderr,"Error: %s (%s)\n\n",s.c_str(),f.c_str());
-							t->errorct=1;
+							showerror(x,f);
+							t->errorct = 1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}
@@ -124,9 +131,9 @@ int CLASS::runCommandLineApp(void)
 					{
 						t->init();
 						std::string f = path.toString();
-						t->filename=f;
-						x=t->processfile(f);
-						f=t->filename;
+						t->filename = f;
+						x = t->processfile(f);
+						f = t->filename;
 						if (x == 0)
 						{
 							t->process();
@@ -134,21 +141,8 @@ int CLASS::runCommandLineApp(void)
 						}
 						else
 						{
-							std::string s;
-							switch (x)
-							{
-								case -2:
-									s = "Permission Denied";
-									break;
-								case -3:
-									s = "File not found";
-									break;
-								default:
-									s = "Unknown Error";
-									break;
-							}
-							fprintf(stderr,"Error: %s (%s)\n\n",s.c_str(),f.c_str());
-							t->errorct=1;
+							showerror(x,f);
+							t->errorct = 1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}

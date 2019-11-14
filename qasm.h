@@ -11,6 +11,7 @@ using namespace PAL_NAMESPACE;
 class CLASS : public PAL_BASEAPP
 {
 protected:
+	void showerror(int ecode,std::string fname);
 	virtual int runCommandLineApp(void);
 	virtual int runServerApp(PAL_EVENTMANAGER *em);
 public:
