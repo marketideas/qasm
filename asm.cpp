@@ -354,8 +354,8 @@ void CLASS::errorOut(uint16_t code)
 void CLASS::init(void)
 {
 	starttime = GetTickCount();
-
-	syntax = SYNTAX_MERLIN;
+	syntax = 0;
+	filecount = 0;
 }
 
 void CLASS::complete(void)
@@ -395,7 +395,7 @@ int CLASS::processfile(std::string &p)
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
 	Poco::Path parent = path.parent();
-	std::string currentdir=Poco::Path::current();
+	std::string currentdir = Poco::Path::current();
 	std::string dir = parent.toString();;
 
 	try
@@ -403,9 +403,11 @@ int CLASS::processfile(std::string &p)
 		//printf("filename : %s\n", path.toString().c_str());
 		//printf("directory: %s\n", dir.c_str());
 
+		p1 = path.toString();
+
+		//LOG_DEBUG << "initial file name: " << p1 << endl;
 
 		valid = true;
-		p1 = tp.toString();
 		Poco::File fn(p1);
 		if (!fn.exists())
 		{
@@ -418,16 +420,52 @@ int CLASS::processfile(std::string &p)
 					fn = Poco::File(p1 + ".mac");
 					if (!fn.exists())
 					{
+						fn = Poco::File(p1);
 						valid = false;
 					}
 				}
 			}
 		}
 		p1 = fn.path();
+		//LOG_DEBUG << "File name: " << p1 << endl;
 
+		valid=false;
+		if (fn.exists())
+		{
+			valid=true;
+			//LOG_DEBUG << "File exists: " << p1 << endl;
+			if (fn.isLink())
+			{
+				//LOG_DEBUG << "File is a link: " << p1 << endl;
+			}
+			if ((fn.isDirectory()) || (!fn.canRead()))
+			{
+				//LOG_DEBUG << "File is a directory: " << p1 << endl;
+				valid = false;
+			}
+		}
+
+		if (!valid)
+		{
+			fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
+
+			errorct = 1;
+			return (-1);
+		}
+
+
+		return (0);
 		if (valid)
 		{
-			chdir(dir.c_str()); // change directory to where the file is
+			if (filecount == 0)
+			{
+				// is this the first file in the compilation, or a PUT/USE?
+				// if first, change CWD to location of file
+				LOG_DEBUG << "Changing directory to: " << dir << endl;
+
+				chdir(dir.c_str()); // change directory to where the file is
+			}
+			filecount++;
 
 			std::ifstream f(p1);
 			if (f.is_open())
@@ -487,7 +525,7 @@ int CLASS::processfile(std::string &p)
 			fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
 		}
 	}
-	catch(...)
+	catch (...)
 	{
 	}
 	chdir(currentdir.c_str());
@@ -508,6 +546,8 @@ void CLASS::init(void)
 	std::string s;
 	int ts, tabpos;
 	lines.clear();
+
+	syntax = SYNTAX_MERLIN;
 
 	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
 	tabstr = Poco::trim(tabstr);
@@ -771,43 +811,46 @@ void CLASS::showVariables(void)
 // false to print by value;
 void CLASS::showSymbolTable(bool alpha)
 {
-	std::map<std::string, uint32_t> alphamap;
-	std::map<uint32_t, std::string> nummap;
-
-	int columns = 4;
-	int column = columns;
-
-	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
+	if (symbols.size() > 0)
 	{
-		TSymbol ptr = itr->second;
-		alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
-		nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
-	}
+		std::map<std::string, uint32_t> alphamap;
+		std::map<uint32_t, std::string> nummap;
 
-	if (alpha)
-	{
-		printf("\n\nSymbol table sorted alphabetically:\n\n");
+		int columns = 4;
+		int column = columns;
 
-		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+		for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 		{
-			printf("%-16s 0x%08X ", itr->first.c_str(), itr->second);
-			if ( !--column )
+			TSymbol ptr = itr->second;
+			alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
+			nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
+		}
+
+		if (alpha)
+		{
+			printf("\n\nSymbol table sorted alphabetically:\n\n");
+
+			for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
 			{
-				printf("\n");
-				column = columns;
+				printf("%-16s 0x%08X ", itr->first.c_str(), itr->second);
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
 			}
 		}
-	}
-	else
-	{
-		printf("\n\nSymbol table sorted numerically:\n\n");
-		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
+		else
 		{
-			printf("0x%08X %-16s ", itr->first, itr->second.c_str());
-			if ( !--column )
+			printf("\n\nSymbol table sorted numerically:\n\n");
+			for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 			{
-				printf("\n");
-				column = columns;
+				printf("0x%08X %-16s ", itr->first, itr->second.c_str());
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
 			}
 		}
 	}

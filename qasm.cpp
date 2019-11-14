@@ -81,9 +81,11 @@ int CLASS::runCommandLineApp(void)
 					{
 						t->init();
 						std::string f = path.toString();
-						t->processfile(f);
-						t->process();
-						t->complete();
+						if (t->processfile(f)==0)
+						{
+							t->process();
+							t->complete();
+						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}
 					catch (...)
@@ -95,26 +97,18 @@ int CLASS::runCommandLineApp(void)
 			}
 			else if (cmd == "ASM")
 			{
-				if (e == "S")
-				{
-					//logger().information("ASM: " + path.toString());
-
-					t = new T65816Asm();
-				}
-				if (e == "LNK")
-				{
-					//logger().information("LNK: " + path.toString());
-					t = new T65816Link();
-				}
+				t = new T65816Asm();
 				if (t != NULL)
 				{
 					try
 					{
 						t->init();
 						std::string f = path.toString();
-						t->processfile(f);
-						t->process();
-						t->complete();
+						if (t->processfile(f)==0)
+						{
+							t->process();
+							t->complete();
+						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}
 					catch (...)

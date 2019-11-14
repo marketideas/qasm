@@ -195,6 +195,7 @@ class TFileProcessor
 protected:
 	uint8_t syntax;
 	uint64_t starttime;
+	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
 
