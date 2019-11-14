@@ -26,7 +26,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     std::deque<Token> tokens;
     int state = 0;
     char c;
-    char delim;
+    char delim = 0;
     std::string ident, asc;
 
     std::string ops = "+-*//^!.&()";
@@ -378,7 +378,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
 
     i = 0;
-    l = n.length();
+    l = (int)n.length();
     s = "";
     for (i = 0; i < l; i++)
     {

@@ -293,6 +293,8 @@ public:
 
 	uint16_t pass;
 
+    bool inDUMSection;		// yes if we are in a DUM/DEND section
+
 	T65816Asm();
 	virtual ~T65816Asm();
 

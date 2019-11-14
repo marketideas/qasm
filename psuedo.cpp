@@ -122,12 +122,15 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				line.startpc=a.PC.orgsave;
 			}
 			break;
+
 		case P_SAV:
 			a.savepath = line.operand;
 			break;
+
 		case P_LST:
 			res = doLST(a, line, opinfo);
 			break;
+
 	}
 	return (res);
 }
