@@ -400,8 +400,8 @@ int CLASS::processfile(std::string &p)
 
 	try
 	{
-		printf("filename : %s\n", path.toString().c_str());
-		printf("directory: %s\n", dir.c_str());
+		//printf("filename : %s\n", path.toString().c_str());
+		//printf("directory: %s\n", dir.c_str());
 
 
 		valid = true;

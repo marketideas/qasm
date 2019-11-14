@@ -50,7 +50,7 @@ int CLASS::runCommandLineApp(void)
 
 
 	startdirectory = Poco::Path::current();
-	LOG_DEBUG << "currentdir: " << startdirectory << endl;
+	//LOG_DEBUG << "currentdir: " << startdirectory << endl;
 	if (commandargs.size() == 0)
 	{
 		fprintf(stderr, "No files given (--help for help)\n\n");
@@ -63,7 +63,7 @@ int CLASS::runCommandLineApp(void)
 
 		std::string p = fn.path();
 		Poco::Path path(p);
-		logger().information(path.toString());
+		//logger().information(path.toString());
 
 		std::string e = toUpper(path.getExtension());
 
