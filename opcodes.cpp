@@ -565,6 +565,11 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 				}
 			}
 		}
+		if (line.flags&FLAG_FORCELONG)
+		{
+			line.setError(errBadAddressMode);
+		}
+		goto out;
 	}
 
 	if (m == syn_imm)

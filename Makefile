@@ -42,6 +42,9 @@ test1:
 
 test2:
 	-qasm src/testfile.s
+
+test3:
+	-qasm src/var.s
 	
 	
 

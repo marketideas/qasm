@@ -40,13 +40,13 @@ enum asmErrors
 	errNone,
 	errWarn,
 	errIncomplete,
+	errUnimplemented,
 	errFatal,
 	errBadAddressMode,
 	errBadOpcode,
 	errIncompatibleOpcode,
 	errBadByteCount,
 	errBadBranch,
-	errUnimplemented,
 	errForwardRef,
 	errNoRedefinition,
 	errBadOperand,
@@ -64,13 +64,13 @@ const std::string errStrings[errMAX + 1] =
 	"No Error",
 	"Warning",
 	"Unfinished Opcode",
+	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
 	"Unknown Opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
 	"Relative branch offset too large",
-	"Unimplemented Instruction",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Unable to evaluate",
@@ -316,6 +316,7 @@ public:
 	void showVariables(void);
 	int evaluate(MerlinLine &line,std::string expr, int64_t &value);
 
+	int substituteVariables(MerlinLine & line);
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
 	void setOpcode(MerlinLine &line, uint8_t op);

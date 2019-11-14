@@ -27,6 +27,8 @@ void CLASS::print(uint32_t lineno)
 {
 	int i, l, pcol;
 	int commentcol = 40;
+	static bool checked = false;
+	static bool nc1 = false;
 	bool nc = false;
 
 
@@ -36,7 +38,21 @@ void CLASS::print(uint32_t lineno)
 		l = 4;
 	}
 
-	nc = getBool("option.nocolor", false);
+	if (!checked)
+	{
+		nc1 = getBool("option.nocolor", false);
+		checked = true;
+	}
+	else
+	{
+		nc = nc1;
+	}
+
+	if (!isatty(STDOUT_FILENO))
+	{
+		nc = true;
+	}
+
 	if (!nc)
 	{
 		if (errorcode > 0)
@@ -896,6 +912,9 @@ const TaddrMode addrRegEx[] =
 //	one or more of any character except ][,();
 const std::string valExpression = "^([^\\]\\[,();]+)$";
 
+// this one looks for ]variables
+const std::string varExpression = "^^([\\]][:-~][0-9A-Z_a-z~]*)";
+
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
 // an error is thrown
@@ -1201,6 +1220,25 @@ int CLASS::parseOperand(MerlinLine & line)
 	return (res);
 }
 
+
+int CLASS::substituteVariables(MerlinLine & line)
+{
+	int res = -1;
+	int idx;
+	std::string oper = line.operand;
+	if (oper.length() > 0)
+	{
+		std::vector<std::string> groups;
+
+		idx = 0;
+		RegularExpression varEx(varExpression, 0, true);
+
+		groups.clear();
+
+	}
+	return (res);
+}
+
 void CLASS::process(void)
 {
 	uint32_t l;
@@ -1256,6 +1294,7 @@ void CLASS::process(void)
 					line.setError(errDupSymbol);
 				}
 			}
+			x = substituteVariables(line);
 			x = parseOperand(line);
 			if (x >= 0)
 			{
