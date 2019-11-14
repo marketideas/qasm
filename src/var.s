@@ -20,5 +20,6 @@ start nop
 	bpl		]loop
 	rts
 
+	use		var
 	lst on
 

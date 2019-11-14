@@ -212,7 +212,7 @@ public:
 	TFileProcessor();
 	virtual ~TFileProcessor();
 	virtual std::string processFilename(std::string p,std::string currentdir,int level);
-	virtual int processfile(std::string &p);
+	virtual int processfile(std::string p,std::string &newfilename);
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);

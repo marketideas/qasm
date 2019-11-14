@@ -54,8 +54,11 @@ void CLASS::showerror(int ecode, std::string fname)
 			s = "Unknown Error";
 			break;
 	}
-	std::string a = Poco::Util::Application::instance().config().getString("application.name", "");
-	fprintf(stderr, "%s: %s: %s\n", a.c_str(), fname.c_str(), s.c_str());
+	if (ecode < -1)
+	{
+		std::string a = Poco::Util::Application::instance().config().getString("application.name", "");
+		fprintf(stderr, "%s: %s: %s\n", a.c_str(), fname.c_str(), s.c_str());
+	}
 }
 
 int CLASS::runCommandLineApp(void)
@@ -63,6 +66,7 @@ int CLASS::runCommandLineApp(void)
 	TFileProcessor *t = NULL;
 	std::string line;
 	std::string startdirectory;
+	std::string fname;
 
 	// only called if SERVERAPP not defined
 	int res = -1;
@@ -101,7 +105,7 @@ int CLASS::runCommandLineApp(void)
 						t->init();
 						std::string f = path.toString();
 						t->filename = f;
-						x = t->processfile(f);
+						x = t->processfile(f,fname);
 						if (x == 0)
 						{
 							t->process();
@@ -109,7 +113,7 @@ int CLASS::runCommandLineApp(void)
 						}
 						else
 						{
-							showerror(x,f);
+							showerror(x, fname);
 							t->errorct = 1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;
@@ -132,7 +136,7 @@ int CLASS::runCommandLineApp(void)
 						t->init();
 						std::string f = path.toString();
 						t->filename = f;
-						x = t->processfile(f);
+						x = t->processfile(f,fname);
 						f = t->filename;
 						if (x == 0)
 						{
@@ -141,7 +145,7 @@ int CLASS::runCommandLineApp(void)
 						}
 						else
 						{
-							showerror(x,f);
+							showerror(x, fname);
 							t->errorct = 1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;

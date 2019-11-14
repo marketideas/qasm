@@ -354,7 +354,6 @@ void CLASS::errorOut(uint16_t code)
 void CLASS::init(void)
 {
 	filenames.clear();
-	filename="";
 	starttime = GetTickCount();
 	initialdir = Poco::Path::current();
 	syntax = 0;
@@ -391,6 +390,11 @@ std::string CLASS::processFilename(std::string fn, std::string curDir, int level
 	try
 	{
 		int n = p.depth();
+		//LOG_DEBUG << "n=" << n << " " << fn << endl;
+		if (n == 0)
+		{
+			res = curDir + fn;
+		}
 		if (n > 0)
 		{
 			std::string d1 = p[0];
@@ -411,7 +415,7 @@ std::string CLASS::processFilename(std::string fn, std::string curDir, int level
 				switch (v)
 				{
 					case 0:
-						s = curDir + s;
+						s = initialdir + s;
 						break;
 					default:
 						s = getConfig(s1, ".") + "/" + s;
@@ -442,13 +446,28 @@ std::string CLASS::processFilename(std::string fn, std::string curDir, int level
 		}
 	}
 
-	//printf("convert: |%s|\n", res.c_str());
-	p=res;
+	p = res;
 	p.makeAbsolute();
+	res = p.toString();
+
+	char buff[PATH_MAX + 1];
+	memset(buff, 0x00, sizeof(buff));
+	char *rp = realpath(res.c_str(), buff);
+	if (rp != NULL)
+	{
+		//printf("realpath: %s\n", buff);
+		res = rp;
+	}
+	p = res;
+	p.makeAbsolute();
+	res = p.toString();
+
+	//LOG_DEBUG << "convert: |" << res << "|" << endl;
+
 	return (res);
 }
 
-int CLASS::processfile(std::string &p)
+int CLASS::processfile(std::string p, std::string &newfilename)
 {
 	//Poco::File fn(p);
 	int c;
@@ -466,25 +485,36 @@ int CLASS::processfile(std::string &p)
 
 	if (filecount == 0)
 	{
-		initialdir = currentdir; \
+		initialdir = currentdir;
 		//printf("initialdir=%s\n",initialdir.c_str());
 	}
 
-	p = processFilename(p, initialdir, 0);
+	//printf("currentdir=%s initialdir=%s\n", currentdir.c_str(), initialdir.c_str());
+	//LOG_DEBUG << "initial file name: " << p << endl;
+	p = processFilename(p, (filecount == 0) ? currentdir : currentdir, 0);
+
+	//LOG_DEBUG << "Converted filename: " << p << endl;
 
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
 	Poco::Path parent = path.parent();
-	std::string dir = parent.toString();;
+	std::string dir = parent.toString();
 
 	try
 	{
-		//printf("filename : %s\n", path.toString().c_str());
-		//printf("directory: %s\n", dir.c_str());
+
+		if (filecount == 0)
+		{
+			// is this the first file in the compilation, or a PUT/USE?
+			// if first, change CWD to location of file
+			//LOG_DEBUG << "Changing directory to: " << dir << endl;
+
+			chdir(dir.c_str()); // change directory to where the file is
+		}
 
 		p1 = path.toString();
 
-		filename=p1;
+		newfilename = p1;
 		//LOG_DEBUG << "initial file name: " << p1 << endl;
 
 		valid = true;
@@ -509,11 +539,11 @@ int CLASS::processfile(std::string &p)
 		p1 = fn.path();
 		//LOG_DEBUG << "File name: " << p1 << endl;
 
-		int ecode=-3;
+		int ecode = -3;
 		valid = false;
 		if (fn.exists())
 		{
-			ecode=-2;
+			ecode = -2;
 			valid = true;
 			//LOG_DEBUG << "File exists: " << p1 << endl;
 			if (fn.isLink())
@@ -527,11 +557,13 @@ int CLASS::processfile(std::string &p)
 			}
 		}
 
+		newfilename = p1;
 		if (!valid)
 		{
 			//fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
 
 			errorct = 1;
+			chdir(currentdir.c_str()); // change directory to where the file is
 			return (ecode);
 		}
 
@@ -540,11 +572,6 @@ int CLASS::processfile(std::string &p)
 
 			if (filecount == 0)
 			{
-				// is this the first file in the compilation, or a PUT/USE?
-				// if first, change CWD to location of file
-				//LOG_DEBUG << "Changing directory to: " << dir << endl;
-
-				chdir(dir.c_str()); // change directory to where the file is
 			}
 			else
 			{
@@ -552,6 +579,8 @@ int CLASS::processfile(std::string &p)
 				{
 					if (*itr == p1)
 					{
+						chdir(currentdir.c_str()); // change directory to where the file is
+
 						return (-9);
 					}
 				}
@@ -1597,8 +1626,8 @@ int CLASS::doline(int lineno, std::string line)
 
 	if ((op == "use") || (op == "put"))
 	{
-
-		x = processfile(l.operand);
+		std::string fn;
+		x = processfile(l.operand, fn);
 		if (x < 0)
 		{
 			switch (x)
@@ -1616,6 +1645,7 @@ int CLASS::doline(int lineno, std::string line)
 					l.setError(errFileNotFound);
 					break;
 			}
+			l.operand = fn;
 			l.print(0);
 			errorct++;
 			res = -1;
