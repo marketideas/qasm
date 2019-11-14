@@ -55,6 +55,9 @@ enum asmErrors
 	errOverflow,
 	errRecursiveOp,
     errOpcodeNotStarted,
+    errDuplicateFile,
+    errFileNotFound,
+    errFileNoAccess,
 	errMAX
 };
 
@@ -79,6 +82,10 @@ const std::string errStrings[errMAX + 1] =
 	"Overflow detected",
 	"Recursive Operand",
     "Opcode without start",
+    "File already included",
+    "File not found",
+    "File no access",
+
 	""
 };
 #else
@@ -193,14 +200,18 @@ public:
 class TFileProcessor
 {
 protected:
+	std::string initialdir;
+	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
+	std::string filename;
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
+	virtual std::string processFilename(std::string p,std::string currentdir,int level);
 	virtual int processfile(std::string &p);
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);

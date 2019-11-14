@@ -353,7 +353,10 @@ void CLASS::errorOut(uint16_t code)
 
 void CLASS::init(void)
 {
+	filenames.clear();
+	filename="";
 	starttime = GetTickCount();
+	initialdir = Poco::Path::current();
 	syntax = 0;
 	filecount = 0;
 }
@@ -379,6 +382,72 @@ int CLASS::doline(int lineno, std::string line)
 	return (res);
 }
 
+std::string CLASS::processFilename(std::string fn, std::string curDir, int level)
+{
+	std::string res = fn;
+	std::string s, s1;
+	Path p = Poco::Path(fn);
+
+	try
+	{
+		int n = p.depth();
+		if (n > 0)
+		{
+			std::string d1 = p[0];
+			uint32_t v = 100;
+			try
+			{
+				v = Poco::NumberParser::parseUnsigned(d1);
+			}
+			catch (...)
+			{
+				v = 99;
+			}
+			if ((v >= 0) && (v < 10))
+			{
+				Poco::Path p1 = p.popFrontDirectory();
+				s = p1.toString();
+				s1 = "global.path" + Poco::NumberFormatter::format(v);
+				switch (v)
+				{
+					case 0:
+						s = curDir + s;
+						break;
+					default:
+						s = getConfig(s1, ".") + "/" + s;
+						if (level < 5)
+						{
+							s = processFilename(s, curDir, level + 1);
+						}
+						break;
+				}
+				p = s;
+				p.makeAbsolute();
+			}
+			res = p.toString();
+		}
+	}
+	catch (Poco::Exception &e)
+	{
+		if (isDebug() > 2)
+		{
+			cout << "exception: " << e.displayText() << endl;
+		}
+	}
+	catch (std::exception &e)
+	{
+		if (isDebug() > 2)
+		{
+			cout << e.what() << endl;
+		}
+	}
+
+	//printf("convert: |%s|\n", res.c_str());
+	p=res;
+	p.makeAbsolute();
+	return (res);
+}
+
 int CLASS::processfile(std::string &p)
 {
 	//Poco::File fn(p);
@@ -386,16 +455,26 @@ int CLASS::processfile(std::string &p)
 	int res = -1;
 	uint32_t linect;
 	bool done, valid;
+	std::string currentdir;
 	std::string p1;
 	std::string line, op;
 
 	linect = 0;
 	done = false;
 
+	currentdir = Poco::Path::current();
+
+	if (filecount == 0)
+	{
+		initialdir = currentdir; \
+		//printf("initialdir=%s\n",initialdir.c_str());
+	}
+
+	p = processFilename(p, initialdir, 0);
+
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
 	Poco::Path parent = path.parent();
-	std::string currentdir = Poco::Path::current();
 	std::string dir = parent.toString();;
 
 	try
@@ -405,6 +484,7 @@ int CLASS::processfile(std::string &p)
 
 		p1 = path.toString();
 
+		filename=p1;
 		//LOG_DEBUG << "initial file name: " << p1 << endl;
 
 		valid = true;
@@ -429,10 +509,12 @@ int CLASS::processfile(std::string &p)
 		p1 = fn.path();
 		//LOG_DEBUG << "File name: " << p1 << endl;
 
-		valid=false;
+		int ecode=-3;
+		valid = false;
 		if (fn.exists())
 		{
-			valid=true;
+			ecode=-2;
+			valid = true;
 			//LOG_DEBUG << "File exists: " << p1 << endl;
 			if (fn.isLink())
 			{
@@ -447,25 +529,36 @@ int CLASS::processfile(std::string &p)
 
 		if (!valid)
 		{
-			fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
+			//fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
 
 			errorct = 1;
-			return (-1);
+			return (ecode);
 		}
 
-
-		return (0);
 		if (valid)
 		{
+
 			if (filecount == 0)
 			{
 				// is this the first file in the compilation, or a PUT/USE?
 				// if first, change CWD to location of file
-				LOG_DEBUG << "Changing directory to: " << dir << endl;
+				//LOG_DEBUG << "Changing directory to: " << dir << endl;
 
 				chdir(dir.c_str()); // change directory to where the file is
 			}
+			else
+			{
+				for (auto itr = filenames.begin(); itr != filenames.end(); ++itr)
+				{
+					if (*itr == p1)
+					{
+						return (-9);
+					}
+				}
+			}
+
 			filecount++;
+			filenames.push_back(p1);
 
 			std::ifstream f(p1);
 			if (f.is_open())
@@ -1485,6 +1578,7 @@ void CLASS::process(void)
 int CLASS::doline(int lineno, std::string line)
 {
 	int res = 0;
+	int x;
 	std::string op;
 
 	MerlinLine l(line);
@@ -1503,8 +1597,29 @@ int CLASS::doline(int lineno, std::string line)
 
 	if ((op == "use") || (op == "put"))
 	{
-		//printf("processing % s\n",l.operand.c_str());
-		processfile(l.operand);
+
+		x = processfile(l.operand);
+		if (x < 0)
+		{
+			switch (x)
+			{
+				case -9:
+					l.setError(errDuplicateFile);
+					break;
+				case -3:
+					l.setError(errFileNotFound);
+					break;
+				case -2:
+					l.setError(errFileNoAccess);
+					break;
+				default:
+					l.setError(errFileNotFound);
+					break;
+			}
+			l.print(0);
+			errorct++;
+			res = -1;
+		}
 	}
 
 	return (res);

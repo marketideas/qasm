@@ -60,7 +60,7 @@ int CLASS::runCommandLineApp(void)
 	for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
 	{
 		Poco::File fn(*it);
-
+		int x;
 		std::string p = fn.path();
 		Poco::Path path(p);
 		//logger().information(path.toString());
@@ -81,10 +81,29 @@ int CLASS::runCommandLineApp(void)
 					{
 						t->init();
 						std::string f = path.toString();
-						if (t->processfile(f)==0)
+						x = t->processfile(f);
+						if (x == 0)
 						{
 							t->process();
 							t->complete();
+						}
+						else
+						{
+							std::string s;
+							switch (x)
+							{
+								case -2:
+									s = "Permission Denied";
+									break;
+								case -3:
+									s = "File not found";
+									break;
+								default:
+									s = "Unknown Error";
+									break;
+							}
+							fprintf(stderr,"Error: %s (%s)\n\n",s.c_str(),f.c_str());
+							t->errorct=1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}
@@ -97,6 +116,7 @@ int CLASS::runCommandLineApp(void)
 			}
 			else if (cmd == "ASM")
 			{
+				int x;
 				t = new T65816Asm();
 				if (t != NULL)
 				{
@@ -104,10 +124,31 @@ int CLASS::runCommandLineApp(void)
 					{
 						t->init();
 						std::string f = path.toString();
-						if (t->processfile(f)==0)
+						t->filename=f;
+						x=t->processfile(f);
+						f=t->filename;
+						if (x == 0)
 						{
 							t->process();
 							t->complete();
+						}
+						else
+						{
+							std::string s;
+							switch (x)
+							{
+								case -2:
+									s = "Permission Denied";
+									break;
+								case -3:
+									s = "File not found";
+									break;
+								default:
+									s = "Unknown Error";
+									break;
+							}
+							fprintf(stderr,"Error: %s (%s)\n\n",s.c_str(),f.c_str());
+							t->errorct=1;
 						}
 						res = (t->errorct > 0) ? -1 : 0;
 					}
