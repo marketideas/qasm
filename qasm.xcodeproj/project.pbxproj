@@ -177,6 +177,7 @@
 		2F5E56C4237CC2700091163D /* time */ = {isa = PBXFileReference; lastKnownFileType = file; path = time; sourceTree = "<group>"; };
 		2F5E56C5237CC2700091163D /* edit */ = {isa = PBXFileReference; lastKnownFileType = text; path = edit; sourceTree = "<group>"; };
 		2F5E56C6237CC2700091163D /* qlinkgs */ = {isa = PBXFileReference; lastKnownFileType = file; path = qlinkgs; sourceTree = "<group>"; };
+		2F5E571B237CDF0A0091163D /* testdata */ = {isa = PBXFileReference; lastKnownFileType = folder; path = testdata; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -316,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				2F5E5664237CC26F0091163D /* src */,
+				2F5E571B237CDF0A0091163D /* testdata */,
 			);
 			name = Test;
 			sourceTree = "<group>";
