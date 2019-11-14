@@ -43,15 +43,18 @@ int CLASS::runCommandLineApp(void)
 {
 	TFileProcessor *t = NULL;
 	std::string line;
+	std::string startdirectory;
 
 	// only called if SERVERAPP not defined
 	int res = -1;
 
-	//LOG_DEBUG << "command line mode" << endl;
-	if (commandargs.size()==0)
+
+	startdirectory = Poco::Path::current();
+	LOG_DEBUG << "currentdir: " << startdirectory << endl;
+	if (commandargs.size() == 0)
 	{
-		fprintf(stderr,"No files given (--help for help)\n\n");
-		return(res);
+		fprintf(stderr, "No files given (--help for help)\n\n");
+		return (res);
 	}
 
 	for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
@@ -60,7 +63,7 @@ int CLASS::runCommandLineApp(void)
 
 		std::string p = fn.path();
 		Poco::Path path(p);
-		//logger().information(path.toString());
+		logger().information(path.toString());
 
 		std::string e = toUpper(path.getExtension());
 
@@ -74,16 +77,20 @@ int CLASS::runCommandLineApp(void)
 				t = new TMerlinConverter();
 				if (t != NULL)
 				{
-
-					t->init();
-					std::string f = path.toString();
-					t->processfile(f);
-					t->process();
-					t->complete();
-					res = (t->errorct > 0) ? -1 : 0;
-
-					delete t;
-					t = NULL;
+					try
+					{
+						t->init();
+						std::string f = path.toString();
+						t->processfile(f);
+						t->process();
+						t->complete();
+						res = (t->errorct > 0) ? -1 : 0;
+					}
+					catch (...)
+					{
+						delete t;
+						t = NULL;
+					}
 				}
 			}
 			else if (cmd == "ASM")
@@ -101,14 +108,21 @@ int CLASS::runCommandLineApp(void)
 				}
 				if (t != NULL)
 				{
-					t->init();
-					std::string f = path.toString();
-					t->processfile(f);
-					t->process();
-					t->complete();
-					res = (t->errorct > 0) ? -1 : 0;
-					delete t;
-					t = NULL;
+					try
+					{
+						t->init();
+						std::string f = path.toString();
+						t->processfile(f);
+						t->process();
+						t->complete();
+						res = (t->errorct > 0) ? -1 : 0;
+					}
+					catch (...)
+					{
+						delete t;
+						t = NULL;
+					}
+					chdir(startdirectory.c_str()); // return us back to where we were
 				}
 				else
 				{
@@ -117,7 +131,7 @@ int CLASS::runCommandLineApp(void)
 			}
 			else
 			{
-				fprintf(stderr,"Invalid command: <%s>\n\n", cmd.c_str());
+				fprintf(stderr, "Invalid command: <%s>\n\n", cmd.c_str());
 			}
 		}
 	}

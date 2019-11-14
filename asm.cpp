@@ -394,93 +394,103 @@ int CLASS::processfile(std::string &p)
 
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
+	Poco::Path parent = path.parent();
+	std::string currentdir=Poco::Path::current();
+	std::string dir = parent.toString();;
 
-
-
-	valid = true;
-	p1 = tp.toString();
-	Poco::File fn(p1);
-	if (!fn.exists())
+	try
 	{
-		fn = Poco::File(p1 + ".s");
+		printf("filename : %s\n", path.toString().c_str());
+		printf("directory: %s\n", dir.c_str());
+
+
+		valid = true;
+		p1 = tp.toString();
+		Poco::File fn(p1);
 		if (!fn.exists())
 		{
-			fn = Poco::File(p1 + ".S");
+			fn = Poco::File(p1 + ".s");
 			if (!fn.exists())
 			{
-				fn = Poco::File(p1 + ".mac");
+				fn = Poco::File(p1 + ".S");
 				if (!fn.exists())
 				{
-					valid = false;
+					fn = Poco::File(p1 + ".mac");
+					if (!fn.exists())
+					{
+						valid = false;
+					}
 				}
 			}
 		}
-	}
-	p1 = fn.path();
+		p1 = fn.path();
 
-	if (valid)
-	{
-
-
-
-		std::ifstream f(p1);
-		if (f.is_open())
+		if (valid)
 		{
-			//printf("file is open\n");
-			line = "";
+			chdir(dir.c_str()); // change directory to where the file is
 
-			while ((!done) && (f.good()) && (!f.eof()))
+			std::ifstream f(p1);
+			if (f.is_open())
 			{
-				c = f.get();
-				if (c == 0x8D) // merlin line ending
+				//printf("file is open\n");
+				line = "";
+
+				while ((!done) && (f.good()) && (!f.eof()))
 				{
-					c = 0x0A;  // convert to linux
+					c = f.get();
+					if (c == 0x8D) // merlin line ending
+					{
+						c = 0x0A;  // convert to linux
+					}
+					if (c == 0x8A) // possible merlin line ending
+					{
+						c = 0x00; // ignore
+					}
+					c &= 0x7F;
+					int x;
+					switch (c)
+					{
+						case 0x0D:
+							break;
+						case 0x09:
+							line += " ";
+							break;
+						case 0x0A:
+							linect++;
+							x = doline(linect, line);
+							if (x < 0)
+							{
+								done = true;
+							}
+							line = "";
+							break;
+						default:
+							if ((c >= ' ') && (c < 0x7F))
+							{
+								line += c;
+							}
+							else
+							{
+								//printf("garbage %08X\n",c);
+							}
+							break;
+					}
 				}
-				if (c == 0x8A) // possible merlin line ending
+				if ( (f.eof()))
 				{
-					c = 0x00; // ignore
+					res = 0;
 				}
-				c &= 0x7F;
-				int x;
-				switch (c)
-				{
-					case 0x0D:
-						break;
-					case 0x09:
-						line += " ";
-						break;
-					case 0x0A:
-						linect++;
-						x = doline(linect, line);
-						if (x < 0)
-						{
-							done = true;
-						}
-						line = "";
-						break;
-					default:
-						if ((c >= ' ') && (c < 0x7F))
-						{
-							line += c;
-						}
-						else
-						{
-							//printf("garbage %08X\n",c);
-						}
-						break;
-				}
-			}
-			if ( (f.eof()))
-			{
-				res = 0;
 			}
 		}
+		else
+		{
+			fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
+		}
 	}
-	else
+	catch(...)
 	{
-		fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
 	}
-
+	chdir(currentdir.c_str());
 	//printf("\n\nfile read result: %d\n", res);
 	return (res);
 }
@@ -1231,7 +1241,7 @@ int CLASS::substituteVariables(MerlinLine & line)
 	std::string oper = line.operand;
 	std::string s;
 	TSymbol *sym;
-	uint32_t len, off,ct;
+	uint32_t len, off, ct;
 
 	slen = oper.length();
 	if (slen > 0)
@@ -1267,7 +1277,7 @@ int CLASS::substituteVariables(MerlinLine & line)
 				if (sym != NULL)
 				{
 					ct++;
-					if (pass>0)
+					if (pass > 0)
 					{
 						//printf("%d |%s|\n", ct, s.c_str());
 					}
