@@ -24,6 +24,8 @@ void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 
 int CLASS::doPSEUDO(MerlinLine &line, TSymbol &sym)
 {
+	UNUSED(sym);
+
 	int res;
 
 	res = psuedoops->ProcessOpcode(*this, line, sym);
@@ -32,6 +34,8 @@ int CLASS::doPSEUDO(MerlinLine &line, TSymbol &sym)
 
 int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 {
+	UNUSED(sym);
+
 	std::string s;
 	int res = 0;
 
@@ -53,6 +57,8 @@ int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 
 int CLASS::doMX(MerlinLine &line, TSymbol &sym)
 {
+	UNUSED(sym);
+
 	if (cpumode < MODE_65816)
 	{
 		line.setError(errIncompatibleOpcode);
@@ -67,6 +73,7 @@ int CLASS::doMX(MerlinLine &line, TSymbol &sym)
 
 int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 {
+	UNUSED(sym);
 	int res = 0;
 	TSymbol *s;
 	if (line.lable.length() > 0)
@@ -100,6 +107,7 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 int CLASS::doUNK(MerlinLine &line, TSymbol &sym)
 {
 	int res = -1;
+	UNUSED(sym);
 
 	res = 0;
 	if (pass > 0)
@@ -117,6 +125,7 @@ int CLASS::doPER(MerlinLine &line, TSymbol &sym)
 {
 	int res;
 	int32_t value = 0;;
+	UNUSED(sym);
 
 	res = 0;
 	if ((line.addressmode == syn_abs) || (line.addressmode == syn_imm))
@@ -147,6 +156,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 {
 	int res;
 	uint8_t op;
+	UNUSED(sym);
 
 	if (line.addressmode == syn_bm)
 	{
@@ -197,6 +207,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 	// STZ = 1
 	// TSB = 2
 	// TRB = 3
+	UNUSED(sym);
 
 	int res, i;
 	uint8_t err;
@@ -675,6 +686,9 @@ out:
 
 int CLASS::doEND(MerlinLine & line, TSymbol & sym)
 {
+	UNUSED(sym);
+	UNUSED(line);
+
 	int res = 0;
 
 	passcomplete = true;
@@ -683,6 +697,8 @@ int CLASS::doEND(MerlinLine & line, TSymbol & sym)
 
 int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 {
+	UNUSED(sym);
+
 	int res = 1;
 
 	if (pass > 0)

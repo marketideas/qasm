@@ -260,6 +260,7 @@ void CLASS::set(std::string line)
 
 	clear();
 
+	delim=0;
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
@@ -441,6 +442,9 @@ void CLASS::process(void)
 }
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+	UNUSED(line);
+
 	int res = -1;
 
 	return (res);
@@ -472,7 +476,7 @@ std::string CLASS::processFilename(std::string fn, std::string curDir, int level
 			{
 				v = 99;
 			}
-			if ((v >= 0) && (v < 10))
+			if (v < 10)
 			{
 				Poco::Path p1 = p.popFrontDirectory();
 				s = p1.toString();
@@ -573,7 +577,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 			// is this the first file in the compilation, or a PUT/USE?
 			// if first, change CWD to location of file
 			LOG_DEBUG << "Changing directory to: " << dir << endl;
-			chdir(dir.c_str()); // change directory to where the file is
+			if (chdir(dir.c_str())) {} // change directory to where the file is
 		}
 
 		p1 = path.toString();
@@ -758,6 +762,8 @@ void CLASS::init(void)
 
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+
 	MerlinLine l(line);
 	lines.push_back(l);
 	return 0;
@@ -1119,7 +1125,7 @@ typedef struct
 	std::string regEx;
 	uint16_t addrMode;
 	std::string text;
-	std::string expression;
+	//std::string expression;
 } TaddrMode;
 
 // these are the regular expressions that determine the addressing mode
@@ -1683,6 +1689,8 @@ int CLASS::doline(int lineno, std::string line)
 	int x;
 	std::string op;
 
+	UNUSED(lineno);
+
 	MerlinLine l(line);
 
 	op = Poco::toLower(l.opcode);
@@ -1755,6 +1763,9 @@ void CLASS::complete(void)
 
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+	UNUSED(line);
+
 	int res = 0;
 
 	return (res);

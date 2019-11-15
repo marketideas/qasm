@@ -162,7 +162,7 @@ int CLASS::runCommandLineApp(void)
 						delete t;
 						t = NULL;
 					}
-					chdir(startdirectory.c_str()); // return us back to where we were
+					if (chdir(startdirectory.c_str())) {}; // return us back to where we were
 				}
 				else
 				{

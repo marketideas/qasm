@@ -19,6 +19,7 @@ constexpr unsigned int strhash(const char *str, int h = 0)
 
 int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
+	UNUSED(opinfo);
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
@@ -78,6 +79,8 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
+	UNUSED(opinfo);
+
 	int res = 0;
 	int32_t v = line.expr_value;
 	if (line.eval_result != 0)
@@ -111,6 +114,8 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
+	UNUSED(opinfo);
+
 	int res = 0;
 	bool isdend = ((opinfo.opcode == P_DEND) ? true : false);
 
@@ -134,6 +139,8 @@ int CLASS::doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
+	UNUSED(opinfo);
+
 	std::string s;
 	if (a.pass > 0)
 	{
@@ -156,6 +163,8 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
+	UNUSED(opinfo);
+	
 	std::string os = Poco::toUpper(Poco::trim(line.operand));
 
 	uint32_t bytect = 0;
