@@ -198,7 +198,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = doLST(a, line, opinfo);
 			break;
 
-		case p_HEX:
+		case P_HEX:
 			res = doHEX(a, line, opinfo);
 			break;
 	}

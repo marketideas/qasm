@@ -731,7 +731,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("DB",  0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ADR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ADRL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("HEX", p_HEX, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("HEX", P_HEX, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DS",  0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DO",  0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ELSE", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

@@ -13,7 +13,7 @@ enum
 	P_DS,
 	P_PUT,
 	P_USE,
-    p_HEX,
+    P_HEX,
 
 	P_MAX
 };
