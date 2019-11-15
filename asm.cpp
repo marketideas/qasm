@@ -366,7 +366,9 @@ void CLASS::complete(void)
 	uint64_t n = GetTickCount();
 	if (isDebug())
 	{
-		printf("Processing Time: %lu ms\n", n - starttime);
+		//cout << "Processing Time: " << n - starttime << "ms" << endl;
+		printf("Processing Time: %" PRIu64 " ms\n",n-starttime);
+
 	}
 }
 
@@ -507,8 +509,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 		{
 			// is this the first file in the compilation, or a PUT/USE?
 			// if first, change CWD to location of file
-			//LOG_DEBUG << "Changing directory to: " << dir << endl;
-
+			LOG_DEBUG << "Changing directory to: " << dir << endl;
 			chdir(dir.c_str()); // change directory to where the file is
 		}
 
@@ -563,7 +564,6 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 			//fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
 
 			errorct = 1;
-			chdir(currentdir.c_str()); // change directory to where the file is
 			return (ecode);
 		}
 
@@ -579,8 +579,6 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 				{
 					if (*itr == p1)
 					{
-						chdir(currentdir.c_str()); // change directory to where the file is
-
 						return (-9);
 					}
 				}
@@ -649,9 +647,8 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 	}
 	catch (...)
 	{
+
 	}
-	chdir(currentdir.c_str());
-	//printf("\n\nfile read result: %d\n", res);
 	return (res);
 }
 
@@ -938,7 +935,7 @@ void CLASS::showSymbolTable(bool alpha)
 		std::map<std::string, uint32_t> alphamap;
 		std::map<uint32_t, std::string> nummap;
 
-		int columns = 4;
+		int columns = 2;
 		int column = columns;
 
 		for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
@@ -954,7 +951,7 @@ void CLASS::showSymbolTable(bool alpha)
 
 			for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
 			{
-				printf("%-16s 0x%08X ", itr->first.c_str(), itr->second);
+				printf("%-16s 0x%08X       ", itr->first.c_str(), itr->second);
 				if ( !--column )
 				{
 					printf("\n");
@@ -967,7 +964,7 @@ void CLASS::showSymbolTable(bool alpha)
 			printf("\n\nSymbol table sorted numerically:\n\n");
 			for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 			{
-				printf("0x%08X %-16s ", itr->first, itr->second.c_str());
+				printf("0x%08X       %-16s ", itr->first, itr->second.c_str());
 				if ( !--column )
 				{
 					printf("\n");
@@ -1201,6 +1198,11 @@ void CLASS::complete(void)
 	{
 		if (errorct == 0)
 		{
+			std::string currentdir = Poco::Path::current();
+
+			savepath = processFilename(savepath, currentdir, 0);
+			printf("saving to file: %s\n", savepath.c_str());
+
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
@@ -1249,7 +1251,9 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
-				printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
+				cout << "eval Error=" << res << "0x" << std::hex << result << std::dec << eval.badsymbol << endl;
+
+				//printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
 				SetColor(c);
 			}
 		}
@@ -1259,7 +1263,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			value = result;
 			if ((listing) && (pass > 0) && (isDebug() > 2))
 			{
-				printf("EV1=%08lX '%c'\n", v1, line.expr_shift);
+				cout << "EV1=0x" << std::hex << v1 << " '" << std::dec << line.expr_shift << ";" << endl;
+				//printf("EV1=%08lX '%c'\n", v1, line.expr_shift);
 			}
 			if (v1 >= 0x10000)
 			{
@@ -1278,7 +1283,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	}
 	if (isDebug() >= 3)
 	{
-		printf("Eval Result: %08lX (status=%d)\n", value, res);
+		cout << "Eval Result: 0x" << std::hex << value << std::dec << "(status=" << res << ")" << endl;
+		//printf("Eval Result: %08lX (status=%d)\n", value, res);
 	}
 	return (res);
 }

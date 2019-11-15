@@ -311,9 +311,6 @@ myQuit
 
         asll $1234
 
-
-        lst off
-
         lda	<$fff0+24       ;zp
         lda	>$fff0+24       ;ABS (lo word)
         lda ^$fff0+24		;ABS (hi word)
@@ -362,6 +359,12 @@ L00BC   bit	L00BC
 
         ldx	L00BC,y
         stx	L00BC,y
+
+* Data Storage Tests
+
+        hex 11,22,33,44,55,66,77,88,99
+        hex 112233445566778899
+        hex aabb,cc,ddee,ff
 
 //]XCODEEND       ; Keep this at the end and put your code above this
     ;lst off
