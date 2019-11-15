@@ -185,6 +185,8 @@ public:
 
 	uint16_t pass0bytect;
 	uint16_t bytect;
+	uint16_t datafillct;
+	uint8_t  datafillbyte;
 	uint16_t outbytect;
 	std::vector<uint8_t> outbytes;
 

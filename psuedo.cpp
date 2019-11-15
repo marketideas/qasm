@@ -12,6 +12,69 @@ CLASS::~CLASS()
 
 }
 
+constexpr unsigned int strhash(const char *str, int h = 0)
+{
+	return !str[h] ? 5381 : (strhash(str, h + 1) * 33) ^ str[h];
+}
+
+int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	int outct = 0;
+	int wordsize = 2;
+	int endian = 0;
+	std::string oper = line.operand;
+	std::string op = Poco::toUpper(Poco::trim(line.opcode));
+	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
+	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+
+
+	const char *ptr = (const char *)op.c_str();
+	switch (strhash(ptr) )
+	{
+		case strhash((const char *)"DA"):
+		case strhash((const char *)"DW"):
+			wordsize = 2;
+			break;
+		case strhash((const char *)"DDB"):
+			wordsize = 2;
+			endian = 1;
+			break;
+		case strhash((const char *)"DFB"):
+		case strhash((const char *)"DB"):
+			wordsize = 1;
+			break;
+		case strhash((const char *)"ADR"):
+			wordsize = 3;
+			break;
+		case strhash((const char *)"ADRL"):
+			wordsize = 4;
+			break;
+	}
+
+	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+	{
+		//printf("%s\n",(*itr).c_str());
+		//evaluate each of these strings, check for errors on pass 2
+
+		outct += wordsize;
+		if (a.pass > 0)
+		{
+			if (!endian) // little endian
+			{
+			}
+			else
+			{
+				// big endian
+			}
+		}
+	}
+	// SGQ  - remove when complete
+	line.datafillct=outct;
+	line.datafillbyte=0xCA;
+	// ===============
+
+	return (outct);
+}
 
 int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
@@ -29,6 +92,9 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		res = v;
 
+		line.datafillbyte = line.eval_result & 0xFF;
+		line.datafillct = v;
+#if 0
 		if (a.pass > 0)
 		{
 			for (int i = 0; i < v; i++)
@@ -37,6 +103,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			}
 			line.outbytect = v;
 		}
+#endif
 
 	}
 	return (res);
@@ -91,26 +158,26 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	std::string os = Poco::toUpper(Poco::trim(line.operand));
 
-	uint32_t bytect=0;
-	uint8_t b=0;
-	uint8_t ct=0;
+	uint32_t bytect = 0;
+	uint8_t b = 0;
+	uint8_t ct = 0;
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
 
-		if ((c>='0') && (c<='9'))
+		if ((c >= '0') && (c <= '9'))
 		{
-			c=c-'0';
+			c = c - '0';
 		}
-		else if ((c>='a') && (c<='f'))
+		else if ((c >= 'a') && (c <= 'f'))
 		{
-			c=c-'a'+10;
+			c = c - 'a' + 10;
 		}
-		else if ((c>='A') && (c<='F'))
+		else if ((c >= 'A') && (c <= 'F'))
 		{
-			c=c-'A'+10;
+			c = c - 'A' + 10;
 		}
-		else if (c==',')
+		else if (c == ',')
 		{
 			continue;
 		}
@@ -121,28 +188,28 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 
 		// Got a good char, append to hex string and see if we've got a byte
-		switch(ct)
+		switch (ct)
 		{
 			case 0:
-				b=(c<<4);
+				b = (c << 4);
 				break;
 			case 1:
-				b|=c;
+				b |= c;
 				break;
 		}
-		ct=(ct+1)&0x01;
+		ct = (ct + 1) & 0x01;
 		if (!ct)
 		{
-			if (a.pass>0)
+			if (a.pass > 0)
 			{
 				line.outbytes.push_back(b);
 			}
-			b=0;
+			b = 0;
 			bytect++;
 		}
 
 	}
-	line.outbytect=bytect;
+	line.outbytect = bytect;
 	//printf("bytect=%d\n",bytect);
 	return bytect;
 }
@@ -191,6 +258,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_HEX:
 			res = doHEX(a, line, opinfo);
+			break;
+		case P_DATA:
+			res = doDATA(a, line, opinfo);
 			break;
 	}
 	return (res);

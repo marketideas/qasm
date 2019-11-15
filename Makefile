@@ -35,6 +35,9 @@ install:
 reformat:
 	qasm -x REFORMAT  src/main.s
 	
+compare:
+	-bcompare . ../lane_hex &
+
 asm:
 	
 test1:

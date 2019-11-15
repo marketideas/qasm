@@ -26,7 +26,7 @@ void CLASS::setError(uint32_t ecode)
 void CLASS::print(uint32_t lineno)
 {
 	int pcol;
-	uint32_t l,i;
+	uint32_t l, i;
 	int commentcol = 40;
 	static bool checked = false;
 	static bool nc1 = false;
@@ -34,8 +34,14 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
-
-	l = outbytect;
+	if (datafillct > 0)
+	{
+		l = datafillct;
+	}
+	else
+	{
+		l = outbytect;
+	}
 	if (l > b)
 	{
 		l = b;
@@ -92,16 +98,24 @@ void CLASS::print(uint32_t lineno)
 
 	for (i = 0; i < l; i++)
 	{
-		pcol += printf("%02X ", outbytes[i]);
+		uint8_t a = datafillbyte;
+		if (datafillct == 0)
+		{
+			a = outbytes[i];
+		}
+
+		pcol += printf("%02X ", a);
 	}
 	for (i = l; i < b; i++)
 	{
 		pcol += printf("   ");
 	}
 
+	pcol += printf("%6d  ", lineno + 1);
+
 	if (showmx)
 	{
-		if (outbytect > 0)
+		if ((outbytect + datafillct) > 0)
 		{
 			pcol += printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
 		}
@@ -115,7 +129,6 @@ void CLASS::print(uint32_t lineno)
 	{
 		pcol += printf("%02X ", addressmode & 0xFF);
 	}
-	pcol += printf("%6d  ", lineno + 1);
 
 	pcol = 0; // reset pcol here because this is where source code starts
 
@@ -159,30 +172,50 @@ void CLASS::print(uint32_t lineno)
 		SetColor(CL_NORMAL | BG_NORMAL);
 	}
 
-	if (outbytect>b)
+	uint32_t obc = datafillct;
+	if (obc == 0)
 	{
-		uint32_t t=b;
-		uint32_t ct=0;
-		//char *s=(char *)"--------";
-		char *s=(char *)"        ";
+		obc = outbytect;
+	}
+
+	uint32_t ct = 1;
+	if (obc > b)
+	{
+		ct = 0;
+		uint8_t db;
+		uint32_t t = b;
+		char *s = (char *)"        ";
+
+		b = 8;
 
 		//printf("t=%d ct=%d\n",t,outbytect);
-		printf("\n%s",s);
-		while(t<outbytect)
+		printf("\n");
+		while (t < obc)
 		{
-			printf("%02X ",outbytes[t]);
+			db = datafillbyte;
+			if (datafillct == 0)
+			{
+				db = outbytes[t];
+			}
+			if (ct == 0)
+			{
+				printf("%s", s);
+			}
+
+			printf("%02X ", db);
 			t++;
 			ct++;
-			if (ct>=b)
+			if (ct >= b)
 			{
 				printf("\n");
-				printf("%s",s);
-				ct=0;
+				ct = 0;
 			}
 		}
 	}
-
-	printf("\n");
+	if (ct > 0)
+	{
+		printf("\n");
+	}
 
 }
 
@@ -206,6 +239,8 @@ void CLASS::clear()
 	errorcode = 0;
 	errorText = "";
 	outbytect = 0;
+	datafillct = 0;
+	datafillbyte = 0;
 	lineno = 0;
 	outbytes.clear();
 	addressmode = 0;
@@ -393,7 +428,9 @@ void CLASS::complete(void)
 	if (isDebug())
 	{
 		//cout << "Processing Time: " << n - starttime << "ms" << endl;
-		printf("Processing Time: %" PRIu64 " ms\n",n-starttime);
+		uint64_t x = n - starttime;
+		uint32_t x1 = x & 0xFFFFFFFF;
+		printf("Processing Time: %u ms\n", x1);
 
 	}
 }
@@ -962,7 +999,7 @@ void CLASS::showSymbolTable(bool alpha)
 		std::map<std::string, uint32_t> alphamap;
 		std::map<uint32_t, std::string> nummap;
 
-		int columns = getInt("asm.symcolumns",3);
+		int columns = getInt("asm.symcolumns", 3);
 		int column = columns;
 
 		for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
@@ -999,7 +1036,7 @@ void CLASS::showSymbolTable(bool alpha)
 				}
 			}
 		}
-		if (column>0)
+		if (column > 0)
 		{
 			printf("\n");
 		}
@@ -1282,9 +1319,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
-				cout << "eval Error=" << res << "0x" << std::hex << result << std::dec << eval.badsymbol << endl;
-
-				//printf("eval Error=%d %08lX |%s|\n", res, result, eval.badsymbol.c_str());
+				uint32_t rr = result & 0xFFFFFFFF;
+				printf("eval Error=%d %08X |%s|\n", res, rr, eval.badsymbol.c_str());
 				SetColor(c);
 			}
 		}
@@ -1294,8 +1330,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			value = result;
 			if ((listing) && (pass > 0) && (isDebug() > 2))
 			{
-				cout << "EV1=0x" << std::hex << v1 << " '" << std::dec << line.expr_shift << ";" << endl;
-				//printf("EV1=%08lX '%c'\n", v1, line.expr_shift);
+				uint32_t rr = v1 & 0xFFFFFFFF;
+				printf("EV1=%08X '%c'\n", rr, line.expr_shift);
 			}
 			if (v1 >= 0x10000)
 			{
@@ -1314,8 +1350,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	}
 	if (isDebug() >= 3)
 	{
-		cout << "Eval Result: 0x" << std::hex << value << std::dec << "(status=" << res << ")" << endl;
-		//printf("Eval Result: %08lX (status=%d)\n", value, res);
+		uint32_t rr = value & 0xFFFFFFFF;
+		printf("Eval Result: %08X (status=%d)\n", rr, res);
 	}
 	return (res);
 }
