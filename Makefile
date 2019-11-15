@@ -1,6 +1,12 @@
-#export CC=/usr/bin/clang
-#export CXX=/usr/bin/clang++
+export USE_CLANG=1
 
+ifeq ($(USE_CLANG),1)
+export CXX=/usr/bin/clang++
+export CC=/usr/bin/clang
+else
+export CXX=g++
+export CC=gcc
+endif
 
 V?=
 S=
