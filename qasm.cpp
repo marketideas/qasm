@@ -14,14 +14,18 @@ programOption PAL::appOptions[] =
 {
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
 	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
-	{ "exec", "x", "execute a command [asm, link, reformat]", " <command>", false, false},
+	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", " <command>", false, false},
 	{ "", "", "", "", false, false}
 };
 
 
 void CLASS::displayVersion()
 {
-	cerr << "version 1234" << endl << endl;
+	std::string s = "";
+#ifdef DEBUG
+	s = "-debug";
+#endif
+	cerr << "quickASM 16++ v" << (std::string)STRINGIFY(APPVERSION) << s << endl;
 }
 
 int CLASS::runServerApp(PAL_EVENTMANAGER *em)
@@ -79,7 +83,7 @@ int CLASS::runCommandLineApp(void)
 
 	if (commandargs.size() == 0)
 	{
-		fprintf(stderr, "No files given (--help for help)\n\n");
+		displayHelp();
 		return (res);
 	}
 
