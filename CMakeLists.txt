@@ -19,13 +19,13 @@ set(SOURCE
   ${PROJECT_ROOT}/psuedo.cpp
 )
 
-find_package(OpenSSL REQUIRED)
-find_package(Poco REQUIRED Foundation Util XML JSON NetSSL)
+#find_package(OpenSSL REQUIRED)
+find_package(Poco REQUIRED Foundation Util XML JSON )
 
 include_directories(BEFORE 
   ${PROJECT_ROOT}
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
-  ${OPENSSL_INCLUDE_DIR}
+  #${OPENSSL_INCLUDE_DIR}
   ${Poco_INCLUDE_DIRS}
 )
 

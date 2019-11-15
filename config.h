@@ -8,6 +8,8 @@
 //#define SERVERAPP
 //#define ENABLE_SSL
 #define USE_LOGGER
+//#define USE_NET
+#define USE_SSL
 
 // help text
 #define HELP_USAGE "<options> <list of files>"
