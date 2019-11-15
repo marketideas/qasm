@@ -26,7 +26,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     std::deque<Token> tokens;
     int state = 0;
     char c;
-    char delim = 0;
+    char delim;
     std::string ident, asc;
 
     std::string ops = "+-*//^!.&()";
@@ -36,6 +36,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     bool numexpect;
     Token::Type t;
 
+    delim=0;
     numexpect = true;
     for (const auto* p = expr.c_str(); *p; ++p)
     {
@@ -378,7 +379,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
 
     i = 0;
-    l = (int)n.length();
+    l = n.length();
     s = "";
     for (i = 0; i < l; i++)
     {

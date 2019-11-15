@@ -40,13 +40,13 @@ enum asmErrors
 	errNone,
 	errWarn,
 	errIncomplete,
+	errUnimplemented,
 	errFatal,
 	errBadAddressMode,
 	errBadOpcode,
 	errIncompatibleOpcode,
 	errBadByteCount,
 	errBadBranch,
-	errUnimplemented,
 	errForwardRef,
 	errNoRedefinition,
 	errBadOperand,
@@ -55,6 +55,10 @@ enum asmErrors
 	errOverflow,
 	errRecursiveOp,
     errOpcodeNotStarted,
+    errDuplicateFile,
+    errFileNotFound,
+    errFileNoAccess,
+    errBadEvaluation,
 	errMAX
 };
 
@@ -64,13 +68,13 @@ const std::string errStrings[errMAX + 1] =
 	"No Error",
 	"Warning",
 	"Unfinished Opcode",
+	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
 	"Unknown Opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
 	"Relative branch offset too large",
-	"Unimplemented Instruction",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Unable to evaluate",
@@ -79,6 +83,11 @@ const std::string errStrings[errMAX + 1] =
 	"Overflow detected",
 	"Recursive Operand",
     "Opcode without start",
+    "File already included",
+    "File not found",
+    "File no access",
+    "Unable to evaluate",
+
 	""
 };
 #else
@@ -178,6 +187,8 @@ public:
 
 	uint16_t pass0bytect;
 	uint16_t bytect;
+	uint16_t datafillct;
+	uint8_t  datafillbyte;
 	uint16_t outbytect;
 	std::vector<uint8_t> outbytes;
 
@@ -193,14 +204,19 @@ public:
 class TFileProcessor
 {
 protected:
+	std::string initialdir;
+	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
+	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
+	std::string filename;
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
-	virtual int processfile(std::string &p);
+	virtual std::string processFilename(std::string p,std::string currentdir,int level);
+	virtual int processfile(std::string p,std::string &newfilename);
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
@@ -293,8 +309,6 @@ public:
 
 	uint16_t pass;
 
-    bool inDUMSection;		// yes if we are in a DUM/DEND section
-
 	T65816Asm();
 	virtual ~T65816Asm();
 
@@ -318,6 +332,7 @@ public:
 	void showVariables(void);
 	int evaluate(MerlinLine &line,std::string expr, int64_t &value);
 
+	int substituteVariables(MerlinLine & line);
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
 	void setOpcode(MerlinLine &line, uint8_t op);

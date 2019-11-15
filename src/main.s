@@ -364,7 +364,35 @@ L00BC   bit	L00BC
 
         hex 11,22,33,44,55,66,77,88,99
         hex 112233445566778899
-        hex aabb,cc,ddee,ff
+        hex aabb,CC,0123456789ABCDEFabcdef,ff
+
+        ds  36
+        da $A55A
+        da $A55A,$1234
+        dw $A55A
+        dw $A55A,$1234
+        ddb $A55A
+        ddb $A55A,$1234
+        dfb $A55A
+        dfb $A55A,$1234
+        db $A55A
+        db $A55A,$1234
+        adr $01A55A
+        adr $01A55A,$011234
+        adrl $01A55A
+        adrl $01A55A,$011234
+
+        dw      >$01A55A,>$011234
+        dw      <$01A55A,<$011234
+        dw      ^$01A55A,^$011234
+        dw      |$01A55A,|$011234
+
+        db      >$01A55A,>$011234
+        db      <$01A55A,<$011234
+        db      ^$01A55A,^$011234
+        db      |$01A55A,|$011234
+
+
 
 //]XCODEEND       ; Keep this at the end and put your code above this
     ;lst off
