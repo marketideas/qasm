@@ -89,69 +89,62 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
-	int res = 0;
-	std::vector<std::string> values;
-	values.clear();
-
 	std::string os = Poco::toUpper(Poco::trim(line.operand));
-	std::string vs = "0123456789ABCDEF";
-	std::string hex = "";
 
+	uint32_t bytect=0;
+	uint8_t b=0;
+	uint8_t ct=0;
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
 
-		// Check for a comma if needed, and continue to next char if found
-		if ( hex.length() == 0 && c == ',' )
+		if ((c>='0') && (c<='9'))
+		{
+			c=c-'0';
+		}
+		else if ((c>='a') && (c<='f'))
+		{
+			c=c-'a'+10;
+		}
+		else if ((c>='A') && (c<='F'))
+		{
+			c=c-'A'+10;
+		}
+		else if (c==',')
 		{
 			continue;
 		}
-
-		if ( vs.find(c) == std::string::npos )
+		else
 		{
 			line.setError(errBadOperand);
-			return -1;
+			return 0;
 		}
 
 		// Got a good char, append to hex string and see if we've got a byte
-		hex.append(1, c);
-		if ( hex.length() == 2 )
+		switch(ct)
 		{
-			// Got 2 chars (1 byte), so store in values array
-			values.push_back(hex);
-			hex.clear();
+			case 0:
+				b=(c<<4);
+				break;
+			case 1:
+				b|=c;
+				break;
 		}
-	}
-
-	// We can't have an odd character dangling around!
-	if ( hex.size() != 0 )
-	{
-		line.setError(errOverflow);
-		return -1;
-	}
-
-	int byteCnt = (int)values.size();
-	a.PC.currentpc += byteCnt;
-
-	if (a.pass > 0)
-	{
-		for ( uint32_t i = 0; i < values.size(); ++i )
+		ct=(ct+1)&0x01;
+		if (!ct)
 		{
-			std::string s = "$";
-			s.append(values[i]);
-			int64_t v;
-			if ( 0 == a.evaluate(line, s, v) )
+			if (a.pass>0)
 			{
-				line.outbytes.push_back((uint8_t)v);
+				line.outbytes.push_back(b);
 			}
+			b=0;
+			bytect++;
 		}
-		line.outbytect = byteCnt;
+
 	}
-	else
-	{
-		line.pass0bytect = byteCnt;
-	}
-	return res;
+	line.outbytect=bytect;
+	//printf("bytect=%d\n",bytect);
+	return bytect;
 }
 
 

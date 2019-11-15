@@ -25,17 +25,20 @@ void CLASS::setError(uint32_t ecode)
 
 void CLASS::print(uint32_t lineno)
 {
-	int i, l, pcol;
+	int pcol;
+	uint32_t l,i;
 	int commentcol = 40;
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
 
+	uint32_t b = 4; // how many bytes show on the first line
+
 
 	l = outbytect;
-	if (l > 4)
+	if (l > b)
 	{
-		l = 4;
+		l = b;
 	}
 
 	if (!checked)
@@ -76,7 +79,6 @@ void CLASS::print(uint32_t lineno)
 	{
 		empty = true;
 	}
-	int b = 4;
 
 	pcol = 0;
 	if (!empty)
@@ -156,6 +158,30 @@ void CLASS::print(uint32_t lineno)
 	{
 		SetColor(CL_NORMAL | BG_NORMAL);
 	}
+
+	if (outbytect>b)
+	{
+		uint32_t t=b;
+		uint32_t ct=0;
+		//char *s=(char *)"--------";
+		char *s=(char *)"        ";
+
+		//printf("t=%d ct=%d\n",t,outbytect);
+		printf("\n%s",s);
+		while(t<outbytect)
+		{
+			printf("%02X ",outbytes[t]);
+			t++;
+			ct++;
+			if (ct>=b)
+			{
+				printf("\n");
+				printf("%s",s);
+				ct=0;
+			}
+		}
+	}
+
 	printf("\n");
 
 }
@@ -923,6 +949,7 @@ void CLASS::showVariables(void)
 		{
 			printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
 		}
+		printf("\n");
 	}
 }
 
@@ -935,7 +962,7 @@ void CLASS::showSymbolTable(bool alpha)
 		std::map<std::string, uint32_t> alphamap;
 		std::map<uint32_t, std::string> nummap;
 
-		int columns = 2;
+		int columns = getInt("asm.symcolumns",3);
 		int column = columns;
 
 		for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
@@ -971,6 +998,10 @@ void CLASS::showSymbolTable(bool alpha)
 					column = columns;
 				}
 			}
+		}
+		if (column>0)
+		{
+			printf("\n");
 		}
 	}
 }
