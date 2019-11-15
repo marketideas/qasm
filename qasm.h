@@ -1,4 +1,5 @@
 #pragma once
+#include "inttypes.h"
 #include "palPoco.h"
 #include "pallogger.h"
 #include "eventtask.h"
