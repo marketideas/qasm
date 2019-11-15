@@ -13,12 +13,16 @@ PAL_BASEAPP *PAL::appFactory(void)
 programOption PAL::appOptions[] =
 {
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
-	{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
-	{ "exec", "x", "execute a command", "<command>", false, false},
-
+	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
+	{ "exec", "x", "execute a command [asm, link, reformat]", " <command>", false, false},
 	{ "", "", "", "", false, false}
 };
 
+
+void CLASS::displayVersion()
+{
+	cerr << "version 1234" << endl << endl;
+}
 
 int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 {
@@ -68,12 +72,11 @@ int CLASS::runCommandLineApp(void)
 	std::string startdirectory;
 	std::string fname;
 
-	// only called if SERVERAPP not defined
 	int res = -1;
 
 
 	startdirectory = Poco::Path::current();
-	//LOG_DEBUG << "currentdir: " << startdirectory << endl;
+
 	if (commandargs.size() == 0)
 	{
 		fprintf(stderr, "No files given (--help for help)\n\n");
@@ -105,7 +108,7 @@ int CLASS::runCommandLineApp(void)
 						t->init();
 						std::string f = path.toString();
 						t->filename = f;
-						x = t->processfile(f,fname);
+						x = t->processfile(f, fname);
 						if (x == 0)
 						{
 							t->process();
@@ -136,7 +139,7 @@ int CLASS::runCommandLineApp(void)
 						t->init();
 						std::string f = path.toString();
 						t->filename = f;
-						x = t->processfile(f,fname);
+						x = t->processfile(f, fname);
 						f = t->filename;
 						if (x == 0)
 						{

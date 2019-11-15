@@ -15,6 +15,8 @@ protected:
 	void showerror(int ecode,std::string fname);
 	virtual int runCommandLineApp(void);
 	virtual int runServerApp(PAL_EVENTMANAGER *em);
+	virtual void displayVersion();
+
 public:
 };
 
