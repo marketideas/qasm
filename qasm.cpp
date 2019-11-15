@@ -12,7 +12,9 @@ PAL_BASEAPP *PAL::appFactory(void)
 // you MUST supply this array 'appOptions'.  NULL line and end.
 programOption PAL::appOptions[] =
 {
+#ifdef DEBUG
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
+#endif
 	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
 	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", " <command>", false, false},
 	{ "", "", "", "", false, false}

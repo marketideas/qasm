@@ -6,10 +6,13 @@
 #define NO_SIGNAL_HANDLING
 
 //#define SERVERAPP
+
 //#define ENABLE_SSL
-#define USE_LOGGER
+//#define USE_LOGGER
 //#define USE_NET
-#define USE_SSL
+//#define USE_SSL
+//#define USE_JSON
+//#define USE_XML
 
 // help text
 #define HELP_USAGE "<options> <list of files>"
