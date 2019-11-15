@@ -17,7 +17,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	int res = 0;
 	int32_t v = line.expr_value;
-	if (line.eval_result!=0)
+	if (line.eval_result != 0)
 	{
 		line.setError(errForwardRef);
 	}
@@ -29,13 +29,13 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		res = v;
 
-		if (a.pass>0)
+		if (a.pass > 0)
 		{
-			for (int i=0;i<v;i++)
+			for (int32_t i = 0; i < v; i++)
 			{
 				line.outbytes.push_back(0x00);
 			}
-			line.outbytect=v;
+			line.outbytect = v;
 		}
 
 	}
@@ -88,67 +88,69 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
-    int res = 0;
-    std::vector<std::string> values;
-    values.clear();
+	int res = 0;
+	std::vector<std::string> values;
+	values.clear();
 
-    std::string os = Poco::toUpper(Poco::trim(line.operand));
-    std::string vs = "0123456789ABCDEF";
-    std::string hex = "";
+	std::string os = Poco::toUpper(Poco::trim(line.operand));
+	std::string vs = "0123456789ABCDEF";
+	std::string hex = "";
 
-    for( int i = 0; i < os.length(); ++i )
-    {
-        char c = os[i];
+	for ( uint32_t i = 0; i < os.length(); ++i )
+	{
+		char c = os[i];
 
-        // Check for a comma if needed, and continue to next char if found
-        if( hex.length() == 0 && c == ',' )
-            continue;
-        
-        if( vs.find(c) == std::string::npos )
-        {
-            line.setError(errBadOperand);
-            return -1;
-        }
+		// Check for a comma if needed, and continue to next char if found
+		if ( hex.length() == 0 && c == ',' )
+		{
+			continue;
+		}
 
-        // Got a good char, append to hex string and see if we've got a byte
-        hex.append(1, c);
-        if( hex.length() == 2 )
-        {
-            // Got 2 chars (1 byte), so store in values array
-            values.push_back(hex);
-            hex.clear();
-        }
-    }
+		if ( vs.find(c) == std::string::npos )
+		{
+			line.setError(errBadOperand);
+			return -1;
+		}
 
-    // We can't have an odd character dangling around!
-    if( hex.size() != 0 )
-    {
-        line.setError(errOverflow);
-        return -1;
-    }
+		// Got a good char, append to hex string and see if we've got a byte
+		hex.append(1, c);
+		if ( hex.length() == 2 )
+		{
+			// Got 2 chars (1 byte), so store in values array
+			values.push_back(hex);
+			hex.clear();
+		}
+	}
 
-    int byteCnt = (int)values.size();
-    a.PC.currentpc += byteCnt;
+	// We can't have an odd character dangling around!
+	if ( hex.size() != 0 )
+	{
+		line.setError(errOverflow);
+		return -1;
+	}
 
-    if (a.pass > 0)
-    {
-        for( int i = 0; i < values.size(); ++i )
-        {
-            std::string s = "$";
-            s.append(values[i]);
-            int64_t v;
-            if( 0 == a.evaluate(line, s, v) )
-            {
-	            line.outbytes.push_back((uint8_t)v);
-            }
-        }
-        line.outbytect = byteCnt;
-    }
+	int byteCnt = (int)values.size();
+	a.PC.currentpc += byteCnt;
+
+	if (a.pass > 0)
+	{
+		for ( uint32_t i = 0; i < values.size(); ++i )
+		{
+			std::string s = "$";
+			s.append(values[i]);
+			int64_t v;
+			if ( 0 == a.evaluate(line, s, v) )
+			{
+				line.outbytes.push_back((uint8_t)v);
+			}
+		}
+		line.outbytect = byteCnt;
+	}
 	else
-    {
-        line.pass0bytect = byteCnt;
-    }
-    return res;
+	{
+		line.pass0bytect = byteCnt;
+	}
+	return res;
 }
 
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
@@ -175,16 +177,16 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = doDUM(a, line, opinfo);
 			break;
 		case P_ORG:
-			if (line.operand.length()>0)
+			if (line.operand.length() > 0)
 			{
-				a.PC.orgsave=a.PC.currentpc;
+				a.PC.orgsave = a.PC.currentpc;
 				a.PC.currentpc = line.expr_value;
-				line.startpc=line.expr_value;
+				line.startpc = line.expr_value;
 			}
 			else
 			{
 				a.PC.currentpc = a.PC.orgsave;
-				line.startpc=a.PC.orgsave;
+				line.startpc = a.PC.orgsave;
 			}
 			break;
 
@@ -196,9 +198,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = doLST(a, line, opinfo);
 			break;
 
-]        case p_HEX:
-            res = doHEX(a, line, opinfo);
-            break;
+		case p_HEX:
+			res = doHEX(a, line, opinfo);
+			break;
 	}
 	return (res);
 }

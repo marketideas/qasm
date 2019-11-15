@@ -348,7 +348,9 @@ void CLASS::complete(void)
 	uint64_t n = GetTickCount();
 	if (isDebug())
 	{
-        printf("Processing Time: %llu ms\n", n - starttime);
+		//cout << "Processing Time: " << n-starttime << " ms" << endl;
+		printf("Processing Time: %" PRIu64 " ms\n",n-starttime);
+        //printf("Processing Time: %llu ms\n", n - starttime);
 	}
 }
 
@@ -1048,7 +1050,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
-                printf("eval Error=%d %08llX |%s|\n", res, result, eval.badsymbol.c_str());
+				cout << "eval Error=" << res << "0x" << std::hex << result << std::dec << eval.badsymbol << endl;
+                //printf("eval Error=%d %08llX |%s|\n", res, result, eval.badsymbol.c_str());
 				SetColor(c);
 			}
 		}
@@ -1058,7 +1061,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			value = result;
 			if ((listing) && (pass > 0) && (isDebug() > 2))
 			{
-                printf("EV1=%08llX '%c'\n", v1, line.expr_shift);
+				cout << "EV1=0x" << std::hex << v1 << " '" << std::dec << line.expr_shift << ";" << endl;
+                //printf("EV1=%08llX '%c'\n", v1, line.expr_shift);
 			}
 			if (v1 >= 0x10000)
 			{
@@ -1077,7 +1081,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	}
 	if (isDebug() >= 3)
 	{
-        printf("Eval Result: %08llX (status=%d)\n", value, res);
+		cout << "Eval Result: 0x" << std::hex << value << std::dec << "(status=" << res << ")" << endl;
+        //printf("Eval Result: %08llX (status=%d)\n", value, res);
 	}
 	return (res);
 }

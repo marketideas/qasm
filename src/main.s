@@ -80,8 +80,12 @@ START
 
 ; --- Test all instructions in all their modes, with as many variants as possible ---
 
+
+      
+
 ;adc (ZP,x)
 	    adc (0,x)
+
 
         adc ($80,x)
         adc	(_tmp,x)
@@ -185,6 +189,127 @@ myQuit
         lda: $05
         ldal $05
 
+        lda $45
+        lda $2345
+        lda $012345
+        ldaz $2345
+        lda: $45
+        ldal $012345
+        ldal $2345
+        ldal $45
+        lda <$2345
+        lda >$2345
+        lda <$012345
+        lda >$012345
+        lda ^$012345
+        lda |$012345
+
+        ora $45
+        ora $2345
+        ora $012345
+        oraz $2345
+        ora: $45
+        oral $012345
+        oral $2345
+        oral $45
+        ora <$2345
+        ora >$2345
+        ora <$012345
+        ora >$012345
+        ora ^$012345
+        ora |$012345
+
+        and $45
+        and $2345
+        and $012345
+        andz $2345
+        and: $45
+        andl $012345
+        andl $2345
+        andl $45
+        and <$2345
+        and >$2345
+        and <$012345
+        and >$012345
+        and ^$012345
+        and |$012345
+
+        eor $45
+        eor $2345
+        eor $012345
+        eorz $2345
+        eor: $45
+        eorl $012345
+        eorl $2345
+        eorl $45
+        eor <$2345
+        eor >$2345
+        eor <$012345
+        eor >$012345
+        eor ^$012345
+        eor |$012345
+
+        adc $45
+        adc $2345
+        adc $012345
+        adcz $2345
+        adc: $45
+        adcl $012345
+        adcl $2345
+        adcl $45
+        adc <$2345
+        adc >$2345
+        adc <$012345
+        adc >$012345
+        adc ^$012345
+        adc |$012345
+
+        sta $45
+        sta $2345
+        sta $012345
+        staz $2345
+        sta: $45
+        stal $012345
+        stal $2345
+        stal $45
+        sta <$2345
+        sta >$2345
+        sta <$012345
+        sta >$012345
+        sta ^$012345
+        sta |$012345
+
+        cmp $45
+        cmp $2345
+        cmp $012345
+        cmpz $2345
+        cmp: $45
+        cmpl $012345
+        cmpl $2345
+        cmpl $45
+        cmp <$2345
+        cmp >$2345
+        cmp <$012345
+        cmp >$012345
+        cmp ^$012345
+        cmp |$012345
+
+        sbc $45
+        sbc $2345
+        sbc $012345
+        sbcz $2345
+        sbc: $45
+        sbcl $012345
+        sbcl $2345
+        sbcl $45
+        sbc <$2345
+        sbc >$2345
+        sbc <$012345
+        sbc >$012345
+        sbc ^$012345
+        sbc |$012345
+
+        asll $1234
 
         lda	<$fff0+24       ;zp
         lda	>$fff0+24       ;ABS (lo word)
@@ -235,14 +360,12 @@ L00BC   bit	L00BC
         ldx	L00BC,y
         stx	L00BC,y
 
-
 * Data Storage Tests
 
-     	hex 11,22,33,44,55,66,77,88,99
+        hex 11,22,33,44,55,66,77,88,99
         hex 112233445566778899
         hex aabb,cc,ddee,ff
 
-
 //]XCODEEND       ; Keep this at the end and put your code above this
-    lst off
+    ;lst off
 
