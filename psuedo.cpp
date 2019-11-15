@@ -1,4 +1,5 @@
 #include "psuedo.h"
+#include "eval.h"
 
 #define CLASS TPsuedoOp
 
@@ -20,6 +21,9 @@ constexpr unsigned int strhash(const char *str, int h = 0)
 int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
+	TEvaluator eval(a);
+
+	int i;
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
@@ -50,6 +54,9 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case strhash((const char *)"ADRL"):
 			wordsize = 4;
 			break;
+		default:
+			wordsize=0;
+			break;
 	}
 
 	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
@@ -57,23 +64,68 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		//printf("%s\n",(*itr).c_str());
 		//evaluate each of these strings, check for errors on pass 2
 
+		std::string expr = *itr;
+		int64_t eval_result = 0;
+		uint8_t shift;
+		int r;
+		uint8_t b;
+
+		shift=0;
+		r = eval.evaluate(expr, eval_result, shift);
+		if (r < 0)
+		{
+			//printf("eval error %d |%s|\n", r,expr.c_str());
+			if (a.pass > 0)
+			{
+				line.setError(errBadEvaluation);
+			}
+		}
+		if (shift=='>')
+		{
+			eval_result=(eval_result) & 0xFF;
+		}
+		if (shift=='<')
+		{
+			eval_result=(eval_result>>8) & 0xFF;
+		}
+		else if ((shift=='^') || (shift=='|'))
+		{
+			eval_result=(eval_result>>16)&0xFF;
+		}
+
+
 		outct += wordsize;
 		if (a.pass > 0)
 		{
 			if (!endian) // little endian
 			{
+				for (i = 0; i < wordsize; i++)
+				{
+					b=(eval_result >> (8 * i))&0xFF;
+					line.outbytes.push_back(b);
+					//printf("%02X\n",b);
+				}
 			}
 			else
 			{
 				// big endian
+				for (i = 0; i < wordsize; i++)
+				{
+					b=(eval_result >> ((wordsize-1-i) * 8))&0xFF;
+					line.outbytes.push_back(b);
+					//printf("%02X\n",b);
+				}
+
 			}
 		}
 	}
+#if 0
 	// SGQ  - remove when complete
-	line.datafillct=outct;
-	line.datafillbyte=0xCA;
+	line.datafillct = outct;
+	line.datafillbyte = 0xCA;
 	// ===============
-
+#endif
+	line.outbytect=outct;
 	return (outct);
 }
 
@@ -164,7 +216,7 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
-	
+
 	std::string os = Poco::toUpper(Poco::trim(line.operand));
 
 	uint32_t bytect = 0;

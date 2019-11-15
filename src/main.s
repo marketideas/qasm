@@ -382,6 +382,16 @@ L00BC   bit	L00BC
         adrl $01A55A
         adrl $01A55A,$011234
 
+        dw      >$01A55A,>$011234
+        dw      <$01A55A,<$011234
+        dw      ^$01A55A,^$011234
+        dw      |$01A55A,|$011234
+
+        db      >$01A55A,>$011234
+        db      <$01A55A,<$011234
+        db      ^$01A55A,^$011234
+        db      |$01A55A,|$011234
+
 
 
 //]XCODEEND       ; Keep this at the end and put your code above this

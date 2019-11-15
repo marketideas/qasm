@@ -58,6 +58,7 @@ enum asmErrors
     errDuplicateFile,
     errFileNotFound,
     errFileNoAccess,
+    errBadEvaluation,
 	errMAX
 };
 
@@ -85,6 +86,7 @@ const std::string errStrings[errMAX + 1] =
     "File already included",
     "File not found",
     "File no access",
+    "Unable to evaluate",
 
 	""
 };
