@@ -9,9 +9,10 @@ set(LIBRARY_NAME pal)
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeHeader.txt)
+set ( PROJECT_NAME "qasm" )
 
 set(SOURCE
-  ${PROJECT_ROOT}/${PROJECT_ID}.cpp
+  ${PROJECT_ROOT}/${PROJECT_NAME}.cpp
   ${PROJECT_ROOT}/asm.cpp
   ${PROJECT_ROOT}/opcodes.cpp
   ${PROJECT_ROOT}/eval.cpp
