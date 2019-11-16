@@ -40,7 +40,7 @@ TSTADDR     =       $1000   ;absolute address for testing
 *==========================================================
 * Data Index DUM section test
 
-            lst             
+            lst     off             
             DUM     0       
 dum0        ds      1       ;fractional byte
 dum1        ds      1       
@@ -166,7 +166,6 @@ myQuit
 
             org             ;return to ongoing address
 
-            lst             
             lda     $FF     
                             ;Issue #16 (fadden) - Byte reference modifiers are ignored (no way to force DP)
             lda     <$fff0  ;zp
@@ -395,11 +394,17 @@ L00BC       bit     L00BC
             db      |$01A55A,|$011234 
 
 
-            ;lup     3       
-            ;db      0       
-            ;--^             
+            lst
+lup_start:
+            lup     3       
+            ;db      0   ; outside 
+            ;lup     3
+            ;db      1   ; inside
+            ;--^      
+            --^             
 
 
+            lst off
 //]XCODEEND       ; Keep this at the end and put your code above this
                             ;lst off
 

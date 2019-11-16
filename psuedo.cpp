@@ -13,6 +13,79 @@ CLASS::~CLASS()
 
 }
 
+int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+	UNUSED(line);
+	UNUSED(a);
+	int lidx, len;
+	int res = 0;
+	int err = 0;
+
+	std::string op = Poco::toUpper(line.opcode);
+
+	if (op == "LUP")
+	{
+		len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
+		if (len >= 0)
+		{
+			a.LUPstack.push(a.curLUP);
+
+			a.curLUP.lupoffset = len;
+			a.curLUP.lupct = 3; // evaluate here
+			a.curLUP.luprunning++;
+		}
+		else
+		{
+			printf("err 3\n");
+			err = errUnexpectedOp;
+		}
+	}
+
+	if (op == "--^")
+	{
+		if (a.curLUP.luprunning > 0)
+		{
+			lidx = line.lineno - 1;
+			len = lidx - a.curLUP.lupoffset - 1;
+
+			if (a.curLUP.lupct > 0)
+			{
+				a.curLUP.lupct--;
+				if (a.curLUP.lupct != 0)
+				{
+					a.lineno = a.curLUP.lupoffset;
+					goto out;
+				}
+			}
+
+			//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
+			if (a.LUPstack.size() > 0)
+			{
+				a.curLUP = a.LUPstack.top();
+				a.LUPstack.pop();
+			}
+			else
+			{
+				printf("err 2\n");
+				err = errUnexpectedOp;
+			}
+		}
+		else
+		{
+			printf("err 1\n");
+			err = errUnexpectedOp;
+		}
+	}
+
+out:
+	if (err > 0)
+	{
+		line.setError(err);
+	}
+	return (res);
+}
+
 constexpr unsigned int strhash(const char *str, int h = 0)
 {
 	return !str[h] ? 5381 : (strhash(str, h + 1) * 33) ^ str[h];
@@ -119,12 +192,6 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			}
 		}
 	}
-#if 0
-	// SGQ  - remove when complete
-	line.datafillct = outct;
-	line.datafillbyte = 0xCA;
-	// ===============
-#endif
 	line.outbytect = outct;
 	return (outct);
 }
@@ -275,7 +342,6 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		bytect = 0;
 	}
 	line.outbytect = bytect;
-	//printf("bytect=%d\n",bytect);
 	return bytect;
 }
 
@@ -326,6 +392,10 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_DATA:
 			res = doDATA(a, line, opinfo);
+			break;
+		case P_LUP:
+			res = doLUP(a, line, opinfo);
+			res = 0;
 			break;
 	}
 	return (res);

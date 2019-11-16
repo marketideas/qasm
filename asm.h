@@ -61,6 +61,8 @@ enum asmErrors
 	errBadEvaluation,
 	errMalformed,
 	errBadCharacter,
+	errUnexpectedOp,
+	errUnexpectedEOF,
 	errMAX
 };
 
@@ -90,7 +92,9 @@ const std::string errStrings[errMAX + 1] =
 	"File no access",
 	"Unable to evaluate",
 	"Malformed Operand",
-	"Bad character in input",
+	"Unexpected character in input",
+	"Unexpected opcode",
+	"Unexpected End of File",
 
 	""
 };
@@ -177,6 +181,7 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
+	uint16_t commentcol;
 	bool showmx;
 	uint32_t lineno;
 	uint32_t flags;
@@ -212,6 +217,8 @@ protected:
 	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
+	uint8_t tabs[10];
+
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
@@ -231,7 +238,6 @@ public:
 class TMerlinConverter : public TFileProcessor
 {
 protected:
-	uint8_t tabs[10];
 	std::vector<MerlinLine> lines;
 
 public:

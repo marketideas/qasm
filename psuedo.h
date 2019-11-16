@@ -15,6 +15,7 @@ enum
 	P_USE,
 	P_HEX,
 	P_DATA,
+	P_LUP,
 
 	P_MAX
 };
@@ -30,6 +31,8 @@ public:
 	int doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+	int doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+
 };
 
 #undef CLASS
