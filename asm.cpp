@@ -208,7 +208,7 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	uint32_t ct = 1;
-	if (obc > b)
+	if ((obc > b) && ((truncdata&0x01)==0))
 	{
 		ct = 0;
 		uint8_t db;
@@ -1293,7 +1293,7 @@ void CLASS::initpass(void)
 	passcomplete = false;
 	dumstartaddr = 0;
 	dumstart = 0;
-
+	truncdata=0;
 	variables.clear(); // clear the variables for each pass
 
 	while (!PCstack.empty())
@@ -1307,6 +1307,10 @@ void CLASS::initpass(void)
 	while (!DOstack.empty())
 	{
 		DOstack.pop();
+	}
+	while (!LSTstack.empty())
+	{
+		LSTstack.pop();
 	}
 	curLUP.clear();
 	curDO.clear();
@@ -1622,6 +1626,7 @@ void CLASS::process(void)
 
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
+			line.truncdata=truncdata;
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);

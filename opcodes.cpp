@@ -738,7 +738,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("PAG", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TTL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SKP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("TR",  0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("TR",  P_TR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ASC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DCI", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("INV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

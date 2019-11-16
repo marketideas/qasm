@@ -27,8 +27,8 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int err = 0;
 
 	std::string op = Poco::toUpper(line.opcode);
-	std::string oper = Poco::toUpper(line.operand_expr);
-	result32=0xFFFFFFFF;
+	std::string oper = line.operand_expr;
+	result32 = 0xFFFFFFFF;
 
 	if (op == "IF")
 	{
@@ -46,7 +46,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		if (oper == "")
 		{
 			err = errIllegalCharOperand;
-			a.curDO.doskip=false;
+			a.curDO.doskip = false;
 			goto out;
 		}
 
@@ -66,7 +66,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 
 		result32 = eval_result & 0xFFFFFFFF;
-		a.curDO.doskip = (result32!=0) ? false : true;
+		a.curDO.doskip = (result32 != 0) ? false : true;
 
 		goto out;
 	}
@@ -98,7 +98,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		{
 			// kind of a silent error here, just make sure we reinitialize
 			err = errUnexpectedOp;
-			a.curDO.doskip=false;
+			a.curDO.doskip = false;
 		}
 		goto out;
 	}
@@ -375,7 +375,15 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	if (a.pass > 0)
 	{
 		s = Poco::toUpper(Poco::trim(line.operand_expr));
-		if ((s == "") || (s == "ON") || (line.expr_value > 0))
+		if (s == "RTN")
+		{
+			if (a.LSTstack.size())
+			{
+				a.listing = a.LSTstack.top();
+				a.LSTstack.pop();
+			}
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
 		{
 			//printf("ON\n");
 			a.skiplist = true;
@@ -391,6 +399,29 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	return (0);
 }
 
+int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	std::string s;
+	if (a.pass > 0)
+	{
+		s = Poco::toUpper(Poco::trim(line.operand_expr));
+		if (s == "ADR")
+		{
+			a.truncdata |= 0x03;
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
+		{
+			a.truncdata |= 0x01;;
+		}
+		else if ((s == "OFF") || (line.expr_value == 0))
+		{
+			a.truncdata = 0x00;
+		}
+	}
+	return (0);
+}
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
@@ -522,6 +553,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_DO:
 			res = doDO(a, line, opinfo);
+			break;
+		case P_TR:
+			res=doTR(a,line,opinfo);
 			break;
 
 	}

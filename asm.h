@@ -189,6 +189,7 @@ public:
 	uint8_t linemx;
 	uint16_t commentcol;
 	bool showmx;
+	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -330,7 +331,6 @@ class T65816Asm : public TFileProcessor
 public:
 	// options
 	bool casesen;
-	bool listing;
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
@@ -356,10 +356,13 @@ public:
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
+	bool listing;
+	uint8_t truncdata; 	// for the TR opcode
 
 	std::stack<TOriginSection> PCstack;
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
+	std::stack<bool> LSTstack;
 
 	TPsuedoOp *psuedoops;
 
