@@ -1,6 +1,12 @@
-#export CC=/usr/bin/clang
-#export CXX=/usr/bin/clang++
+export USE_CLANG=1
 
+ifeq ($(USE_CLANG),1)
+export CXX=/usr/bin/clang++
+export CC=/usr/bin/clang
+else
+export CXX=g++
+export CC=gcc
+endif
 
 V?=
 S=
@@ -35,6 +41,9 @@ install:
 reformat:
 	qasm -x REFORMAT  src/main.s
 	
+compare:
+	-bcompare . ../lane_hex &
+
 asm:
 	
 test1:
@@ -42,6 +51,9 @@ test1:
 
 test2:
 	-qasm src/testfile.s
+
+test3:
+	-qasm src/var.s
 	
 	
 

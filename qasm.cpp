@@ -12,13 +12,23 @@ PAL_BASEAPP *PAL::appFactory(void)
 // you MUST supply this array 'appOptions'.  NULL line and end.
 programOption PAL::appOptions[] =
 {
+#ifdef DEBUG
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
-	{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
-	{ "exec", "x", "execute a command", "<command>", false, false},
-
+#endif
+	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
+	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", " <command>", false, false},
 	{ "", "", "", "", false, false}
 };
 
+
+void CLASS::displayVersion()
+{
+	std::string s = "";
+#ifdef DEBUG
+	s = "-debug";
+#endif
+	cerr << "quickASM 16++ v" << (std::string)STRINGIFY(APPVERSION) << s << endl;
+}
 
 int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 {
@@ -39,25 +49,50 @@ int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 	return (res);
 }
 
+void CLASS::showerror(int ecode, std::string fname)
+{
+	std::string s;
+	switch (ecode)
+	{
+		case -2:
+			s = "Permission Denied";
+			break;
+		case -3:
+			s = "File not found";
+			break;
+		default:
+			s = "Unknown Error";
+			break;
+	}
+	if (ecode < -1)
+	{
+		std::string a = Poco::Util::Application::instance().config().getString("application.name", "");
+		fprintf(stderr, "%s: %s: %s\n", a.c_str(), fname.c_str(), s.c_str());
+	}
+}
+
 int CLASS::runCommandLineApp(void)
 {
 	TFileProcessor *t = NULL;
 	std::string line;
+	std::string startdirectory;
+	std::string fname;
 
-	// only called if SERVERAPP not defined
 	int res = -1;
 
-	//LOG_DEBUG << "command line mode" << endl;
-	if (commandargs.size()==0)
+
+	startdirectory = Poco::Path::current();
+
+	if (commandargs.size() == 0)
 	{
-		fprintf(stderr,"No files given (--help for help)\n\n");
-		return(res);
+		displayHelp();
+		return (res);
 	}
 
 	for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
 	{
 		Poco::File fn(*it);
-
+		int x;
 		std::string p = fn.path();
 		Poco::Path path(p);
 		//logger().information(path.toString());
@@ -74,41 +109,62 @@ int CLASS::runCommandLineApp(void)
 				t = new TMerlinConverter();
 				if (t != NULL)
 				{
-
-					t->init();
-					std::string f = path.toString();
-					t->processfile(f);
-					t->process();
-					t->complete();
-					res = (t->errorct > 0) ? -1 : 0;
-
-					delete t;
-					t = NULL;
+					try
+					{
+						t->init();
+						std::string f = path.toString();
+						t->filename = f;
+						x = t->processfile(f, fname);
+						if (x == 0)
+						{
+							t->process();
+							t->complete();
+						}
+						else
+						{
+							showerror(x, fname);
+							t->errorct = 1;
+						}
+						res = (t->errorct > 0) ? -1 : 0;
+					}
+					catch (...)
+					{
+						delete t;
+						t = NULL;
+					}
 				}
 			}
 			else if (cmd == "ASM")
 			{
-				if (e == "S")
-				{
-					//logger().information("ASM: " + path.toString());
-
-					t = new T65816Asm();
-				}
-				if (e == "LNK")
-				{
-					//logger().information("LNK: " + path.toString());
-					t = new T65816Link();
-				}
+				int x;
+				t = new T65816Asm();
 				if (t != NULL)
 				{
-					t->init();
-					std::string f = path.toString();
-					t->processfile(f);
-					t->process();
-					t->complete();
-					res = (t->errorct > 0) ? -1 : 0;
-					delete t;
-					t = NULL;
+					try
+					{
+						t->init();
+						std::string f = path.toString();
+						t->filename = f;
+						x = t->processfile(f, fname);
+						f = t->filename;
+						if (x == 0)
+						{
+							t->process();
+							t->complete();
+						}
+						else
+						{
+							showerror(x, fname);
+							t->errorct = 1;
+						}
+						res = (t->errorct > 0) ? -1 : 0;
+					}
+					catch (...)
+					{
+						delete t;
+						t = NULL;
+					}
+					if (chdir(startdirectory.c_str())) {}; // return us back to where we were
 				}
 				else
 				{
@@ -117,7 +173,7 @@ int CLASS::runCommandLineApp(void)
 			}
 			else
 			{
-				fprintf(stderr,"Invalid command: <%s>\n\n", cmd.c_str());
+				fprintf(stderr, "Invalid command: <%s>\n\n", cmd.c_str());
 			}
 		}
 	}
