@@ -34,6 +34,8 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
+	bool merlinstyle=true;
+
 	if (datafillct > 0)
 	{
 		l = datafillct;
@@ -46,7 +48,25 @@ void CLASS::print(uint32_t lineno)
 	{
 		l = b;
 	}
+	if (errorcode > 0)
+	{
+		if (merlinstyle)
+		{
+			//printf("errorcode=%d\n",errorcode);
+			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno+1);
+			if (errorText != "")
+			{
+				printf("%s", errorText.c_str());
+			}
+			printf("\n");
+		}
+		flags &= (~FLAG_NOLINEPRINT);
+	}
 
+	if (flags & FLAG_NOLINEPRINT)
+	{
+		return;
+	}
 	if (!checked)
 	{
 		nc1 = getBool("option.nocolor", false);
@@ -57,7 +77,7 @@ void CLASS::print(uint32_t lineno)
 		nc = nc1;
 	}
 
-	if (!isatty(STDOUT_FILENO))
+	if ((!isatty(STDOUT_FILENO)) || (merlinstyle))
 	{
 		nc = true;
 	}
@@ -158,7 +178,7 @@ void CLASS::print(uint32_t lineno)
 	{
 		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
-	if (errorcode > 0)
+	if ((errorcode > 0) && (!merlinstyle))
 	{
 		while (pcol < commentcol)
 		{
@@ -1229,6 +1249,7 @@ void CLASS::initpass(void)
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
+	generateCode = true;
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
@@ -1278,7 +1299,12 @@ void CLASS::initpass(void)
 	{
 		LUPstack.pop();
 	}
+	while (!DOstack.empty())
+	{
+		DOstack.pop();
+	}
 	curLUP.clear();
+	curDO.clear();
 	savepath = "";
 }
 
@@ -1315,7 +1341,7 @@ void CLASS::complete(void)
 		}
 	}
 
-	printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct,lines.size(),symbols.size());
+	printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct, lines.size(), symbols.size());
 
 	TFileProcessor::complete();
 
@@ -1557,6 +1583,18 @@ int CLASS::substituteVariables(MerlinLine & line)
 	return (res);
 }
 
+bool CLASS::codeSkipped(void)
+{
+	bool res = false;
+
+	if (curLUP.lupskip)
+	{
+		res = true;
+	}
+
+	return (res);
+}
+
 void CLASS::process(void)
 {
 	uint32_t l;
@@ -1649,6 +1687,11 @@ void CLASS::process(void)
 				x = callOpCode(op, line);
 			}
 
+			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
+			{
+				x = 0;
+			}
+
 			if (x > 0)
 			{
 				if (!PCstack.empty()) // are we inside a DUM section?
@@ -1707,6 +1750,7 @@ void CLASS::process(void)
 
 		// end of file reached here, do some final checks
 
+#if 0
 		if (LUPstack.size() > 0)
 		{
 			errLine.clear();
@@ -1714,6 +1758,7 @@ void CLASS::process(void)
 			errLine.print(lineno);
 			pass = 2;
 		}
+#endif
 		pass++;
 	}
 
