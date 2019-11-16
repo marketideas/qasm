@@ -13,7 +13,8 @@ enum
 	P_DS,
 	P_PUT,
 	P_USE,
-    P_HEX,
+	P_HEX,
+	P_DATA,
 
 	P_MAX
 };
@@ -27,7 +28,8 @@ public:
 	int doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
-    int doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+	int doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+	int doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 };
 
 #undef CLASS

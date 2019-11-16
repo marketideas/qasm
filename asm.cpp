@@ -25,18 +25,43 @@ void CLASS::setError(uint32_t ecode)
 
 void CLASS::print(uint32_t lineno)
 {
-	int i, l, pcol;
+	int pcol;
+	uint32_t l, i;
 	int commentcol = 40;
+	static bool checked = false;
+	static bool nc1 = false;
 	bool nc = false;
 
+	uint32_t b = 4; // how many bytes show on the first line
 
-	l = outbytect;
-	if (l > 4)
+	if (datafillct > 0)
 	{
-		l = 4;
+		l = datafillct;
+	}
+	else
+	{
+		l = outbytect;
+	}
+	if (l > b)
+	{
+		l = b;
 	}
 
-	nc = getBool("option.nocolor", false);
+	if (!checked)
+	{
+		nc1 = getBool("option.nocolor", false);
+		checked = true;
+	}
+	else
+	{
+		nc = nc1;
+	}
+
+	if (!isatty(STDOUT_FILENO))
+	{
+		nc = true;
+	}
+
 	if (!nc)
 	{
 		if (errorcode > 0)
@@ -60,7 +85,6 @@ void CLASS::print(uint32_t lineno)
 	{
 		empty = true;
 	}
-	int b = 4;
 
 	pcol = 0;
 	if (!empty)
@@ -74,16 +98,24 @@ void CLASS::print(uint32_t lineno)
 
 	for (i = 0; i < l; i++)
 	{
-		pcol += printf("%02X ", outbytes[i]);
+		uint8_t a = datafillbyte;
+		if (datafillct == 0)
+		{
+			a = outbytes[i];
+		}
+
+		pcol += printf("%02X ", a);
 	}
 	for (i = l; i < b; i++)
 	{
 		pcol += printf("   ");
 	}
 
+	pcol += printf("%6d  ", lineno + 1);
+
 	if (showmx)
 	{
-		if (outbytect > 0)
+		if ((outbytect + datafillct) > 0)
 		{
 			pcol += printf("%%%c%c ", linemx & 02 ? '1' : '0', linemx & 01 ? '1' : '0');
 		}
@@ -97,7 +129,6 @@ void CLASS::print(uint32_t lineno)
 	{
 		pcol += printf("%02X ", addressmode & 0xFF);
 	}
-	pcol += printf("%6d  ", lineno + 1);
 
 	pcol = 0; // reset pcol here because this is where source code starts
 
@@ -140,7 +171,51 @@ void CLASS::print(uint32_t lineno)
 	{
 		SetColor(CL_NORMAL | BG_NORMAL);
 	}
-	printf("\n");
+
+	uint32_t obc = datafillct;
+	if (obc == 0)
+	{
+		obc = outbytect;
+	}
+
+	uint32_t ct = 1;
+	if (obc > b)
+	{
+		ct = 0;
+		uint8_t db;
+		uint32_t t = b;
+		char *s = (char *)"        ";
+
+		b = 8;
+
+		//printf("t=%d ct=%d\n",t,outbytect);
+		printf("\n");
+		while (t < obc)
+		{
+			db = datafillbyte;
+			if (datafillct == 0)
+			{
+				db = outbytes[t];
+			}
+			if (ct == 0)
+			{
+				printf("%s", s);
+			}
+
+			printf("%02X ", db);
+			t++;
+			ct++;
+			if (ct >= b)
+			{
+				printf("\n");
+				ct = 0;
+			}
+		}
+	}
+	if (ct > 0)
+	{
+		printf("\n");
+	}
 
 }
 
@@ -164,6 +239,8 @@ void CLASS::clear()
 	errorcode = 0;
 	errorText = "";
 	outbytect = 0;
+	datafillct = 0;
+	datafillbyte = 0;
 	lineno = 0;
 	outbytes.clear();
 	addressmode = 0;
@@ -176,13 +253,14 @@ void CLASS::clear()
 void CLASS::set(std::string line)
 {
 	int state = 0;
-	int l = (int)line.length();
+	int l = line.length();
 	int i = 0;
 	int x;
-	char c, delim = 0;
+	char c, delim;
 
 	clear();
 
+	delim = 0;
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
@@ -304,7 +382,7 @@ void CLASS::set(std::string line)
 		}
 	}
 	printlable = lable;
-	x = (int)lable.length();
+	x = lable.length();
 	if (x > 1)
 	{
 		while ((x > 1) && (lable[x - 1] == ':'))
@@ -337,9 +415,11 @@ void CLASS::errorOut(uint16_t code)
 
 void CLASS::init(void)
 {
+	filenames.clear();
 	starttime = GetTickCount();
-
-	syntax = SYNTAX_MERLIN;
+	initialdir = Poco::Path::current();
+	syntax = 0;
+	filecount = 0;
 }
 
 void CLASS::complete(void)
@@ -348,9 +428,11 @@ void CLASS::complete(void)
 	uint64_t n = GetTickCount();
 	if (isDebug())
 	{
-		//cout << "Processing Time: " << n-starttime << " ms" << endl;
-		printf("Processing Time: %" PRIu64 " ms\n",n-starttime);
-        //printf("Processing Time: %llu ms\n", n - starttime);
+		//cout << "Processing Time: " << n - starttime << "ms" << endl;
+		uint64_t x = n - starttime;
+		uint32_t x1 = x & 0xFFFFFFFF;
+		printf("Processing Time: %u ms\n", x1);
+
 	}
 }
 
@@ -360,109 +442,280 @@ void CLASS::process(void)
 }
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+	UNUSED(line);
+
 	int res = -1;
 
 	return (res);
 }
 
-int CLASS::processfile(std::string &p)
+std::string CLASS::processFilename(std::string fn, std::string curDir, int level)
+{
+	std::string res = fn;
+	std::string s, s1;
+	Path p = Poco::Path(fn);
+
+	try
+	{
+		int n = p.depth();
+		//LOG_DEBUG << "n=" << n << " " << fn << endl;
+		if (n == 0)
+		{
+			res = curDir + fn;
+		}
+		if (n > 0)
+		{
+			std::string d1 = p[0];
+			uint32_t v = 100;
+			try
+			{
+				v = Poco::NumberParser::parseUnsigned(d1);
+			}
+			catch (...)
+			{
+				v = 99;
+			}
+			if (v < 10)
+			{
+				Poco::Path p1 = p.popFrontDirectory();
+				s = p1.toString();
+				s1 = "global.path" + Poco::NumberFormatter::format(v);
+				switch (v)
+				{
+					case 0:
+						s = initialdir + s;
+						break;
+					default:
+						s = getConfig(s1, ".") + "/" + s;
+						if (level < 5)
+						{
+							s = processFilename(s, curDir, level + 1);
+						}
+						break;
+				}
+				p = s;
+				p.makeAbsolute();
+			}
+			res = p.toString();
+		}
+	}
+	catch (Poco::Exception &e)
+	{
+		if (isDebug() > 2)
+		{
+			cout << "exception: " << e.displayText() << endl;
+		}
+	}
+	catch (std::exception &e)
+	{
+		if (isDebug() > 2)
+		{
+			cout << e.what() << endl;
+		}
+	}
+
+	p = res;
+	p.makeAbsolute();
+	res = p.toString();
+
+	char buff[PATH_MAX + 1];
+	memset(buff, 0x00, sizeof(buff));
+	char *rp = realpath(res.c_str(), buff);
+	if (rp != NULL)
+	{
+		//printf("realpath: %s\n", buff);
+		res = rp;
+	}
+	p = res;
+	p.makeAbsolute();
+	res = p.toString();
+
+	//LOG_DEBUG << "convert: |" << res << "|" << endl;
+
+	return (res);
+}
+
+int CLASS::processfile(std::string p, std::string &newfilename)
 {
 	//Poco::File fn(p);
 	int c;
 	int res = -1;
 	uint32_t linect;
 	bool done, valid;
+	std::string currentdir;
 	std::string p1;
 	std::string line, op;
 
 	linect = 0;
 	done = false;
 
+	currentdir = Poco::Path::current();
+
+	if (filecount == 0)
+	{
+		initialdir = currentdir;
+		//printf("initialdir=%s\n",initialdir.c_str());
+	}
+
+	//printf("currentdir=%s initialdir=%s\n", currentdir.c_str(), initialdir.c_str());
+	//LOG_DEBUG << "initial file name: " << p << endl;
+	p = processFilename(p, (filecount == 0) ? currentdir : currentdir, 0);
+
+	//LOG_DEBUG << "Converted filename: " << p << endl;
+
 	Poco::Path tp(p);
 	Poco::Path path = tp.makeAbsolute();
+	Poco::Path parent = path.parent();
+	std::string dir = parent.toString();
 
-	valid = true;
-	p1 = tp.toString();
-	Poco::File fn(p1);
-	if (!fn.exists())
+	try
 	{
-		fn = Poco::File(p1 + ".s");
+
+		if (filecount == 0)
+		{
+			// is this the first file in the compilation, or a PUT/USE?
+			// if first, change CWD to location of file
+			LOG_DEBUG << "Changing directory to: " << dir << endl;
+			if (chdir(dir.c_str())) {} // change directory to where the file is
+		}
+
+		p1 = path.toString();
+
+		newfilename = p1;
+		//LOG_DEBUG << "initial file name: " << p1 << endl;
+
+		valid = true;
+		Poco::File fn(p1);
 		if (!fn.exists())
 		{
-			fn = Poco::File(p1 + ".S");
+			fn = Poco::File(p1 + ".s");
 			if (!fn.exists())
 			{
-				fn = Poco::File(p1 + ".mac");
+				fn = Poco::File(p1 + ".S");
 				if (!fn.exists())
 				{
-					valid = false;
+					fn = Poco::File(p1 + ".mac");
+					if (!fn.exists())
+					{
+						fn = Poco::File(p1);
+						valid = false;
+					}
 				}
 			}
 		}
-	}
-	p1 = fn.path();
+		p1 = fn.path();
+		//LOG_DEBUG << "File name: " << p1 << endl;
 
-	if (valid)
-	{
-		std::ifstream f(p1);
-		if (f.is_open())
+		int ecode = -3;
+		valid = false;
+		if (fn.exists())
 		{
-			//printf("file is open\n");
-			line = "";
-
-			while ((!done) && (f.good()) && (!f.eof()))
+			ecode = -2;
+			valid = true;
+			//LOG_DEBUG << "File exists: " << p1 << endl;
+			if (fn.isLink())
 			{
-				c = f.get();
-				if (c == 0x8D) // merlin line ending
-				{
-					c = 0x0A;  // convert to linux
-				}
-				if (c == 0x8A) // possible merlin line ending
-				{
-					c = 0x00; // ignore
-				}
-				c &= 0x7F;
-				int x;
-				switch (c)
-				{
-					case 0x0D:
-						break;
-					case 0x09:
-						line += " ";
-						break;
-					case 0x0A:
-						linect++;
-						x = doline(linect, line);
-						if (x < 0)
-						{
-							done = true;
-						}
-						line = "";
-						break;
-					default:
-						if ((c >= ' ') && (c < 0x7F))
-						{
-							line += c;
-						}
-						else
-						{
-							//printf("garbage %08X\n",c);
-						}
-						break;
-				}
+				//LOG_DEBUG << "File is a link: " << p1 << endl;
 			}
-			if ( (f.eof()))
+			if ((fn.isDirectory()) || (!fn.canRead()))
 			{
-				res = 0;
+				//LOG_DEBUG << "File is a directory: " << p1 << endl;
+				valid = false;
 			}
 		}
-	}
-	else
-	{
-		fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
-	}
 
-	//printf("\n\nfile read result: %d\n", res);
+		newfilename = p1;
+		if (!valid)
+		{
+			//fprintf(stderr, "Unable to access file: %s\n", p1.c_str());
+
+			errorct = 1;
+			return (ecode);
+		}
+
+		if (valid)
+		{
+
+			if (filecount == 0)
+			{
+			}
+			else
+			{
+				for (auto itr = filenames.begin(); itr != filenames.end(); ++itr)
+				{
+					if (*itr == p1)
+					{
+						return (-9);
+					}
+				}
+			}
+
+			filecount++;
+			filenames.push_back(p1);
+
+			std::ifstream f(p1);
+			if (f.is_open())
+			{
+				//printf("file is open\n");
+				line = "";
+
+				while ((!done) && (f.good()) && (!f.eof()))
+				{
+					c = f.get();
+					if (c == 0x8D) // merlin line ending
+					{
+						c = 0x0A;  // convert to linux
+					}
+					if (c == 0x8A) // possible merlin line ending
+					{
+						c = 0x00; // ignore
+					}
+					c &= 0x7F;
+					int x;
+					switch (c)
+					{
+						case 0x0D:
+							break;
+						case 0x09:
+							line += " ";
+							break;
+						case 0x0A:
+							linect++;
+							x = doline(linect, line);
+							if (x < 0)
+							{
+								done = true;
+							}
+							line = "";
+							break;
+						default:
+							if ((c >= ' ') && (c < 0x7F))
+							{
+								line += c;
+							}
+							else
+							{
+								//printf("garbage %08X\n",c);
+							}
+							break;
+					}
+				}
+				if ( (f.eof()))
+				{
+					res = 0;
+				}
+			}
+		}
+		else
+		{
+			fprintf(stderr, "File <%s> does not exist.\n\n", p.c_str());
+		}
+	}
+	catch (...)
+	{
+
+	}
 	return (res);
 }
 
@@ -479,6 +732,8 @@ void CLASS::init(void)
 	std::string s;
 	int ts, tabpos;
 	lines.clear();
+
+	syntax = SYNTAX_MERLIN;
 
 	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
 	tabstr = Poco::trim(tabstr);
@@ -507,6 +762,8 @@ void CLASS::init(void)
 
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+
 	MerlinLine l(line);
 	lines.push_back(l);
 	return 0;
@@ -516,7 +773,7 @@ void CLASS::process(void)
 {
 	uint32_t len, t, pos;
 
-	uint32_t ct = (uint32_t)lines.size();
+	uint32_t ct = lines.size();
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
@@ -592,7 +849,6 @@ void CLASS::complete(void)
 CLASS::CLASS() : TFileProcessor()
 {
 	lines.clear();
-    inDUMSection = false;
 	psuedoops = new TPsuedoOp();
 }
 
@@ -701,6 +957,9 @@ TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
 	s.text = val;
 	s.used = false;
 	s.cb = NULL;
+
+	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
+
 	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 	variables.insert(p);
 	res = findVariable(sym);
@@ -733,6 +992,7 @@ void CLASS::showVariables(void)
 		{
 			printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
 		}
+		printf("\n");
 	}
 }
 
@@ -740,44 +1000,51 @@ void CLASS::showVariables(void)
 // false to print by value;
 void CLASS::showSymbolTable(bool alpha)
 {
-	std::map<std::string, uint32_t> alphamap;
-	std::map<uint32_t, std::string> nummap;
-
-	int columns = 4;
-	int column = columns;
-
-	for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
+	if (symbols.size() > 0)
 	{
-		TSymbol ptr = itr->second;
-		alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
-		nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
-	}
+		std::map<std::string, uint32_t> alphamap;
+		std::map<uint32_t, std::string> nummap;
 
-	if (alpha)
-	{
-		printf("\n\nSymbol table sorted alphabetically:\n\n");
+		int columns = getInt("asm.symcolumns", 3);
+		int column = columns;
 
-		for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+		for (auto itr = symbols.begin(); itr != symbols.end(); itr++)
 		{
-			printf("%-16s 0x%08X ", itr->first.c_str(), itr->second);
-			if ( !--column )
+			TSymbol ptr = itr->second;
+			alphamap.insert(pair<std::string, uint32_t>(ptr.name, ptr.value));
+			nummap.insert(pair<uint32_t, std::string>(ptr.value, ptr.name));
+		}
+
+		if (alpha)
+		{
+			printf("\n\nSymbol table sorted alphabetically:\n\n");
+
+			for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
 			{
-				printf("\n");
-				column = columns;
+				printf("%-16s 0x%08X       ", itr->first.c_str(), itr->second);
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
 			}
 		}
-	}
-	else
-	{
-		printf("\n\nSymbol table sorted numerically:\n\n");
-		for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
+		else
 		{
-			printf("0x%08X %-16s ", itr->first, itr->second.c_str());
-			if ( !--column )
+			printf("\n\nSymbol table sorted numerically:\n\n");
+			for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 			{
-				printf("\n");
-				column = columns;
+				printf("0x%08X       %-16s ", itr->first, itr->second.c_str());
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
 			}
+		}
+		if (column > 0)
+		{
+			printf("\n");
 		}
 	}
 }
@@ -858,7 +1125,7 @@ typedef struct
 	std::string regEx;
 	uint16_t addrMode;
 	std::string text;
-	std::string expression;
+	//std::string expression;
 } TaddrMode;
 
 // these are the regular expressions that determine the addressing mode
@@ -893,6 +1160,9 @@ const TaddrMode addrRegEx[] =
 
 //	one or more of any character except ][,();
 const std::string valExpression = "^([^\\]\\[,();]+)$";
+
+// this one looks for ]variables
+const std::string varExpression = "([]]{1}[:0-9A-Z_a-z]{1}[0-9A-Z_a-z]*)";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -985,12 +1255,17 @@ void CLASS::initpass(void)
 	dumstartaddr = 0;
 	dumstart = 0;
 
-
 	variables.clear(); // clear the variables for each pass
+
 	while (!PCstack.empty())
 	{
 		PCstack.pop();
 	}
+	while (!LUPstack.empty())
+	{
+		LUPstack.pop();
+	}
+	curLUP.clear();
 	savepath = "";
 }
 
@@ -1002,10 +1277,15 @@ void CLASS::complete(void)
 	{
 		if (errorct == 0)
 		{
+			std::string currentdir = Poco::Path::current();
+
+			savepath = processFilename(savepath, currentdir, 0);
+			printf("saving to file: %s\n", savepath.c_str());
+
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
-			uint32_t l = (uint32_t)lines.size();
+			uint32_t l = lines.size();
 			while (lineno < l)
 			{
 				MerlinLine &line = lines.at(lineno++);
@@ -1050,8 +1330,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			if (isDebug() > 2)
 			{
 				int c = SetColor(CL_RED);
-				cout << "eval Error=" << res << "0x" << std::hex << result << std::dec << eval.badsymbol << endl;
-                //printf("eval Error=%d %08llX |%s|\n", res, result, eval.badsymbol.c_str());
+				uint32_t rr = result & 0xFFFFFFFF;
+				printf("eval Error=%d %08X |%s|\n", res, rr, eval.badsymbol.c_str());
 				SetColor(c);
 			}
 		}
@@ -1061,8 +1341,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			value = result;
 			if ((listing) && (pass > 0) && (isDebug() > 2))
 			{
-				cout << "EV1=0x" << std::hex << v1 << " '" << std::dec << line.expr_shift << ";" << endl;
-                //printf("EV1=%08llX '%c'\n", v1, line.expr_shift);
+				uint32_t rr = v1 & 0xFFFFFFFF;
+				printf("EV1=%08X '%c'\n", rr, line.expr_shift);
 			}
 			if (v1 >= 0x10000)
 			{
@@ -1081,8 +1361,8 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	}
 	if (isDebug() >= 3)
 	{
-		cout << "Eval Result: 0x" << std::hex << value << std::dec << "(status=" << res << ")" << endl;
-        //printf("Eval Result: %08llX (status=%d)\n", value, res);
+		uint32_t rr = value & 0xFFFFFFFF;
+		printf("Eval Result: %08X (status=%d)\n", rr, res);
 	}
 	return (res);
 }
@@ -1202,22 +1482,81 @@ int CLASS::parseOperand(MerlinLine & line)
 	return (res);
 }
 
+int CLASS::substituteVariables(MerlinLine & line)
+{
+	int res = -1;
+	int x;
+	std::string::size_type offset, slen;
+	std::string oper = line.operand;
+	std::string s;
+	TSymbol *sym;
+	uint32_t len, off, ct;
+
+	slen = oper.length();
+	if (slen > 0)
+	{
+		std::vector<std::string> groups;
+
+		offset = 0;
+		RegularExpression varEx(varExpression, Poco::RegularExpression::RE_EXTRA, true);
+		Poco::RegularExpression::MatchVec  mVec;
+
+		//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
+		groups.clear();
+		ct = 0;
+		while (offset < slen)
+		{
+			try
+			{
+				varEx.match(oper, offset, mVec, 0);
+			}
+			catch (...)
+			{
+				offset = slen;
+			}
+
+			x = mVec.size();
+			if (x > 0)
+			{
+				res = 0;
+				off = mVec[0].offset;
+				len = mVec[0].length;
+				s = oper.substr(off, len);
+				sym = findVariable(s);
+				if (sym != NULL)
+				{
+					ct++;
+					if (pass > 0)
+					{
+						//printf("%d |%s|\n", ct, s.c_str());
+					}
+				}
+				offset += len;
+			}
+			else
+			{
+				offset = slen;
+			}
+		}
+
+	}
+	return (res);
+}
+
 void CLASS::process(void)
 {
 	uint32_t l;
 	int x;;
 	char c;
-	std::string op, operand;
-	//uint32_t operand_eval;
-	//uint16_t addrmode;
+	char buff[256];
+	std::string op, operand, ls;
 
-	//MerlinLine *line;
 	pass = 0;
 	while (pass < 2)
 	{
 		initpass();
 
-		l = (uint32_t)lines.size();
+		l = lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
 			MerlinLine &line = lines[lineno];
@@ -1233,7 +1572,7 @@ void CLASS::process(void)
 			line.bytect = 0;
 			line.showmx = showmx;
 
-			if ((line.lable != "") && (pass == 0))
+			if ((line.lable != ""))
 			{
 				std::string lable = Poco::trim(line.lable);
 				TSymbol *sym = NULL;
@@ -1242,14 +1581,19 @@ void CLASS::process(void)
 				switch (c)
 				{
 					case ']':
-						sym = addVariable(line.lable, "", true);
+						sprintf(buff, "$%X", PC.currentpc);
+						ls = buff;
+						sym = addVariable(line.lable, ls, true);
 						if (sym == NULL) { dupsym = true; }
 						break;
 					case ':':
 						break;
 					default:
-						sym = addSymbol(line.lable, PC.currentpc, false);
-						if (sym == NULL) { dupsym = true; }
+						if (pass == 0)
+						{
+							sym = addSymbol(line.lable, PC.currentpc, false);
+							if (sym == NULL) { dupsym = true; }
+						}
 						break;
 				}
 				if (dupsym)
@@ -1257,6 +1601,7 @@ void CLASS::process(void)
 					line.setError(errDupSymbol);
 				}
 			}
+			x = substituteVariables(line);
 			x = parseOperand(line);
 			if (x >= 0)
 			{
@@ -1270,7 +1615,7 @@ void CLASS::process(void)
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				line.expr_value = (int32_t)value;
+				line.expr_value = value;
 			}
 			else
 			{
@@ -1346,7 +1691,10 @@ void CLASS::process(void)
 int CLASS::doline(int lineno, std::string line)
 {
 	int res = 0;
+	int x;
 	std::string op;
+
+	UNUSED(lineno);
 
 	MerlinLine l(line);
 
@@ -1362,10 +1710,69 @@ int CLASS::doline(int lineno, std::string line)
 	l.syntax = syntax;
 	lines.push_back(l);
 
-	if ((op == "use") || (op == "put"))
+
+	if (op == "lup")
 	{
-		//printf("processing % s\n",l.operand.c_str());
-		processfile(l.operand);
+		curLUP.lupoffset = lines.size();
+		LUPstack.push(curLUP);
+		curLUP.luprunning++;
+		curLUP.lupct = 3;
+	}
+	else if (op == "--^")
+	{
+		if (curLUP.luprunning > 0)
+		{
+			while (curLUP.luprunning > 0)
+			{
+				if (curLUP.lupct > 0)
+				{
+
+					curLUP.lupct--;
+
+				}
+				if (curLUP.lupct == 0)
+				{
+					curLUP.luprunning--;
+					curLUP = LUPstack.top();
+					LUPstack.pop();
+				}
+			}
+		}
+		else
+		{
+			l.setError(errDuplicateFile);
+			curLUP.luprunning = 0;
+			l.print(0);
+			errorct++;
+			res = -1;
+		}
+	}
+	else if ((op == "use") || (op == "put"))
+	{
+		std::string fn;
+		x = processfile(l.operand, fn);
+		if (x < 0)
+		{
+			switch (x)
+			{
+				case -9:
+					l.setError(errDuplicateFile);
+					break;
+				case -3:
+					l.setError(errFileNotFound);
+					break;
+				case -2:
+					l.setError(errFileNoAccess);
+					break;
+				default:
+					l.setError(errFileNotFound);
+					break;
+			}
+			l.operand = fn;
+			l.print(0);
+			errorct++;
+			res = -1;
+		}
 	}
 
 	return (res);
@@ -1398,6 +1805,9 @@ void CLASS::complete(void)
 
 int CLASS::doline(int lineno, std::string line)
 {
+	UNUSED(lineno);
+	UNUSED(line);
+
 	int res = 0;
 
 	return (res);

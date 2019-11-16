@@ -36,6 +36,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     bool numexpect;
     Token::Type t;
 
+    delim=0;
     numexpect = true;
     for (const auto* p = expr.c_str(); *p; ++p)
     {

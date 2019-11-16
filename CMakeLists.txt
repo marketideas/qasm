@@ -3,8 +3,8 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 project(QAsm)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(APPVERSION "1.0.1")
+set(CMAKE_BUILD_TYPE DEBUG)
+set(APPVERSION "4.0.9")
 set(LIBRARY_NAME pal)
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
@@ -19,13 +19,13 @@ set(SOURCE
   ${PROJECT_ROOT}/psuedo.cpp
 )
 
-find_package(OpenSSL REQUIRED)
-find_package(Poco REQUIRED Foundation Util XML JSON NetSSL)
+#find_package(OpenSSL REQUIRED)
+find_package(Poco REQUIRED Foundation Util XML JSON )
 
 include_directories(BEFORE 
   ${PROJECT_ROOT}
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
-  ${OPENSSL_INCLUDE_DIR}
+  #${OPENSSL_INCLUDE_DIR}
   ${Poco_INCLUDE_DIRS}
 )
 
