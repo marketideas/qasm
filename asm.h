@@ -79,7 +79,7 @@ const std::string errStrings[errMAX + 1] =
 	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
-	"Unknown Opcode",
+	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
 	"Relative branch offset too large",
@@ -282,11 +282,11 @@ public:
 		clear();
 	}
 	void clear(void) {
-		dooff=false;
+		doskip=false;
 		value=0;
 	}
 	uint32_t value;
-	bool dooff;
+	bool doskip;
 };
 
 class TSymbol;
@@ -344,8 +344,6 @@ public:
 	uint32_t dumstartaddr;
 	bool skiplist; // used if lst is on, but LST opcode turns it off
 	uint32_t lineno;
-
-	bool generateCode;
 
 	std::string savepath;
 	TSymbol *currentsym;

@@ -34,7 +34,7 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
-	bool merlinstyle=true;
+	bool merlinstyle = true;
 
 	if (datafillct > 0)
 	{
@@ -53,7 +53,7 @@ void CLASS::print(uint32_t lineno)
 		if (merlinstyle)
 		{
 			//printf("errorcode=%d\n",errorcode);
-			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno+1);
+			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
 			if (errorText != "")
 			{
 				printf("%s", errorText.c_str());
@@ -1086,6 +1086,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 {
 	int res = -1;
 	char c;
+	std::string s;
 
 	if (op.length() == 4) // check for 4 digit 'L' opcodes
 	{
@@ -1101,7 +1102,12 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 				line.flags |= FLAG_FORCELONG; // 3 byte address
 				break;
 			default:  // any char but 'L' as in Merlin 16+
-				if ((c != 'D') || (Poco::toUpper(op) != "DEND"))
+				s = Poco::toUpper(op);
+				if ((s == "ELSE") || (s == "DEND"))
+				{
+					break;
+				}
+				if (c != 'D')
 				{
 					op = op.substr(0, 3);
 					line.flags |= FLAG_FORCEABS; // 2 byte address
@@ -1249,7 +1255,6 @@ void CLASS::initpass(void)
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
-	generateCode = true;
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
@@ -1583,14 +1588,15 @@ int CLASS::substituteVariables(MerlinLine & line)
 	return (res);
 }
 
+// this function determines if code generation is turned off (IF,DO,LUP,MAC, etc
 bool CLASS::codeSkipped(void)
 {
 	bool res = false;
 
-	if (curLUP.lupskip)
-	{
-		res = true;
-	}
+	res = (curLUP.lupskip) ? true : res;
+	res = (curDO.doskip) ? true : res;
+
+	//printf("codeskip: %d\n",res);
 
 	return (res);
 }
@@ -1690,6 +1696,7 @@ void CLASS::process(void)
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
 			{
 				x = 0;
+				line.outbytect=0;
 			}
 
 			if (x > 0)
