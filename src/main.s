@@ -395,11 +395,8 @@ L00BC       bit     L00BC
 
             lst
 lup_start:
-            lup     3       
+            lup     0     
             db      0   ; outside 
-            ;lup     3
-            ;db      1   ; inside
-            ;--^      
             --^             
 
 

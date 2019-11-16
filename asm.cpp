@@ -464,12 +464,12 @@ void CLASS::complete(void)
 {
 
 	uint64_t n = GetTickCount();
-	if (isDebug())
+	//if (isDebug())
 	{
 		//cout << "Processing Time: " << n - starttime << "ms" << endl;
 		uint64_t x = n - starttime;
 		uint32_t x1 = x & 0xFFFFFFFF;
-		printf("Processing Time: %u ms\n", x1);
+		printf("Elapsed time: %u ms\n", x1);
 
 	}
 }
@@ -614,7 +614,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 		{
 			// is this the first file in the compilation, or a PUT/USE?
 			// if first, change CWD to location of file
-			LOG_DEBUG << "Changing directory to: " << dir << endl;
+			//LOG_DEBUG << "Changing directory to: " << dir << endl;
 			if (chdir(dir.c_str())) {} // change directory to where the file is
 		}
 
@@ -1284,8 +1284,6 @@ void CLASS::initpass(void)
 
 void CLASS::complete(void)
 {
-	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", PC.totalbytes, errorct);
-
 	if (savepath != "")
 	{
 		if (errorct == 0)
@@ -1317,13 +1315,16 @@ void CLASS::complete(void)
 		}
 	}
 
+	printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct,lines.size(),symbols.size());
+
+	TFileProcessor::complete();
+
 	if (listing)
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
 		showVariables();
 	}
-	TFileProcessor::complete();
 }
 
 int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)

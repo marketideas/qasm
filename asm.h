@@ -64,6 +64,7 @@ enum asmErrors
 	errBadCharacter,
 	errUnexpectedOp,
 	errUnexpectedEOF,
+	errBadLUPOperand,
 	errMAX
 };
 
@@ -96,6 +97,7 @@ const std::string errStrings[errMAX + 1] =
 	"Unexpected character in input",
 	"Unexpected opcode",
 	"Unexpected End of File",
+	"LUP value must be 0 < VAL <= $8000"
 
 	""
 };

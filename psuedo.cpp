@@ -16,8 +16,11 @@ CLASS::~CLASS()
 int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
-	UNUSED(line);
-	UNUSED(a);
+
+	TEvaluator eval(a);
+
+	int64_t eval_result = 0;
+	uint8_t shift;
 	int lidx, len;
 	int res = 0;
 	int err = 0;
@@ -29,15 +32,26 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
 		if (len >= 0)
 		{
+
+			shift = 0;
+			eval_result = 0;
+			int x = eval.evaluate(line.operand, eval_result, shift);
+			if ((x < 0) || (eval_result<=0) || (eval_result>0x8000))
+			{
+				// merlin just ignores LUP if the value is out of range
+				a.curLUP.lupct=0;
+				goto out;
+			}
+
+
 			a.LUPstack.push(a.curLUP);
 
 			a.curLUP.lupoffset = len;
-			a.curLUP.lupct = 3; // evaluate here
+			a.curLUP.lupct = eval_result&0xFF; // evaluate here
 			a.curLUP.luprunning++;
 		}
 		else
 		{
-			printf("err 3\n");
 			err = errUnexpectedOp;
 		}
 	}
@@ -58,6 +72,9 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					goto out;
 				}
 			}
+			// kind of a silent error here, just make sure we reinitialize
+			a.curLUP.luprunning=0;
+			a.curLUP.lupct=0;
 
 			//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
 			if (a.LUPstack.size() > 0)
@@ -67,14 +84,13 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			}
 			else
 			{
-				printf("err 2\n");
 				err = errUnexpectedOp;
 			}
 		}
 		else
 		{
-			printf("err 1\n");
-			err = errUnexpectedOp;
+			// SGQ - found a '--^' without a LUP, should we just ignore?
+			//err = errUnexpectedOp;
 		}
 	}
 
@@ -367,7 +383,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_DUM:
 		case P_DEND:
 			res = doDUM(a, line, opinfo);
-			line.flags|=FLAG_FORCEADDRPRINT;
+			line.flags |= FLAG_FORCEADDRPRINT;
 
 			break;
 		case P_ORG:
@@ -382,7 +398,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
-			line.flags|=FLAG_FORCEADDRPRINT;
+			line.flags |= FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
