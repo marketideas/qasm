@@ -25,7 +25,7 @@
 #define OP_SPECIAL 0x0008
 
 // these bits are actually the CC (last 2 bits) of opcode addressing
-#define OP_CLASS0  0x0000  
+#define OP_CLASS0  0x0000
 #define OP_CLASS1  0x0100
 #define OP_CLASS2  0x0200
 #define OP_CLASS3  0x0300
@@ -54,11 +54,13 @@ enum asmErrors
 	errBadDUMop,
 	errOverflow,
 	errRecursiveOp,
-    errOpcodeNotStarted,
-    errDuplicateFile,
-    errFileNotFound,
-    errFileNoAccess,
-    errBadEvaluation,
+	errOpcodeNotStarted,
+	errDuplicateFile,
+	errFileNotFound,
+	errFileNoAccess,
+	errBadEvaluation,
+	errMalformed,
+	errBadCharacter,
 	errMAX
 };
 
@@ -77,16 +79,18 @@ const std::string errStrings[errMAX + 1] =
 	"Relative branch offset too large",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
-	"Unable to evaluate",
+	"Error in expression",
 	"Duplicate Symbol",
 	"Invalid use of DUM/DEND",
 	"Overflow detected",
 	"Recursive Operand",
-    "Opcode without start",
-    "File already included",
-    "File not found",
-    "File no access",
-    "Unable to evaluate",
+	"Opcode without start",
+	"File already included",
+	"File not found",
+	"File no access",
+	"Unable to evaluate",
+	"Malformed Operand",
+	"Bad character in input",
 
 	""
 };
@@ -132,7 +136,7 @@ public:
 	{
 		origin = old.origin;
 		currentpc = old.currentpc;
-		orgsave=old.orgsave;
+		orgsave = old.orgsave;
 		totalbytes = old.totalbytes;
 	};
 
@@ -141,7 +145,7 @@ public:
 		origin = other.origin;
 		currentpc = other.currentpc;
 		totalbytes = other.totalbytes;
-		orgsave=other.orgsave;
+		orgsave = other.orgsave;
 		return (*this);
 	};
 
@@ -150,7 +154,7 @@ public:
 		origin = 0;
 		currentpc = 0;
 		totalbytes = 0;
-		orgsave=0;
+		orgsave = 0;
 	};
 	~TOriginSection()
 	{
@@ -215,8 +219,8 @@ public:
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
-	virtual std::string processFilename(std::string p,std::string currentdir,int level);
-	virtual int processfile(std::string p,std::string &newfilename);
+	virtual std::string processFilename(std::string p, std::string currentdir, int level);
+	virtual int processfile(std::string p, std::string &newfilename);
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
@@ -237,6 +241,23 @@ public:
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
 	virtual void complete(void);
+};
+
+class TLUPstruct
+{
+public:
+	TLUPstruct()
+	{
+		clear();
+	}
+	void clear(void) {
+		lupct=0;
+		lupoffset=0;
+		luprunning=0;
+	}
+	uint16_t lupct;
+	uint32_t lupoffset;
+	uint16_t luprunning;
 };
 
 class TSymbol;
@@ -305,6 +326,9 @@ public:
 
 	TOriginSection PC;
 	std::stack<TOriginSection> PCstack;
+	std::stack<TLUPstruct> LUPstack;
+	TLUPstruct curLUP;
+
 	TPsuedoOp *psuedoops;
 
 	uint16_t pass;
@@ -330,7 +354,7 @@ public:
 	void initpass(void);
 	void showSymbolTable(bool alpha);
 	void showVariables(void);
-	int evaluate(MerlinLine &line,std::string expr, int64_t &value);
+	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line);
 	int parseOperand(MerlinLine &line);

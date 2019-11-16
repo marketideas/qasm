@@ -260,7 +260,7 @@ void CLASS::set(std::string line)
 
 	clear();
 
-	delim=0;
+	delim = 0;
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
@@ -1255,12 +1255,17 @@ void CLASS::initpass(void)
 	dumstartaddr = 0;
 	dumstart = 0;
 
-
 	variables.clear(); // clear the variables for each pass
+
 	while (!PCstack.empty())
 	{
 		PCstack.pop();
 	}
+	while (!LUPstack.empty())
+	{
+		LUPstack.pop();
+	}
+	curLUP.clear();
 	savepath = "";
 }
 
@@ -1705,7 +1710,44 @@ int CLASS::doline(int lineno, std::string line)
 	l.syntax = syntax;
 	lines.push_back(l);
 
-	if ((op == "use") || (op == "put"))
+
+	if (op == "lup")
+	{
+		curLUP.lupoffset = lines.size();
+		LUPstack.push(curLUP);
+		curLUP.luprunning++;
+		curLUP.lupct = 3;
+	}
+	else if (op == "--^")
+	{
+		if (curLUP.luprunning > 0)
+		{
+			while (curLUP.luprunning > 0)
+			{
+				if (curLUP.lupct > 0)
+				{
+
+					curLUP.lupct--;
+
+				}
+				if (curLUP.lupct == 0)
+				{
+					curLUP.luprunning--;
+					curLUP = LUPstack.top();
+					LUPstack.pop();
+				}
+			}
+		}
+		else
+		{
+			l.setError(errDuplicateFile);
+			curLUP.luprunning = 0;
+			l.print(0);
+			errorct++;
+			res = -1;
+		}
+	}
+	else if ((op == "use") || (op == "put"))
 	{
 		std::string fn;
 		x = processfile(l.operand, fn);

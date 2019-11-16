@@ -55,7 +55,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			wordsize = 4;
 			break;
 		default:
-			wordsize=0;
+			wordsize = 0;
 			break;
 	}
 
@@ -70,7 +70,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		int r;
 		uint8_t b;
 
-		shift=0;
+		shift = 0;
 		r = eval.evaluate(expr, eval_result, shift);
 		if (r < 0)
 		{
@@ -80,17 +80,17 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				line.setError(errBadEvaluation);
 			}
 		}
-		if (shift=='>')
+		if (shift == '>')
 		{
-			eval_result=(eval_result) & 0xFF;
+			eval_result = (eval_result) & 0xFF;
 		}
-		if (shift=='<')
+		if (shift == '<')
 		{
-			eval_result=(eval_result>>8) & 0xFF;
+			eval_result = (eval_result >> 8) & 0xFF;
 		}
-		else if ((shift=='^') || (shift=='|'))
+		else if ((shift == '^') || (shift == '|'))
 		{
-			eval_result=(eval_result>>16)&0xFF;
+			eval_result = (eval_result >> 16) & 0xFF;
 		}
 
 
@@ -101,7 +101,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			{
 				for (i = 0; i < wordsize; i++)
 				{
-					b=(eval_result >> (8 * i))&0xFF;
+					b = (eval_result >> (8 * i)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -111,7 +111,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				// big endian
 				for (i = 0; i < wordsize; i++)
 				{
-					b=(eval_result >> ((wordsize-1-i) * 8))&0xFF;
+					b = (eval_result >> ((wordsize - 1 - i) * 8)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -125,7 +125,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	line.datafillbyte = 0xCA;
 	// ===============
 #endif
-	line.outbytect=outct;
+	line.outbytect = outct;
 	return (outct);
 }
 
@@ -244,7 +244,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 		else
 		{
-			line.setError(errBadOperand);
+			line.setError(errBadCharacter);
 			return 0;
 		}
 
@@ -268,7 +268,11 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			b = 0;
 			bytect++;
 		}
-
+	}
+	if (ct & 0x01) // we got an odd number of nibbles
+	{
+		line.setError(errMalformed);
+		bytect = 0;
 	}
 	line.outbytect = bytect;
 	//printf("bytect=%d\n",bytect);
