@@ -367,6 +367,8 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_DUM:
 		case P_DEND:
 			res = doDUM(a, line, opinfo);
+			line.flags|=FLAG_FORCEADDRPRINT;
+
 			break;
 		case P_ORG:
 			if (line.operand.length() > 0)
@@ -380,6 +382,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
+			line.flags|=FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);

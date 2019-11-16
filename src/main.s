@@ -1,4 +1,4 @@
-            lst     off     
+            ;lst     off     
 *
 *  main.s
 *  Merlin32 Test
@@ -40,7 +40,6 @@ TSTADDR     =       $1000   ;absolute address for testing
 *==========================================================
 * Data Index DUM section test
 
-            lst     off             
             DUM     0       
 dum0        ds      1       ;fractional byte
 dum1        ds      1       
@@ -397,7 +396,7 @@ L00BC       bit     L00BC
             lst
 lup_start:
             lup     3       
-            ;db      0   ; outside 
+            db      0   ; outside 
             ;lup     3
             ;db      1   ; inside
             ;--^      

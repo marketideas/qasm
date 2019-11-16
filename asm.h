@@ -18,6 +18,7 @@
 #define FLAG_BIGNUM    0x10
 #define FLAG_INDUM     0x20
 
+#define FLAG_FORCEADDRPRINT 0x0100
 
 #define OP_A       0x0001
 #define OP_XY      0x0002

@@ -87,7 +87,12 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	pcol = 0;
-	if (!empty)
+
+	bool saddr = flags & FLAG_FORCEADDRPRINT;
+	saddr = (outbytect > 0) ? true : saddr;
+	saddr = (printlable != "") ? true : saddr;
+
+	if (saddr)
 	{
 		pcol += printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
 	}
@@ -143,7 +148,10 @@ void CLASS::print(uint32_t lineno)
 					pcol += printf(" ");
 				}
 			}
-			//pcol += printf("%s", comment.c_str());
+			else
+			{
+				pcol += printf("%s", comment.c_str());
+			}
 		}
 	}
 	else
@@ -233,7 +241,7 @@ void CLASS::clear()
 	operand_expr2 = "";
 	addrtext = "";
 	linemx = 0;
-	commentcol=40;
+	commentcol = 40;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
@@ -1575,12 +1583,12 @@ void CLASS::process(void)
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
-			uint16_t cc=tabs[2];
-			if (cc==0)
+			uint16_t cc = tabs[2];
+			if (cc == 0)
 			{
-				cc=40;
+				cc = 40;
 			}
-			line.commentcol=cc;
+			line.commentcol = cc;
 			line.bytect = 0;
 			line.showmx = showmx;
 
