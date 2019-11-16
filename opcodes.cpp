@@ -761,8 +761,8 @@ void CLASS::insertOpcodes(void)
 	pushopcode("CHK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ERR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("KBD", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("LUP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("--^", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("LUP", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("--^", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
 	pushopcode("PAU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SW", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

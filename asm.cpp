@@ -27,7 +27,7 @@ void CLASS::print(uint32_t lineno)
 {
 	int pcol;
 	uint32_t l, i;
-	int commentcol = 40;
+	//int commentcol;
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
@@ -143,30 +143,31 @@ void CLASS::print(uint32_t lineno)
 					pcol += printf(" ");
 				}
 			}
-			pcol += printf("%s", comment.c_str());
+			//pcol += printf("%s", comment.c_str());
 		}
 	}
 	else
 	{
 		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
-		if (errorcode > 0)
-		{
-
-			while (pcol < commentcol)
-			{
-				pcol += printf(" ");
-			}
-			pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
-		}
-		else
-		{
-			while (pcol < commentcol)
-			{
-				pcol += printf(" ");
-			}
-			pcol += printf("%s", comment.c_str());
-		}
 	}
+	if (errorcode > 0)
+	{
+		while (pcol < commentcol)
+		{
+			pcol += printf(" ");
+		}
+		pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
+	}
+	else
+	{
+		while (pcol < commentcol)
+		{
+			pcol += printf(" ");
+		}
+		pcol += printf("%s", comment.c_str());
+	}
+	//printf("\n");
+
 	if ((!nc) && (errorcode > 0))
 	{
 		SetColor(CL_NORMAL | BG_NORMAL);
@@ -232,6 +233,7 @@ void CLASS::clear()
 	operand_expr2 = "";
 	addrtext = "";
 	linemx = 0;
+	commentcol=40;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
@@ -415,11 +417,39 @@ void CLASS::errorOut(uint16_t code)
 
 void CLASS::init(void)
 {
+	int ts, tabpos;
+	std::string s;
+
 	filenames.clear();
 	starttime = GetTickCount();
 	initialdir = Poco::Path::current();
 	syntax = 0;
 	filecount = 0;
+
+	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
+	tabstr = Poco::trim(tabstr);
+
+	memset(tabs, 0x00, sizeof(tabs));
+
+	Poco::StringTokenizer t(tabstr, ",;", 0);
+	tabpos = 0;
+	for (auto itr = t.begin(); itr != t.end(); ++itr)
+	{
+		s = Poco::trim(*itr);
+		try
+		{
+			ts = Poco::NumberParser::parse(s);
+		}
+		catch (...)
+		{
+			ts = 0;
+		}
+		if ((ts >= 0) && (ts < 240))
+		{
+			tabs[tabpos++] = ts;
+		}
+	}
+
 }
 
 void CLASS::complete(void)
@@ -730,34 +760,9 @@ CLASS::~CLASS()
 void CLASS::init(void)
 {
 	std::string s;
-	int ts, tabpos;
 	lines.clear();
 
 	syntax = SYNTAX_MERLIN;
-
-	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
-	tabstr = Poco::trim(tabstr);
-
-	memset(tabs, 0x00, sizeof(tabs));
-
-	Poco::StringTokenizer t(tabstr, ",;", 0);
-	tabpos = 0;
-	for (auto itr = t.begin(); itr != t.end(); ++itr)
-	{
-		s = Poco::trim(*itr);
-		try
-		{
-			ts = Poco::NumberParser::parse(s);
-		}
-		catch (...)
-		{
-			ts = 0;
-		}
-		if ((ts >= 0) && (ts < 240))
-		{
-			tabs[tabpos++] = ts;
-		}
-	}
 }
 
 int CLASS::doline(int lineno, std::string line)
@@ -1549,6 +1554,7 @@ void CLASS::process(void)
 	int x;;
 	char c;
 	char buff[256];
+	MerlinLine errLine;
 	std::string op, operand, ls;
 
 	pass = 0;
@@ -1569,6 +1575,12 @@ void CLASS::process(void)
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
+			uint16_t cc=tabs[2];
+			if (cc==0)
+			{
+				cc=40;
+			}
+			line.commentcol=cc;
 			line.bytect = 0;
 			line.showmx = showmx;
 
@@ -1683,6 +1695,16 @@ void CLASS::process(void)
 			}
 			lineno++;
 		}
+
+		// end of file reached here, do some final checks
+
+		if (LUPstack.size() > 0)
+		{
+			errLine.clear();
+			errLine.setError(errUnexpectedEOF);
+			errLine.print(lineno);
+			pass = 2;
+		}
 		pass++;
 	}
 
@@ -1710,44 +1732,7 @@ int CLASS::doline(int lineno, std::string line)
 	l.syntax = syntax;
 	lines.push_back(l);
 
-
-	if (op == "lup")
-	{
-		curLUP.lupoffset = lines.size();
-		LUPstack.push(curLUP);
-		curLUP.luprunning++;
-		curLUP.lupct = 3;
-	}
-	else if (op == "--^")
-	{
-		if (curLUP.luprunning > 0)
-		{
-			while (curLUP.luprunning > 0)
-			{
-				if (curLUP.lupct > 0)
-				{
-
-					curLUP.lupct--;
-
-				}
-				if (curLUP.lupct == 0)
-				{
-					curLUP.luprunning--;
-					curLUP = LUPstack.top();
-					LUPstack.pop();
-				}
-			}
-		}
-		else
-		{
-			l.setError(errDuplicateFile);
-			curLUP.luprunning = 0;
-			l.print(0);
-			errorct++;
-			res = -1;
-		}
-	}
-	else if ((op == "use") || (op == "put"))
+	if ((op == "use") || (op == "put"))
 	{
 		std::string fn;
 		x = processfile(l.operand, fn);
