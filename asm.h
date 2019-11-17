@@ -18,6 +18,8 @@
 #define FLAG_BIGNUM    0x10
 #define FLAG_INDUM     0x20
 
+#define FLAG_FORCEADDRPRINT 0x0100
+#define FLAG_NOLINEPRINT 0x2000
 
 #define OP_A       0x0001
 #define OP_XY      0x0002
@@ -32,8 +34,8 @@
 // these ORd bits specify specific classes of opcodes and subgroups
 #define OP_STD     (0x1000 | OP_CLASS1)
 #define OP_ASL     (0x2000 | OP_CLASS2)
-#define OP_STX     (0x3000 | OP_CLASS2)
 #define OP_C0      (0x4000 | OP_CLASS0)
+#define OP_STX     (0x8000 | OP_ASL|OP_CLASS2)
 
 enum asmErrors
 {
@@ -49,7 +51,6 @@ enum asmErrors
 	errBadBranch,
 	errForwardRef,
 	errNoRedefinition,
-	errBadOperand,
 	errDupSymbol,
 	errBadDUMop,
 	errOverflow,
@@ -59,8 +60,13 @@ enum asmErrors
 	errFileNotFound,
 	errFileNoAccess,
 	errBadEvaluation,
-	errMalformed,
+	errIllegalCharOperand,
 	errBadCharacter,
+	errUnexpectedOp,
+	errUnexpectedEOF,
+	errBadLUPOperand,
+	errBadLabel,
+	errBadOperand,
 	errMAX
 };
 
@@ -73,13 +79,12 @@ const std::string errStrings[errMAX + 1] =
 	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
-	"Unknown Opcode",
+	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
-	"Relative branch offset too large",
+	"Bad branch",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
-	"Error in expression",
 	"Duplicate Symbol",
 	"Invalid use of DUM/DEND",
 	"Overflow detected",
@@ -89,8 +94,13 @@ const std::string errStrings[errMAX + 1] =
 	"File not found",
 	"File no access",
 	"Unable to evaluate",
-	"Malformed Operand",
-	"Bad character in input",
+	"Illegal char in operand",
+	"Unexpected character in input",
+	"Unexpected opcode",
+	"Unexpected End of File",
+	"LUP value must be 0 < VAL <= $8000",
+	"Unknown label",
+	"Bad operand",
 
 	""
 };
@@ -177,7 +187,9 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
+	uint8_t tabs[16];
 	bool showmx;
+	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -212,6 +224,8 @@ protected:
 	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
+	uint8_t tabs[16];
+
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
@@ -231,7 +245,6 @@ public:
 class TMerlinConverter : public TFileProcessor
 {
 protected:
-	uint8_t tabs[10];
 	std::vector<MerlinLine> lines;
 
 public:
@@ -254,10 +267,27 @@ public:
 		lupct=0;
 		lupoffset=0;
 		luprunning=0;
+		lupskip=false;
 	}
 	uint16_t lupct;
+	bool lupskip;
 	uint32_t lupoffset;
 	uint16_t luprunning;
+};
+
+class TDOstruct
+{
+public:
+	TDOstruct()
+	{
+		clear();
+	}
+	void clear(void) {
+		doskip=false;
+		value=0;
+	}
+	uint32_t value;
+	bool doskip;
 };
 
 class TSymbol;
@@ -301,7 +331,6 @@ class T65816Asm : public TFileProcessor
 public:
 	// options
 	bool casesen;
-	bool listing;
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
@@ -318,6 +347,7 @@ public:
 
 	std::string savepath;
 	TSymbol *currentsym;
+	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;
@@ -325,15 +355,19 @@ public:
 	Poco::HashMap<std::string, TSymbol> variables;
 
 	TOriginSection PC;
+	TLUPstruct curLUP;
+	TDOstruct curDO;
+	bool listing;
+	uint8_t truncdata; 	// for the TR opcode
+
 	std::stack<TOriginSection> PCstack;
 	std::stack<TLUPstruct> LUPstack;
-	TLUPstruct curLUP;
+	std::stack<TDOstruct> DOstack;
+	std::stack<bool> LSTstack;
 
 	TPsuedoOp *psuedoops;
 
 	uint16_t pass;
-
-    bool inDUMSection;		// yes if we are in a DUM/DEND section
 
 	T65816Asm();
 	virtual ~T65816Asm();
@@ -359,6 +393,8 @@ public:
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line);
+	bool codeSkipped(void);
+
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
 	void setOpcode(MerlinLine &line, uint8_t op);

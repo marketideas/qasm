@@ -1975,7 +1975,7 @@ DIError DiskFSProDOS::CreateFile(const CreateParms* pParms, A2File** ppNewFile)
      */
     dirEntryPtr[0x00] = (pParms->storageType << 4) | strlen(upperName);
     strncpy((char*) &dirEntryPtr[0x01], upperName, A2FileProDOS::kMaxFileName);
-    if (pParms->fileType >= 0 && pParms->fileType <= 0xff)
+    if (pParms->fileType <= 0xff)
         dirEntryPtr[0x10] = (uint8_t) pParms->fileType;
     else
         dirEntryPtr[0x10] = 0;      // HFS long type?
@@ -1996,7 +1996,7 @@ DIError DiskFSProDOS::CreateFile(const CreateParms* pParms, A2File** ppNewFile)
         PutShortLE(&dirEntryPtr[0x1c], 0);  // version, min_version
     }
     dirEntryPtr[0x1e] = pParms->access;
-    if (pParms->auxType >= 0 && pParms->auxType <= 0xffff)
+    if (pParms->auxType <= 0xffff)
         PutShortLE(&dirEntryPtr[0x1f], (uint16_t) pParms->auxType);
     else
         PutShortLE(&dirEntryPtr[0x1f], 0);

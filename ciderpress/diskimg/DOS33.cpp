@@ -20,7 +20,7 @@
  * ===========================================================================
  */
 
-const int kMaxSectors = 32;
+//const int kMaxSectors = 32;
 
 const int kSctSize = 256;
 /* do we need a way to override these? */

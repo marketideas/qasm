@@ -80,7 +80,7 @@ SST disk.
 const int kNumSymbols = 256;
 const int kNumFavorites = 20;
 const int kRLEDelim = 0x97;     // value MUST have high bit set
-const int kMaxExcessByteCount = WrapperDDD::kMaxDDDZeroCount + 1;
+//const int kMaxExcessByteCount = WrapperDDD::kMaxDDDZeroCount + 1;
 //const int kTrackLen = 4096;
 //const int kNumTracks = 35;
 

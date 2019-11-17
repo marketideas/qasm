@@ -26,7 +26,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     std::deque<Token> tokens;
     int state = 0;
     char c;
-    char delim = 0;
+    char delim;
     std::string ident, asc;
 
     std::string ops = "+-*//^!.&()";
@@ -225,9 +225,9 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 }
                 else
                 {
-                    //printf("symbol find |%s|\n",token.str.c_str());
-
                     sym = assembler.findSymbol(token.str);
+                    //printf("symbol find |%s| %p\n",token.str.c_str(),sym);
+
                     if (sym != NULL)
                     {
                         sym->used = true;
@@ -379,7 +379,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
 
     i = 0;
-    l = (int)n.length();
+    l = n.length();
     s = "";
     for (i = 0; i < l; i++)
     {
