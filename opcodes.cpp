@@ -226,7 +226,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 			op = (m == syn_abs ? 0x64 : op);
 			op = (m == syn_absx ? 0x74 : op);
 
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = (op == 0x64) ? 0x9C : op;
@@ -236,7 +236,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 2:		// TSB
 			res++;
 			op = (m == syn_abs ? 0x04 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x0C;
@@ -245,7 +245,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 3:		// TRB
 			res++;
 			op = (m == syn_abs ? 0x14 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x1C;
@@ -487,14 +487,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			cc = 0x01;
 			op = 0x80;
 			bbb = 0x02;
-			//if ((mx&0x02)==0)
-			//{
-			//	bytelen++;
-			//}
-
 		}
 
-		else if ((bbb > 0) && (line.expr_value >= 0x100))
+		else if ((bbb > 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 		{
 			bbb |= 0x02;
 			bytelen++;

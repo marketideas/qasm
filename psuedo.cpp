@@ -221,8 +221,11 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
-	std::string oper = line.operand_expr;
+	std::string oper = line.operand;
 	std::string op = Poco::toUpper(Poco::trim(line.opcode));
+
+	//printf("DFB TOK1 : |%s|\n", oper.c_str());
+
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
 
@@ -255,38 +258,49 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
 	{
-		//printf("%s\n",(*itr).c_str());
 		//evaluate each of these strings, check for errors on pass 2
 
 		std::string expr = *itr;
+
+		//printf("DFB TOK : |%s|\n", expr.c_str());
+
 		int64_t eval_result = 0;
 		uint8_t shift;
 		int r;
 		uint8_t b;
 
-		shift = 0;
-		r = eval.evaluate(expr, eval_result, shift);
-		if (r < 0)
+		if (expr.length() > 0)
 		{
-			//printf("eval error %d |%s|\n", r,expr.c_str());
-			if (a.pass > 0)
+			if (expr[0] == '#')
 			{
-				line.setError(errBadEvaluation);
+				expr[0] = ' ';
+				expr = Poco::trim(expr);
+			}
+			shift = 0;
+			eval_result = 0;
+			//printf("DFB EVAL: |%s|\n", expr.c_str());
+			r = eval.evaluate(expr, eval_result, shift);
+			if (r < 0)
+			{
+				//printf("error\n");
+				if (a.pass > 0)
+				{
+					line.setError(errBadEvaluation);
+				}
+			}
+			if (shift == '>')
+			{
+				eval_result = (eval_result) & 0xFF;
+			}
+			if (shift == '<')
+			{
+				eval_result = (eval_result >> 8) & 0xFF;
+			}
+			else if ((shift == '^') || (shift == '|'))
+			{
+				eval_result = (eval_result >> 16) & 0xFF;
 			}
 		}
-		if (shift == '>')
-		{
-			eval_result = (eval_result) & 0xFF;
-		}
-		if (shift == '<')
-		{
-			eval_result = (eval_result >> 8) & 0xFF;
-		}
-		else if ((shift == '^') || (shift == '|'))
-		{
-			eval_result = (eval_result >> 16) & 0xFF;
-		}
-
 
 		outct += wordsize;
 		if (a.pass > 0)
@@ -375,10 +389,10 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	if (a.pass > 0)
 	{
 		s = Poco::toUpper(Poco::trim(line.operand_expr));
-		if (s=="")
+		if (s == "")
 		{
-			a.listing=true;
-			a.skiplist=true;
+			a.listing = true;
+			a.skiplist = true;
 		}
 		else if (s == "RTN")
 		{
@@ -560,7 +574,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = doDO(a, line, opinfo);
 			break;
 		case P_TR:
-			res=doTR(a,line,opinfo);
+			res = doTR(a, line, opinfo);
 			break;
 
 	}
