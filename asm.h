@@ -34,8 +34,8 @@
 // these ORd bits specify specific classes of opcodes and subgroups
 #define OP_STD     (0x1000 | OP_CLASS1)
 #define OP_ASL     (0x2000 | OP_CLASS2)
-#define OP_STX     (0x3000 | OP_CLASS2)
 #define OP_C0      (0x4000 | OP_CLASS0)
+#define OP_STX     (0x8000 | OP_ASL|OP_CLASS2)
 
 enum asmErrors
 {

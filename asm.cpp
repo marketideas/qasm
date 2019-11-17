@@ -1165,6 +1165,10 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			line.flags |= FLAG_FORCELONG;
 			break;
 	}
+	if (line.expr_value>=0x100)
+	{
+		line.flags|=FLAG_FORCEABS;
+	}
 
 
 	auto itr = opcodes.find(Poco::toUpper(op));
@@ -1354,6 +1358,10 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
+			if (isDebug()>=1)
+			{
+				savepath+="1";  // append this to the end to help with testing against other assemblers
+			}
 			printf("saving to file: %s\n", savepath.c_str());
 
 			std::ofstream f(savepath);
