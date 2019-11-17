@@ -13,11 +13,14 @@ SRC=`ls ./testdata`
 for S in $SRC ; do
 
 	rm -f $TMPFILE
-	./qasm ./testdata/$S >> $TMPFILE
+	./qasm -o 0/$OUTDIR/$S ./testdata/$S >> $TMPFILE
+
 	R=?$
 	echo $S
 	cat $TMPFILE | grep "End qASM assembly"
 
 done
+ls -l $OUTDIR
+
 
 
