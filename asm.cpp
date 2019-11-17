@@ -1786,7 +1786,7 @@ void CLASS::process(void)
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				line.expr_value = value;
+				line.expr_value = (uint32_t)value;
 			}
 			else
 			{
