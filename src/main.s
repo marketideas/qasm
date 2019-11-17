@@ -13,9 +13,9 @@
             xc              
             mx      %00     
 
+
 *==========================================================
 * monitor addresses
-
 
 TEXT        =       $FB39   ;Reset text window
 TABV        =       $FB5B   ;Complete vtab, using contents of 'A'

@@ -308,5 +308,5 @@ startF0
 	inc expr,x
 	sbcl lexpr,x
 	lst off
-	sav ./test.bin
+	sav /tmp/test.bin
 	

@@ -25,12 +25,12 @@ void CLASS::setError(uint32_t ecode)
 
 void CLASS::print(uint32_t lineno)
 {
-	int pcol;
-	uint32_t l, i;
-	//int commentcol;
+	uint32_t l, i, savpcol, pcol;
+	bool commentprinted = false;
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
+	uint8_t commentcol=tabs[2];
 
 	uint32_t b = 4; // how many bytes show on the first line
 
@@ -53,7 +53,7 @@ void CLASS::print(uint32_t lineno)
 		if (merlinstyle)
 		{
 			//printf("errorcode=%d\n",errorcode);
-			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
+			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
 			if (errorText != "")
 			{
 				printf("%s", errorText.c_str());
@@ -155,6 +155,7 @@ void CLASS::print(uint32_t lineno)
 		pcol += printf("%02X ", addressmode & 0xFF);
 	}
 
+	savpcol = pcol; // this is how many bytes are in the side margin
 	pcol = 0; // reset pcol here because this is where source code starts
 
 	if (empty)
@@ -168,15 +169,43 @@ void CLASS::print(uint32_t lineno)
 					pcol += printf(" ");
 				}
 			}
-			else
+			//else
 			{
-				pcol += printf("%s", comment.c_str());
+				int comct = 0;
+				for (uint32_t cc = 0; cc < comment.length(); cc++)
+				{
+					pcol += printf("%c", comment[cc]);
+					comct++;
+					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 10)))
+					{
+						printf("\n");
+						pcol = 0;
+						while (pcol < (commentcol + savpcol))
+						{
+							pcol += printf(" ");
+						}
+					}
+				}
+				//pcol += printf("%s", comment.c_str());
+
 			}
+			commentprinted = true;
 		}
 	}
 	else
 	{
-		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
+		pcol += printf("%s ",printlable.c_str());
+		while (pcol < tabs[0])
+		{
+			pcol += printf(" ");
+		}
+		pcol+=printf("%s ",opcode.c_str());
+		while (pcol < tabs[1])
+		{
+			pcol += printf(" ");
+		}
+		pcol+=printf("%s ",operand.c_str());
+		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinstyle))
 	{
@@ -186,7 +215,7 @@ void CLASS::print(uint32_t lineno)
 		}
 		pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
 	}
-	else
+	else if (!commentprinted)
 	{
 		while (pcol < commentcol)
 		{
@@ -208,7 +237,7 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	uint32_t ct = 1;
-	if ((obc > b) && ((truncdata&0x01)==0))
+	if ((obc > b) && ((truncdata & 0x01) == 0))
 	{
 		ct = 0;
 		uint8_t db;
@@ -261,7 +290,6 @@ void CLASS::clear()
 	operand_expr2 = "";
 	addrtext = "";
 	linemx = 0;
-	commentcol = 40;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
@@ -1293,7 +1321,7 @@ void CLASS::initpass(void)
 	passcomplete = false;
 	dumstartaddr = 0;
 	dumstart = 0;
-	truncdata=0;
+	truncdata = 0;
 	variables.clear(); // clear the variables for each pass
 
 	while (!PCstack.empty())
@@ -1626,19 +1654,14 @@ void CLASS::process(void)
 
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
-			line.truncdata=truncdata;
+			line.truncdata = truncdata;
+			memcpy(line.tabs,tabs,sizeof(tabs));
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
-			uint16_t cc = tabs[2];
-			if (cc == 0)
-			{
-				cc = 40;
-			}
-			line.commentcol = cc;
 			line.bytect = 0;
 			line.showmx = showmx;
 
@@ -1701,7 +1724,7 @@ void CLASS::process(void)
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
 			{
 				x = 0;
-				line.outbytect=0;
+				line.outbytect = 0;
 			}
 
 			if (x > 0)

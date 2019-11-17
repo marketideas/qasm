@@ -187,7 +187,7 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
-	uint16_t commentcol;
+	uint8_t tabs[16];
 	bool showmx;
 	uint8_t truncdata;
 	uint32_t lineno;
@@ -224,7 +224,7 @@ protected:
 	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
-	uint8_t tabs[10];
+	uint8_t tabs[16];
 
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
