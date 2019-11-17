@@ -13,11 +13,102 @@ CLASS::~CLASS()
 
 }
 
+
+int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	TEvaluator eval(a);
+
+	int64_t eval_result = 0;
+	uint8_t shift;
+	int res = 0;
+	int err = 0;
+
+	std::string op = Poco::toUpper(line.opcode);
+	std::string oper = Poco::toUpper(line.operand);
+
+
+	if (op == "IF")
+	{
+		if (oper == "")
+		{
+			err = errIllegalCharOperand;
+		}
+		goto out;
+	}
+	if (op == "DO")
+	{
+
+		if (oper == "")
+		{
+			err = errIllegalCharOperand;
+			goto out;
+		}
+
+		//line.flags |= FLAG_NOLINEPRINT;
+
+		shift = 0;
+		eval_result = 0;
+		int x = eval.evaluate(line.operand, eval_result, shift);
+		a.curDO.dooff = (eval_result & 0xFFFFFF); // evaluate here
+
+		if (x < 0)
+		{
+			a.curDO.dooff = false;
+			err = errBadLabel;
+			if (a.pass == 0)
+			{
+				err = errForwardRef;
+			}
+		}
+
+		a.DOstack.push(a.curDO);
+		goto out;
+	}
+
+	if (op == "ELSE")
+	{
+		//line.flags |= FLAG_NOLINEPRINT;
+		a.curDO.dooff = !a.curDO.dooff;
+		goto out;
+	}
+
+	if (op == "FIN")
+	{
+		//line.flags |= FLAG_NOLINEPRINT;
+
+		if (a.DOstack.size() > 0)
+		{
+			// kind of a silent error here, just make sure we reinitialize
+			a.curDO.dooff = false;
+			a.curDO = a.DOstack.top();
+			a.DOstack.pop();
+		}
+		else
+		{
+			// kind of a silent error here, just make sure we reinitialize
+			a.curDO.dooff = false;
+		}
+		goto out;
+	}
+
+out:
+	if (err > 0)
+	{
+		line.setError(err);
+	}
+	return (res);
+}
+
 int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
-	UNUSED(line);
-	UNUSED(a);
+
+	TEvaluator eval(a);
+
+	int64_t eval_result = 0;
+	uint8_t shift;
 	int lidx, len;
 	int res = 0;
 	int err = 0;
@@ -26,24 +117,38 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	if (op == "LUP")
 	{
+		line.flags |= FLAG_NOLINEPRINT;
 		len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
 		if (len >= 0)
 		{
+
+			shift = 0;
+			eval_result = 0;
+			int x = eval.evaluate(line.operand, eval_result, shift);
+
 			a.LUPstack.push(a.curLUP);
 
 			a.curLUP.lupoffset = len;
-			a.curLUP.lupct = 3; // evaluate here
+			a.curLUP.lupct = eval_result & 0xFFFF; // evaluate here
 			a.curLUP.luprunning++;
+
+			if ((x < 0) || (eval_result <= 0) || (eval_result > 0x8000))
+			{
+				// merlin just ignores LUP if the value is out of range
+				a.curLUP.lupct = 0;
+				a.curLUP.lupskip = true;
+			}
 		}
 		else
 		{
-			printf("err 3\n");
 			err = errUnexpectedOp;
 		}
 	}
 
 	if (op == "--^")
 	{
+		line.flags |= FLAG_NOLINEPRINT;
+
 		if (a.curLUP.luprunning > 0)
 		{
 			lidx = line.lineno - 1;
@@ -58,6 +163,10 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					goto out;
 				}
 			}
+			// kind of a silent error here, just make sure we reinitialize
+			a.curLUP.luprunning = 0;
+			a.curLUP.lupct = 0;
+			a.curLUP.lupskip = false;
 
 			//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
 			if (a.LUPstack.size() > 0)
@@ -67,14 +176,14 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			}
 			else
 			{
-				printf("err 2\n");
 				err = errUnexpectedOp;
 			}
 		}
 		else
 		{
-			printf("err 1\n");
-			err = errUnexpectedOp;
+			a.curLUP.lupskip = false;
+			// SGQ - found a '--^' without a LUP, should we just ignore?
+			//err = errUnexpectedOp;
 		}
 	}
 
@@ -289,6 +398,14 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
+
+	if (os.length() == 0)
+	{
+		// case where HEX has no operand, Merlin does not flag as error
+		//line.setError(errIllegalCharOperand);
+		bytect = 0;
+		goto out;
+	}
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
@@ -311,8 +428,9 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 		else
 		{
-			line.setError(errBadCharacter);
-			return 0;
+			line.setError(errIllegalCharOperand);
+			bytect = 0;
+			goto out;
 		}
 
 		// Got a good char, append to hex string and see if we've got a byte
@@ -338,9 +456,10 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	if (ct & 0x01) // we got an odd number of nibbles
 	{
-		line.setError(errMalformed);
+		line.setError(errBadOperand);
 		bytect = 0;
 	}
+out:
 	line.outbytect = bytect;
 	return bytect;
 }
@@ -367,6 +486,8 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_DUM:
 		case P_DEND:
 			res = doDUM(a, line, opinfo);
+			line.flags |= FLAG_FORCEADDRPRINT;
+
 			break;
 		case P_ORG:
 			if (line.operand.length() > 0)
@@ -380,6 +501,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
+			line.flags |= FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
@@ -395,8 +517,11 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_LUP:
 			res = doLUP(a, line, opinfo);
-			res = 0;
 			break;
+		case P_DO:
+			res = doDO(a, line, opinfo);
+			break;
+
 	}
 	return (res);
 }

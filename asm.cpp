@@ -34,6 +34,8 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
+	bool merlinstyle=true;
+
 	if (datafillct > 0)
 	{
 		l = datafillct;
@@ -46,7 +48,25 @@ void CLASS::print(uint32_t lineno)
 	{
 		l = b;
 	}
+	if (errorcode > 0)
+	{
+		if (merlinstyle)
+		{
+			//printf("errorcode=%d\n",errorcode);
+			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno+1);
+			if (errorText != "")
+			{
+				printf("%s", errorText.c_str());
+			}
+			printf("\n");
+		}
+		flags &= (~FLAG_NOLINEPRINT);
+	}
 
+	if (flags & FLAG_NOLINEPRINT)
+	{
+		return;
+	}
 	if (!checked)
 	{
 		nc1 = getBool("option.nocolor", false);
@@ -57,7 +77,7 @@ void CLASS::print(uint32_t lineno)
 		nc = nc1;
 	}
 
-	if (!isatty(STDOUT_FILENO))
+	if ((!isatty(STDOUT_FILENO)) || (merlinstyle))
 	{
 		nc = true;
 	}
@@ -87,7 +107,12 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	pcol = 0;
-	if (!empty)
+
+	bool saddr = flags & FLAG_FORCEADDRPRINT;
+	saddr = (outbytect > 0) ? true : saddr;
+	saddr = (printlable != "") ? true : saddr;
+
+	if (saddr)
 	{
 		pcol += printf("%02X/%04X:", (startpc >> 16), startpc & 0xFFFF);
 	}
@@ -143,14 +168,17 @@ void CLASS::print(uint32_t lineno)
 					pcol += printf(" ");
 				}
 			}
-			//pcol += printf("%s", comment.c_str());
+			else
+			{
+				pcol += printf("%s", comment.c_str());
+			}
 		}
 	}
 	else
 	{
 		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
-	if (errorcode > 0)
+	if ((errorcode > 0) && (!merlinstyle))
 	{
 		while (pcol < commentcol)
 		{
@@ -233,7 +261,7 @@ void CLASS::clear()
 	operand_expr2 = "";
 	addrtext = "";
 	linemx = 0;
-	commentcol=40;
+	commentcol = 40;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
@@ -456,12 +484,12 @@ void CLASS::complete(void)
 {
 
 	uint64_t n = GetTickCount();
-	if (isDebug())
+	//if (isDebug())
 	{
 		//cout << "Processing Time: " << n - starttime << "ms" << endl;
 		uint64_t x = n - starttime;
 		uint32_t x1 = x & 0xFFFFFFFF;
-		printf("Processing Time: %u ms\n", x1);
+		printf("Elapsed time: %u ms\n", x1);
 
 	}
 }
@@ -606,7 +634,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 		{
 			// is this the first file in the compilation, or a PUT/USE?
 			// if first, change CWD to location of file
-			LOG_DEBUG << "Changing directory to: " << dir << endl;
+			//LOG_DEBUG << "Changing directory to: " << dir << endl;
 			if (chdir(dir.c_str())) {} // change directory to where the file is
 		}
 
@@ -1221,6 +1249,7 @@ void CLASS::initpass(void)
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
+	generateCode = true;
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
@@ -1270,14 +1299,17 @@ void CLASS::initpass(void)
 	{
 		LUPstack.pop();
 	}
+	while (!DOstack.empty())
+	{
+		DOstack.pop();
+	}
 	curLUP.clear();
+	curDO.clear();
 	savepath = "";
 }
 
 void CLASS::complete(void)
 {
-	printf("\n\n=== Assembly Complete: %d bytes %u errors.\n", PC.totalbytes, errorct);
-
 	if (savepath != "")
 	{
 		if (errorct == 0)
@@ -1309,13 +1341,16 @@ void CLASS::complete(void)
 		}
 	}
 
+	printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct, lines.size(), symbols.size());
+
+	TFileProcessor::complete();
+
 	if (listing)
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
 		showVariables();
 	}
-	TFileProcessor::complete();
 }
 
 int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
@@ -1548,6 +1583,18 @@ int CLASS::substituteVariables(MerlinLine & line)
 	return (res);
 }
 
+bool CLASS::codeSkipped(void)
+{
+	bool res = false;
+
+	if (curLUP.lupskip)
+	{
+		res = true;
+	}
+
+	return (res);
+}
+
 void CLASS::process(void)
 {
 	uint32_t l;
@@ -1575,12 +1622,12 @@ void CLASS::process(void)
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
-			uint16_t cc=tabs[2];
-			if (cc==0)
+			uint16_t cc = tabs[2];
+			if (cc == 0)
 			{
-				cc=40;
+				cc = 40;
 			}
-			line.commentcol=cc;
+			line.commentcol = cc;
 			line.bytect = 0;
 			line.showmx = showmx;
 
@@ -1638,6 +1685,11 @@ void CLASS::process(void)
 			if (op.length() > 0)
 			{
 				x = callOpCode(op, line);
+			}
+
+			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
+			{
+				x = 0;
 			}
 
 			if (x > 0)
@@ -1698,6 +1750,7 @@ void CLASS::process(void)
 
 		// end of file reached here, do some final checks
 
+#if 0
 		if (LUPstack.size() > 0)
 		{
 			errLine.clear();
@@ -1705,6 +1758,7 @@ void CLASS::process(void)
 			errLine.print(lineno);
 			pass = 2;
 		}
+#endif
 		pass++;
 	}
 

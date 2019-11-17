@@ -18,6 +18,8 @@
 #define FLAG_BIGNUM    0x10
 #define FLAG_INDUM     0x20
 
+#define FLAG_FORCEADDRPRINT 0x0100
+#define FLAG_NOLINEPRINT 0x2000
 
 #define OP_A       0x0001
 #define OP_XY      0x0002
@@ -49,7 +51,6 @@ enum asmErrors
 	errBadBranch,
 	errForwardRef,
 	errNoRedefinition,
-	errBadOperand,
 	errDupSymbol,
 	errBadDUMop,
 	errOverflow,
@@ -59,10 +60,13 @@ enum asmErrors
 	errFileNotFound,
 	errFileNoAccess,
 	errBadEvaluation,
-	errMalformed,
+	errIllegalCharOperand,
 	errBadCharacter,
 	errUnexpectedOp,
 	errUnexpectedEOF,
+	errBadLUPOperand,
+	errBadLabel,
+	errBadOperand,
 	errMAX
 };
 
@@ -81,7 +85,6 @@ const std::string errStrings[errMAX + 1] =
 	"Relative branch offset too large",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
-	"Error in expression",
 	"Duplicate Symbol",
 	"Invalid use of DUM/DEND",
 	"Overflow detected",
@@ -91,10 +94,13 @@ const std::string errStrings[errMAX + 1] =
 	"File not found",
 	"File no access",
 	"Unable to evaluate",
-	"Malformed Operand",
+	"Illegal char in operand",
 	"Unexpected character in input",
 	"Unexpected opcode",
 	"Unexpected End of File",
+	"LUP value must be 0 < VAL <= $8000",
+	"Unknown label",
+	"Bad operand",
 
 	""
 };
@@ -260,10 +266,27 @@ public:
 		lupct=0;
 		lupoffset=0;
 		luprunning=0;
+		lupskip=false;
 	}
 	uint16_t lupct;
+	bool lupskip;
 	uint32_t lupoffset;
 	uint16_t luprunning;
+};
+
+class TDOstruct
+{
+public:
+	TDOstruct()
+	{
+		clear();
+	}
+	void clear(void) {
+		dooff=false;
+		value=0;
+	}
+	uint32_t value;
+	bool dooff;
 };
 
 class TSymbol;
@@ -322,6 +345,8 @@ public:
 	bool skiplist; // used if lst is on, but LST opcode turns it off
 	uint32_t lineno;
 
+	bool generateCode;
+
 	std::string savepath;
 	TSymbol *currentsym;
 	std::vector<MerlinLine> lines;
@@ -331,9 +356,12 @@ public:
 	Poco::HashMap<std::string, TSymbol> variables;
 
 	TOriginSection PC;
+	TLUPstruct curLUP;
+	TDOstruct curDO;
+
 	std::stack<TOriginSection> PCstack;
 	std::stack<TLUPstruct> LUPstack;
-	TLUPstruct curLUP;
+	std::stack<TDOstruct> DOstack;
 
 	TPsuedoOp *psuedoops;
 
@@ -363,6 +391,8 @@ public:
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line);
+	bool codeSkipped(void);
+
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
 	void setOpcode(MerlinLine &line, uint8_t op);
