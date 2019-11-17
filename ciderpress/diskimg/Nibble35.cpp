@@ -53,7 +53,7 @@ const int kDataChecksumLen = 3;
 const int kChunkSize35 = 175;       // ceil(524 / 3)
 const int kOffsetToChecksum = 699;
 const int kNibblizedOutputLen = (kOffsetToChecksum + 4);
-const int kMaxDataReach = 48;       // should only be 6 bytes */
+//const int kMaxDataReach = 48;       // should only be 6 bytes */
 
 enum {
     kAddrProlog0 = 0xd5,

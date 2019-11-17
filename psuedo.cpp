@@ -13,6 +13,200 @@ CLASS::~CLASS()
 
 }
 
+
+int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	TEvaluator eval(a);
+
+	int64_t eval_result = 0;
+	uint8_t shift;
+	uint32_t result32;
+	int res = 0;
+	int err = 0;
+
+	std::string op = Poco::toUpper(line.opcode);
+	std::string oper = line.operand_expr;
+	result32 = 0xFFFFFFFF;
+
+	if (op == "IF")
+	{
+		if (oper == "")
+		{
+			err = errIllegalCharOperand;
+		}
+		goto out;
+	}
+	if (op == "DO")
+	{
+
+		a.DOstack.push(a.curDO);
+
+		if (oper == "")
+		{
+			err = errIllegalCharOperand;
+			a.curDO.doskip = false;
+			goto out;
+		}
+
+		shift = 0;
+		eval_result = 0;
+		int x = eval.evaluate(line.operand_expr, eval_result, shift);
+
+		if (x < 0)
+		{
+			a.curDO.doskip = false;
+			err = errBadLabel;
+			if (a.pass == 0)
+			{
+				err = errForwardRef;
+			}
+			goto out;
+		}
+
+		result32 = eval_result & 0xFFFFFFFF;
+		a.curDO.doskip = (result32 != 0) ? false : true;
+
+		goto out;
+	}
+
+	if (op == "ELSE")
+	{
+		if (a.DOstack.size() > 0)
+		{
+			//line.flags |= FLAG_NOLINEPRINT;
+			a.curDO.doskip = !a.curDO.doskip;
+		}
+		else
+		{
+			err = errUnexpectedOp;
+		}
+		goto out;
+	}
+
+	if (op == "FIN")
+	{
+		//line.flags |= FLAG_NOLINEPRINT;
+
+		if (a.DOstack.size() > 0)
+		{
+			a.curDO = a.DOstack.top();
+			a.DOstack.pop();
+		}
+		else
+		{
+			// kind of a silent error here, just make sure we reinitialize
+			err = errUnexpectedOp;
+			a.curDO.doskip = false;
+		}
+		goto out;
+	}
+
+out:
+	//printf("DO eval: %08X %s\n", result32, a.curDO.doskip ? "true" : "false");
+
+	if (err > 0)
+	{
+		line.setError(err);
+	}
+	return (res);
+}
+
+int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	TEvaluator eval(a);
+
+	int64_t eval_result = 0;
+	uint8_t shift;
+	int lidx, len;
+	int res = 0;
+	int err = 0;
+
+	std::string op = Poco::toUpper(line.opcode);
+
+	if (op == "LUP")
+	{
+		line.flags |= FLAG_NOLINEPRINT;
+		len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
+		if (len >= 0)
+		{
+
+			shift = 0;
+			eval_result = 0;
+			int x = eval.evaluate(line.operand_expr, eval_result, shift);
+
+			a.LUPstack.push(a.curLUP);
+
+			a.curLUP.lupoffset = len;
+			a.curLUP.lupct = eval_result & 0xFFFF; // evaluate here
+			a.curLUP.luprunning++;
+
+			if ((x < 0) || (eval_result <= 0) || (eval_result > 0x8000))
+			{
+				// merlin just ignores LUP if the value is out of range
+				a.curLUP.lupct = 0;
+				a.curLUP.lupskip = true;
+			}
+		}
+		else
+		{
+			err = errUnexpectedOp;
+		}
+	}
+
+	if (op == "--^")
+	{
+		line.flags |= FLAG_NOLINEPRINT;
+
+		if (a.curLUP.luprunning > 0)
+		{
+			lidx = line.lineno - 1;
+			len = lidx - a.curLUP.lupoffset - 1;
+
+			if (a.curLUP.lupct > 0)
+			{
+				a.curLUP.lupct--;
+				if (a.curLUP.lupct != 0)
+				{
+					a.lineno = a.curLUP.lupoffset;
+					goto out;
+				}
+			}
+			// kind of a silent error here, just make sure we reinitialize
+			a.curLUP.luprunning = 0;
+			a.curLUP.lupct = 0;
+			a.curLUP.lupskip = false;
+
+			//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
+			if (a.LUPstack.size() > 0)
+			{
+				a.curLUP = a.LUPstack.top();
+				a.LUPstack.pop();
+			}
+			else
+			{
+				err = errUnexpectedOp;
+			}
+		}
+		else
+		{
+			a.curLUP.lupskip = false;
+			// SGQ - found a '--^' without a LUP, should we just ignore?
+			//err = errUnexpectedOp;
+		}
+	}
+
+out:
+	if (err > 0)
+	{
+		line.setError(err);
+	}
+	return (res);
+}
+
 constexpr unsigned int strhash(const char *str, int h = 0)
 {
 	return !str[h] ? 5381 : (strhash(str, h + 1) * 33) ^ str[h];
@@ -27,7 +221,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
-	std::string oper = line.operand;
+	std::string oper = line.operand_expr;
 	std::string op = Poco::toUpper(Poco::trim(line.opcode));
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
@@ -55,7 +249,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			wordsize = 4;
 			break;
 		default:
-			wordsize=0;
+			wordsize = 0;
 			break;
 	}
 
@@ -70,7 +264,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		int r;
 		uint8_t b;
 
-		shift=0;
+		shift = 0;
 		r = eval.evaluate(expr, eval_result, shift);
 		if (r < 0)
 		{
@@ -80,17 +274,17 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				line.setError(errBadEvaluation);
 			}
 		}
-		if (shift=='>')
+		if (shift == '>')
 		{
-			eval_result=(eval_result) & 0xFF;
+			eval_result = (eval_result) & 0xFF;
 		}
-		if (shift=='<')
+		if (shift == '<')
 		{
-			eval_result=(eval_result>>8) & 0xFF;
+			eval_result = (eval_result >> 8) & 0xFF;
 		}
-		else if ((shift=='^') || (shift=='|'))
+		else if ((shift == '^') || (shift == '|'))
 		{
-			eval_result=(eval_result>>16)&0xFF;
+			eval_result = (eval_result >> 16) & 0xFF;
 		}
 
 
@@ -101,7 +295,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			{
 				for (i = 0; i < wordsize; i++)
 				{
-					b=(eval_result >> (8 * i))&0xFF;
+					b = (eval_result >> (8 * i)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -111,7 +305,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				// big endian
 				for (i = 0; i < wordsize; i++)
 				{
-					b=(eval_result >> ((wordsize-1-i) * 8))&0xFF;
+					b = (eval_result >> ((wordsize - 1 - i) * 8)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -119,13 +313,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			}
 		}
 	}
-#if 0
-	// SGQ  - remove when complete
-	line.datafillct = outct;
-	line.datafillbyte = 0xCA;
-	// ===============
-#endif
-	line.outbytect=outct;
+	line.outbytect = outct;
 	return (outct);
 }
 
@@ -149,16 +337,6 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 		line.datafillbyte = line.eval_result & 0xFF;
 		line.datafillct = v;
-#if 0
-		if (a.pass > 0)
-		{
-			for (int i = 0; i < v; i++)
-			{
-				line.outbytes.push_back(0x00);
-			}
-			line.outbytect = v;
-		}
-#endif
 
 	}
 	return (res);
@@ -196,8 +374,16 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string s;
 	if (a.pass > 0)
 	{
-		s = Poco::toUpper(Poco::trim(line.operand));
-		if ((s == "") || (s == "ON") || (line.expr_value > 0))
+		s = Poco::toUpper(Poco::trim(line.operand_expr));
+		if (s == "RTN")
+		{
+			if (a.LSTstack.size())
+			{
+				a.listing = a.LSTstack.top();
+				a.LSTstack.pop();
+			}
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
 		{
 			//printf("ON\n");
 			a.skiplist = true;
@@ -213,15 +399,46 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	return (0);
 }
 
+int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	std::string s;
+	if (a.pass > 0)
+	{
+		s = Poco::toUpper(Poco::trim(line.operand_expr));
+		if (s == "ADR")
+		{
+			a.truncdata |= 0x03;
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
+		{
+			a.truncdata |= 0x01;;
+		}
+		else if ((s == "OFF") || (line.expr_value == 0))
+		{
+			a.truncdata = 0x00;
+		}
+	}
+	return (0);
+}
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand));
+	std::string os = Poco::toUpper(Poco::trim(line.operand_expr));
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
+
+	if (os.length() == 0)
+	{
+		// case where HEX has no operand, Merlin does not flag as error
+		//line.setError(errIllegalCharOperand);
+		bytect = 0;
+		goto out;
+	}
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
@@ -244,8 +461,9 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 		else
 		{
-			line.setError(errBadOperand);
-			return 0;
+			line.setError(errIllegalCharOperand);
+			bytect = 0;
+			goto out;
 		}
 
 		// Got a good char, append to hex string and see if we've got a byte
@@ -268,10 +486,14 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			b = 0;
 			bytect++;
 		}
-
 	}
+	if (ct & 0x01) // we got an odd number of nibbles
+	{
+		line.setError(errBadOperand);
+		bytect = 0;
+	}
+out:
 	line.outbytect = bytect;
-	//printf("bytect=%d\n",bytect);
 	return bytect;
 }
 
@@ -297,9 +519,11 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_DUM:
 		case P_DEND:
 			res = doDUM(a, line, opinfo);
+			line.flags |= FLAG_FORCEADDRPRINT;
+
 			break;
 		case P_ORG:
-			if (line.operand.length() > 0)
+			if (line.operand_expr.length() > 0)
 			{
 				a.PC.orgsave = a.PC.currentpc;
 				a.PC.currentpc = line.expr_value;
@@ -310,6 +534,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
+			line.flags |= FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
@@ -323,6 +548,16 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_DATA:
 			res = doDATA(a, line, opinfo);
 			break;
+		case P_LUP:
+			res = doLUP(a, line, opinfo);
+			break;
+		case P_DO:
+			res = doDO(a, line, opinfo);
+			break;
+		case P_TR:
+			res=doTR(a,line,opinfo);
+			break;
+
 	}
 	return (res);
 }

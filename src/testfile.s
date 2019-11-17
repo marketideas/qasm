@@ -8,16 +8,16 @@ MXX  =  %00
 	mx 	MXX
 	org $4000
 
-dp:	=	$A5
+dp	=	$A5
 expr = $0405
 lexpr = $010203
 immed = $123456
 neg	equ	-16
 
-]var1	=	v1234
+//]var1	=	v1234
 
 	;lst off
-start00:
+:start00:
 	brk				;$00
 	ora	(dp,x)
 	cop	$BA
@@ -219,7 +219,7 @@ startA0
 startB0
 	bcs startB0
 	lda (dp),y
-	lda dp,s
+	lda (dp)
 	lda (dp,s),y
 	ldy dp,x
 	lda dp,x
@@ -233,6 +233,7 @@ startB0
 	lda expr,x
 	ldx expr,y
 	ldal lexpr,x
+	lst off
 
 startC0
 	cpy #immed

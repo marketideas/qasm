@@ -18,6 +18,8 @@
 #define FLAG_BIGNUM    0x10
 #define FLAG_INDUM     0x20
 
+#define FLAG_FORCEADDRPRINT 0x0100
+#define FLAG_NOLINEPRINT 0x2000
 
 #define OP_A       0x0001
 #define OP_XY      0x0002
@@ -25,15 +27,15 @@
 #define OP_SPECIAL 0x0008
 
 // these bits are actually the CC (last 2 bits) of opcode addressing
-#define OP_CLASS0  0x0000  
+#define OP_CLASS0  0x0000
 #define OP_CLASS1  0x0100
 #define OP_CLASS2  0x0200
 #define OP_CLASS3  0x0300
 // these ORd bits specify specific classes of opcodes and subgroups
 #define OP_STD     (0x1000 | OP_CLASS1)
 #define OP_ASL     (0x2000 | OP_CLASS2)
-#define OP_STX     (0x3000 | OP_CLASS2)
 #define OP_C0      (0x4000 | OP_CLASS0)
+#define OP_STX     (0x8000 | OP_ASL|OP_CLASS2)
 
 enum asmErrors
 {
@@ -49,16 +51,22 @@ enum asmErrors
 	errBadBranch,
 	errForwardRef,
 	errNoRedefinition,
-	errBadOperand,
 	errDupSymbol,
 	errBadDUMop,
 	errOverflow,
 	errRecursiveOp,
-    errOpcodeNotStarted,
-    errDuplicateFile,
-    errFileNotFound,
-    errFileNoAccess,
-    errBadEvaluation,
+	errOpcodeNotStarted,
+	errDuplicateFile,
+	errFileNotFound,
+	errFileNoAccess,
+	errBadEvaluation,
+	errIllegalCharOperand,
+	errBadCharacter,
+	errUnexpectedOp,
+	errUnexpectedEOF,
+	errBadLUPOperand,
+	errBadLabel,
+	errBadOperand,
 	errMAX
 };
 
@@ -71,22 +79,28 @@ const std::string errStrings[errMAX + 1] =
 	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
-	"Unknown Opcode",
+	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
 	"Relative branch offset too large",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
-	"Unable to evaluate",
 	"Duplicate Symbol",
 	"Invalid use of DUM/DEND",
 	"Overflow detected",
 	"Recursive Operand",
-    "Opcode without start",
-    "File already included",
-    "File not found",
-    "File no access",
-    "Unable to evaluate",
+	"Opcode without start",
+	"File already included",
+	"File not found",
+	"File no access",
+	"Unable to evaluate",
+	"Illegal char in operand",
+	"Unexpected character in input",
+	"Unexpected opcode",
+	"Unexpected End of File",
+	"LUP value must be 0 < VAL <= $8000",
+	"Unknown label",
+	"Bad operand",
 
 	""
 };
@@ -132,7 +146,7 @@ public:
 	{
 		origin = old.origin;
 		currentpc = old.currentpc;
-		orgsave=old.orgsave;
+		orgsave = old.orgsave;
 		totalbytes = old.totalbytes;
 	};
 
@@ -141,7 +155,7 @@ public:
 		origin = other.origin;
 		currentpc = other.currentpc;
 		totalbytes = other.totalbytes;
-		orgsave=other.orgsave;
+		orgsave = other.orgsave;
 		return (*this);
 	};
 
@@ -150,7 +164,7 @@ public:
 		origin = 0;
 		currentpc = 0;
 		totalbytes = 0;
-		orgsave=0;
+		orgsave = 0;
 	};
 	~TOriginSection()
 	{
@@ -173,7 +187,9 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
+	uint8_t tabs[16];
 	bool showmx;
+	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -208,6 +224,8 @@ protected:
 	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
+	uint8_t tabs[16];
+
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
 	uint32_t errorct;
@@ -215,8 +233,8 @@ public:
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
-	virtual std::string processFilename(std::string p,std::string currentdir,int level);
-	virtual int processfile(std::string p,std::string &newfilename);
+	virtual std::string processFilename(std::string p, std::string currentdir, int level);
+	virtual int processfile(std::string p, std::string &newfilename);
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
@@ -227,7 +245,6 @@ public:
 class TMerlinConverter : public TFileProcessor
 {
 protected:
-	uint8_t tabs[10];
 	std::vector<MerlinLine> lines;
 
 public:
@@ -237,6 +254,40 @@ public:
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
 	virtual void complete(void);
+};
+
+class TLUPstruct
+{
+public:
+	TLUPstruct()
+	{
+		clear();
+	}
+	void clear(void) {
+		lupct=0;
+		lupoffset=0;
+		luprunning=0;
+		lupskip=false;
+	}
+	uint16_t lupct;
+	bool lupskip;
+	uint32_t lupoffset;
+	uint16_t luprunning;
+};
+
+class TDOstruct
+{
+public:
+	TDOstruct()
+	{
+		clear();
+	}
+	void clear(void) {
+		doskip=false;
+		value=0;
+	}
+	uint32_t value;
+	bool doskip;
 };
 
 class TSymbol;
@@ -280,7 +331,6 @@ class T65816Asm : public TFileProcessor
 public:
 	// options
 	bool casesen;
-	bool listing;
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
@@ -304,7 +354,16 @@ public:
 	Poco::HashMap<std::string, TSymbol> variables;
 
 	TOriginSection PC;
+	TLUPstruct curLUP;
+	TDOstruct curDO;
+	bool listing;
+	uint8_t truncdata; 	// for the TR opcode
+
 	std::stack<TOriginSection> PCstack;
+	std::stack<TLUPstruct> LUPstack;
+	std::stack<TDOstruct> DOstack;
+	std::stack<bool> LSTstack;
+
 	TPsuedoOp *psuedoops;
 
 	uint16_t pass;
@@ -330,9 +389,11 @@ public:
 	void initpass(void);
 	void showSymbolTable(bool alpha);
 	void showVariables(void);
-	int evaluate(MerlinLine &line,std::string expr, int64_t &value);
+	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line);
+	bool codeSkipped(void);
+
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
 	void setOpcode(MerlinLine &line, uint8_t op);

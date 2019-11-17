@@ -1771,8 +1771,8 @@ char* A2FileHFS::GetLibHFSPathName(void) const
     } else if (fileType == 0x04 && auxType == 0x0000) {
         strcpy(pCreator, "pdos");
         strcpy(pType, "TEXT");
-    } else if (fileType >= 0 && fileType <= 0xff &&
-        auxType >= 0 && auxType <= 0xffff)
+    } else if (fileType <= 0xff &&
+        auxType <= 0xffff)
     {
         pType[0] = 'p';
         pType[1] = (uint8_t) fileType;
