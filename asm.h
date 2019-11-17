@@ -34,8 +34,8 @@
 // these ORd bits specify specific classes of opcodes and subgroups
 #define OP_STD     (0x1000 | OP_CLASS1)
 #define OP_ASL     (0x2000 | OP_CLASS2)
-#define OP_STX     (0x3000 | OP_CLASS2)
 #define OP_C0      (0x4000 | OP_CLASS0)
+#define OP_STX     (0x8000 | OP_ASL|OP_CLASS2)
 
 enum asmErrors
 {
@@ -79,10 +79,10 @@ const std::string errStrings[errMAX + 1] =
 	"Unimplemented Instruction",
 	"Fatal",
 	"Unsupported Addressing Mode",
-	"Unknown Opcode",
+	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
-	"Relative branch offset too large",
+	"Bad branch",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Duplicate Symbol",
@@ -187,8 +187,9 @@ public:
 	std::string comment;
 	std::string addrtext;
 	uint8_t linemx;
-	uint16_t commentcol;
+	uint8_t tabs[16];
 	bool showmx;
+	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
 	uint16_t opflags;
@@ -223,7 +224,7 @@ protected:
 	std::vector<std::string> filenames;
 	uint8_t syntax;
 	uint64_t starttime;
-	uint8_t tabs[10];
+	uint8_t tabs[16];
 
 	uint32_t filecount; // how many files have been read in (because of included files from source
 public:
@@ -282,11 +283,11 @@ public:
 		clear();
 	}
 	void clear(void) {
-		dooff=false;
+		doskip=false;
 		value=0;
 	}
 	uint32_t value;
-	bool dooff;
+	bool doskip;
 };
 
 class TSymbol;
@@ -330,7 +331,6 @@ class T65816Asm : public TFileProcessor
 public:
 	// options
 	bool casesen;
-	bool listing;
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
@@ -345,10 +345,9 @@ public:
 	bool skiplist; // used if lst is on, but LST opcode turns it off
 	uint32_t lineno;
 
-	bool generateCode;
-
 	std::string savepath;
 	TSymbol *currentsym;
+	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;
@@ -358,10 +357,13 @@ public:
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
+	bool listing;
+	uint8_t truncdata; 	// for the TR opcode
 
 	std::stack<TOriginSection> PCstack;
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
+	std::stack<bool> LSTstack;
 
 	TPsuedoOp *psuedoops;
 

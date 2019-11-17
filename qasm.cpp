@@ -1,5 +1,8 @@
 #include "app.h"
 #include "asm.h"
+#ifdef CIDERPRESS
+#include "DiskImg.h"
+#endif
 
 #define CLASS PAL_APPCLASS
 
@@ -28,6 +31,14 @@ void CLASS::displayVersion()
 	s = "-debug";
 #endif
 	cerr << "quickASM 16++ v" << (std::string)STRINGIFY(APPVERSION) << s << endl;
+
+#ifdef CIDERPRESS
+	DiskImgLib::Global::AppInit();
+	DiskImgLib::DiskImg prodos;
+
+    DiskImgLib::Global::AppCleanup();
+#endif
+
 }
 
 int CLASS::runServerApp(PAL_EVENTMANAGER *em)

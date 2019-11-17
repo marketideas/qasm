@@ -22,6 +22,8 @@ set(CMAKE_C_FLAGS_RELEASE "${RELEASE_OPT}")
 
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/libhfs)
+
 set (SOURCE 
 ASPI.cpp       
 DiskFS.cpp    

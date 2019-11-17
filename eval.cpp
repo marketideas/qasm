@@ -225,9 +225,9 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 }
                 else
                 {
-                    //printf("symbol find |%s|\n",token.str.c_str());
-
                     sym = assembler.findSymbol(token.str);
+                    //printf("symbol find |%s| %p\n",token.str.c_str(),sym);
+
                     if (sym != NULL)
                     {
                         sym->used = true;

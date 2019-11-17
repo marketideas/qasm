@@ -862,8 +862,15 @@ static NuError Nu_OpenTempFile(UNICHAR* fileNameUNI, FILE** pFp)
 #else
         char* result;
 
+#if 1
         DBUG(("+++ Using mktemp\n"));
         result = mktemp(fileNameUNI);
+#else
+        char fbuff[256];
+        sprintf(fbuff,"%s%s",fileNameUNI,"XXXXXX");
+        result=mkstemp();
+#endif
+        
         if (result == NULL) {
             Nu_ReportError(NU_BLOB, kNuErrNone, "mktemp failed on '%s'",
                 fileNameUNI);

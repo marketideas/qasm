@@ -20,7 +20,7 @@
 
 const int kBlkSize = 512;
 const int kVolHeaderBlock = 2;          // first directory block
-const int kMaxCatalogIterations = 64;   // should be short, linear catalog
+//const int kMaxCatalogIterations = 64;   // should be short, linear catalog
 const int kHugeDir = 32;
 static const char* kInvalidNameChars = "$=?,[#:";
 
@@ -1506,7 +1506,7 @@ uint32_t A2FilePascal::GetFileType(void) const
     year = ptm->tm_year;    // years since 1900
     if (year >= 100)
         year -= 100;
-    if (year < 0 || year >= 100) {
+    if (year >= 100) {
         LOGW("WHOOPS: got year %u from %d", year, ptm->tm_year);
         year = 70;
     }

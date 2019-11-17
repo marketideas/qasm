@@ -22,12 +22,13 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	int64_t eval_result = 0;
 	uint8_t shift;
+	uint32_t result32;
 	int res = 0;
 	int err = 0;
 
 	std::string op = Poco::toUpper(line.opcode);
-	std::string oper = Poco::toUpper(line.operand);
-
+	std::string oper = line.operand_expr;
+	result32 = 0xFFFFFFFF;
 
 	if (op == "IF")
 	{
@@ -40,37 +41,47 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	if (op == "DO")
 	{
 
+		a.DOstack.push(a.curDO);
+
 		if (oper == "")
 		{
 			err = errIllegalCharOperand;
+			a.curDO.doskip = false;
 			goto out;
 		}
 
-		//line.flags |= FLAG_NOLINEPRINT;
-
 		shift = 0;
 		eval_result = 0;
-		int x = eval.evaluate(line.operand, eval_result, shift);
-		a.curDO.dooff = (eval_result & 0xFFFFFF); // evaluate here
+		int x = eval.evaluate(line.operand_expr, eval_result, shift);
 
 		if (x < 0)
 		{
-			a.curDO.dooff = false;
+			a.curDO.doskip = false;
 			err = errBadLabel;
 			if (a.pass == 0)
 			{
 				err = errForwardRef;
 			}
+			goto out;
 		}
 
-		a.DOstack.push(a.curDO);
+		result32 = eval_result & 0xFFFFFFFF;
+		a.curDO.doskip = (result32 != 0) ? false : true;
+
 		goto out;
 	}
 
 	if (op == "ELSE")
 	{
-		//line.flags |= FLAG_NOLINEPRINT;
-		a.curDO.dooff = !a.curDO.dooff;
+		if (a.DOstack.size() > 0)
+		{
+			//line.flags |= FLAG_NOLINEPRINT;
+			a.curDO.doskip = !a.curDO.doskip;
+		}
+		else
+		{
+			err = errUnexpectedOp;
+		}
 		goto out;
 	}
 
@@ -80,20 +91,21 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 		if (a.DOstack.size() > 0)
 		{
-			// kind of a silent error here, just make sure we reinitialize
-			a.curDO.dooff = false;
 			a.curDO = a.DOstack.top();
 			a.DOstack.pop();
 		}
 		else
 		{
 			// kind of a silent error here, just make sure we reinitialize
-			a.curDO.dooff = false;
+			err = errUnexpectedOp;
+			a.curDO.doskip = false;
 		}
 		goto out;
 	}
 
 out:
+	//printf("DO eval: %08X %s\n", result32, a.curDO.doskip ? "true" : "false");
+
 	if (err > 0)
 	{
 		line.setError(err);
@@ -124,7 +136,7 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 			shift = 0;
 			eval_result = 0;
-			int x = eval.evaluate(line.operand, eval_result, shift);
+			int x = eval.evaluate(line.operand_expr, eval_result, shift);
 
 			a.LUPstack.push(a.curLUP);
 
@@ -209,7 +221,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
-	std::string oper = line.operand;
+	std::string oper = line.operand_expr;
 	std::string op = Poco::toUpper(Poco::trim(line.opcode));
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
@@ -325,16 +337,6 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 		line.datafillbyte = line.eval_result & 0xFF;
 		line.datafillct = v;
-#if 0
-		if (a.pass > 0)
-		{
-			for (int i = 0; i < v; i++)
-			{
-				line.outbytes.push_back(0x00);
-			}
-			line.outbytect = v;
-		}
-#endif
 
 	}
 	return (res);
@@ -372,8 +374,21 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string s;
 	if (a.pass > 0)
 	{
-		s = Poco::toUpper(Poco::trim(line.operand));
-		if ((s == "") || (s == "ON") || (line.expr_value > 0))
+		s = Poco::toUpper(Poco::trim(line.operand_expr));
+		if (s=="")
+		{
+			a.listing=true;
+			a.skiplist=true;
+		}
+		else if (s == "RTN")
+		{
+			if (a.LSTstack.size())
+			{
+				a.listing = a.LSTstack.top();
+				a.LSTstack.pop();
+			}
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
 		{
 			//printf("ON\n");
 			a.skiplist = true;
@@ -389,11 +404,34 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	return (0);
 }
 
+int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	std::string s;
+	if (a.pass > 0)
+	{
+		s = Poco::toUpper(Poco::trim(line.operand_expr));
+		if (s == "ADR")
+		{
+			a.truncdata |= 0x03;
+		}
+		else if ((s == "ON") || (line.expr_value > 0))
+		{
+			a.truncdata |= 0x01;;
+		}
+		else if ((s == "OFF") || (line.expr_value == 0))
+		{
+			a.truncdata = 0x00;
+		}
+	}
+	return (0);
+}
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand));
+	std::string os = Poco::toUpper(Poco::trim(line.operand_expr));
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
@@ -490,7 +528,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 			break;
 		case P_ORG:
-			if (line.operand.length() > 0)
+			if (line.operand_expr.length() > 0)
 			{
 				a.PC.orgsave = a.PC.currentpc;
 				a.PC.currentpc = line.expr_value;
@@ -520,6 +558,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_DO:
 			res = doDO(a, line, opinfo);
+			break;
+		case P_TR:
+			res=doTR(a,line,opinfo);
 			break;
 
 	}

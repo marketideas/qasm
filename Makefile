@@ -20,6 +20,17 @@ all:
 	-mkdir -p ./build
 	-cd ./build && cmake .. && $(MAKE) $S
 
+release:
+	-rm -rf ./build
+	-mkdir -p ./build
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=RELEASE .. && $(MAKE) $S
+
+debug:
+	-rm -rf ./build
+	-mkdir -p ./build
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
+
+
 distclean:
 	rm -rf ./build 
 

@@ -25,16 +25,16 @@ void CLASS::setError(uint32_t ecode)
 
 void CLASS::print(uint32_t lineno)
 {
-	int pcol;
-	uint32_t l, i;
-	//int commentcol;
+	uint32_t l, i, savpcol, pcol;
+	bool commentprinted = false;
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
+	uint8_t commentcol = tabs[2];
 
 	uint32_t b = 4; // how many bytes show on the first line
 
-	bool merlinstyle=true;
+	bool merlinstyle = true;
 
 	if (datafillct > 0)
 	{
@@ -53,7 +53,7 @@ void CLASS::print(uint32_t lineno)
 		if (merlinstyle)
 		{
 			//printf("errorcode=%d\n",errorcode);
-			printf("%s in line: %d", errStrings[errorcode].c_str(), lineno+1);
+			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
 			if (errorText != "")
 			{
 				printf("%s", errorText.c_str());
@@ -155,6 +155,7 @@ void CLASS::print(uint32_t lineno)
 		pcol += printf("%02X ", addressmode & 0xFF);
 	}
 
+	savpcol = pcol; // this is how many bytes are in the side margin
 	pcol = 0; // reset pcol here because this is where source code starts
 
 	if (empty)
@@ -168,15 +169,43 @@ void CLASS::print(uint32_t lineno)
 					pcol += printf(" ");
 				}
 			}
-			else
+			//else
 			{
-				pcol += printf("%s", comment.c_str());
+				int comct = 0;
+				for (uint32_t cc = 0; cc < comment.length(); cc++)
+				{
+					pcol += printf("%c", comment[cc]);
+					comct++;
+					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 10)))
+					{
+						printf("\n");
+						pcol = 0;
+						while (pcol < (commentcol + savpcol))
+						{
+							pcol += printf(" ");
+						}
+					}
+				}
+				//pcol += printf("%s", comment.c_str());
+
 			}
+			commentprinted = true;
 		}
 	}
 	else
 	{
-		pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
+		pcol += printf("%s ", printlable.c_str());
+		while (pcol < tabs[0])
+		{
+			pcol += printf(" ");
+		}
+		pcol += printf("%s ", opcode.c_str());
+		while (pcol < tabs[1])
+		{
+			pcol += printf(" ");
+		}
+		pcol += printf("%s ", operand.c_str());
+		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinstyle))
 	{
@@ -186,7 +215,7 @@ void CLASS::print(uint32_t lineno)
 		}
 		pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
 	}
-	else
+	else if (!commentprinted)
 	{
 		while (pcol < commentcol)
 		{
@@ -208,7 +237,7 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	uint32_t ct = 1;
-	if (obc > b)
+	if ((obc > b) && ((truncdata & 0x01) == 0))
 	{
 		ct = 0;
 		uint8_t db;
@@ -261,7 +290,6 @@ void CLASS::clear()
 	operand_expr2 = "";
 	addrtext = "";
 	linemx = 0;
-	commentcol = 40;
 	bytect = 0;
 	opflags = 0;
 	pass0bytect = 0;
@@ -787,6 +815,7 @@ CLASS::~CLASS()
 }
 void CLASS::init(void)
 {
+	TFileProcessor::init();
 	std::string s;
 	lines.clear();
 
@@ -916,32 +945,69 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
-	fnd = findSymbol(sym);
-
-	if ((fnd != NULL) && (!replace))
+	if (sym.length() > 0)
 	{
-		return (NULL);  // it is a duplicate
-	}
+		TSymbol s;
+		s.name = sym;
+		s.opcode = 0;
+		s.namelc = Poco::toLower(sym);
+		s.stype = 0;
+		s.value = val;
+		s.used = false;
+		s.cb = NULL;
+		std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 
-	if (fnd != NULL)
-	{
-		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
-		fnd->value = val;
-		return (fnd);
-	}
+		if (sym[0] == ':')
+		{
+			//local symbol
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				fnd = findSymbol(sym);
+				if ((fnd != NULL) && (!replace))
+				{
+					goto out;
+				}
 
-	//printf("addSymbol |%s|\n",sym.c_str());
-	TSymbol s;
-	s.name = sym;
-	s.opcode = 0;
-	s.namelc = Poco::toLower(sym);
-	s.stype = 0;
-	s.value = val;
-	s.used = false;
-	s.cb = NULL;
-	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
-	symbols.insert(p);
-	res = findSymbol(sym);
+				if (fnd != NULL)
+				{
+					fnd->value = val;
+					res = fnd;
+					goto out;
+				}
+				if (currentsym != NULL)
+				{
+					currentsym->locals.insert(p);
+				}
+				res = findSymbol(sym);
+				goto out;
+			}
+		}
+		else
+		{
+			fnd = findSymbol(sym);
+
+			if ((fnd != NULL) && (!replace))
+			{
+				goto out;
+			}
+
+			if (fnd != NULL)
+			{
+				//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
+				fnd->value = val;
+				res = fnd;
+				goto out;
+			}
+
+			symbols.insert(p);
+			res = findSymbol(sym);
+		}
+	}
+out:
 	return (res);
 }
 
@@ -949,15 +1015,37 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
-	//printf("finding: %s\n",symname.c_str());
-	auto itr = symbols.find(Poco::toUpper(symname));
-	if (itr != symbols.end())
+	if (symname.length() > 0)
 	{
-		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
-		res = &itr->second;
-
-		return (res);
+		if (symname[0] == ':')
+		{
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				auto itr = currentsym->locals.find(Poco::toUpper(symname));
+				if (itr != currentsym->locals.end())
+				{
+					res = &itr->second;
+					goto out;
+				}
+			}
+		}
+		else
+		{
+			//printf("finding: %s\n",symname.c_str());
+			auto itr = symbols.find(Poco::toUpper(symname));
+			if (itr != symbols.end())
+			{
+				//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
+				res = &itr->second;
+				goto out;
+			}
+		}
 	}
+out:
 	return (res);
 }
 
@@ -1086,6 +1174,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 {
 	int res = -1;
 	char c;
+	std::string s;
 
 	if (op.length() == 4) // check for 4 digit 'L' opcodes
 	{
@@ -1101,7 +1190,12 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 				line.flags |= FLAG_FORCELONG; // 3 byte address
 				break;
 			default:  // any char but 'L' as in Merlin 16+
-				if ((c != 'D') || (Poco::toUpper(op) != "DEND"))
+				s = Poco::toUpper(op);
+				if ((s == "ELSE") || (s == "DEND"))
+				{
+					break;
+				}
+				if (c != 'D')
 				{
 					op = op.substr(0, 3);
 					line.flags |= FLAG_FORCEABS; // 2 byte address
@@ -1130,6 +1224,10 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		case '|':
 			line.flags |= FLAG_FORCELONG;
 			break;
+	}
+	if (line.expr_value >= 0x100)
+	{
+		line.flags |= FLAG_FORCEABS;
 	}
 
 
@@ -1249,7 +1347,6 @@ void CLASS::initpass(void)
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
-	generateCode = true;
 
 	PC.origin = 0x8000;
 	PC.currentpc = PC.origin;
@@ -1283,12 +1380,13 @@ void CLASS::initpass(void)
 	}
 	relocatable = false;
 	currentsym = NULL;
+	currentsymstr="";
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
 	dumstartaddr = 0;
 	dumstart = 0;
-
+	truncdata = 0;
 	variables.clear(); // clear the variables for each pass
 
 	while (!PCstack.empty())
@@ -1302,6 +1400,10 @@ void CLASS::initpass(void)
 	while (!DOstack.empty())
 	{
 		DOstack.pop();
+	}
+	while (!LSTstack.empty())
+	{
+		LSTstack.pop();
 	}
 	curLUP.clear();
 	curDO.clear();
@@ -1317,6 +1419,10 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
+			if (isDebug() >= 1)
+			{
+				savepath += "1"; // append this to the end to help with testing against other assemblers
+			}
 			printf("saving to file: %s\n", savepath.c_str());
 
 			std::ofstream f(savepath);
@@ -1583,14 +1689,15 @@ int CLASS::substituteVariables(MerlinLine & line)
 	return (res);
 }
 
+// this function determines if code generation is turned off (IF,DO,LUP,MAC, etc
 bool CLASS::codeSkipped(void)
 {
 	bool res = false;
 
-	if (curLUP.lupskip)
-	{
-		res = true;
-	}
+	res = (curLUP.lupskip) ? true : res;
+	res = (curDO.doskip) ? true : res;
+
+	//printf("codeskip: %d\n",res);
 
 	return (res);
 }
@@ -1616,18 +1723,14 @@ void CLASS::process(void)
 
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
+			line.truncdata = truncdata;
+			memcpy(line.tabs, tabs, sizeof(tabs));
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
-			uint16_t cc = tabs[2];
-			if (cc == 0)
-			{
-				cc = 40;
-			}
-			line.commentcol = cc;
 			line.bytect = 0;
 			line.showmx = showmx;
 
@@ -1645,13 +1748,22 @@ void CLASS::process(void)
 						sym = addVariable(line.lable, ls, true);
 						if (sym == NULL) { dupsym = true; }
 						break;
+
 					case ':':
-						break;
 					default:
 						if (pass == 0)
 						{
 							sym = addSymbol(line.lable, PC.currentpc, false);
-							if (sym == NULL) { dupsym = true; }
+							if (sym == NULL)
+							{
+								dupsym = true;
+								line.setError(errDupSymbol);
+							}
+						}
+						if (c != ':')
+						{
+							currentsym = findSymbol(line.lable);
+							currentsymstr=line.lable;
 						}
 						break;
 				}
@@ -1690,6 +1802,7 @@ void CLASS::process(void)
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
 			{
 				x = 0;
+				line.outbytect = 0;
 			}
 
 			if (x > 0)
