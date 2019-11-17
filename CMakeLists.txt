@@ -9,6 +9,7 @@ set(LIBRARY_NAME pal)
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 include(./lib${LIBRARY_NAME}/cmake/CMakeHeader.txt)
+
 set ( PROJECT_NAME "qasm" )
 
 set(SOURCE
@@ -25,9 +26,13 @@ find_package(Poco REQUIRED Foundation Util XML JSON )
 include_directories(BEFORE 
   ${PROJECT_ROOT}
   ${PROJECT_ROOT}/lib${LIBRARY_NAME}/include/${LIBRARY_NAME}
+  ${PROJECT_ROOT}/ciderpress/diskimg
   #${OPENSSL_INCLUDE_DIR}
   ${Poco_INCLUDE_DIRS}
 )
+
+add_subdirectory(${PROJECT_ROOT}/ciderpress/nufxlib)
+add_subdirectory(${PROJECT_ROOT}/ciderpress/diskimg)
 
 add_subdirectory(${PROJECT_ROOT}/lib${LIBRARY_NAME})
 
@@ -35,10 +40,12 @@ include(${PROJECT_ROOT}/lib${LIBRARY_NAME}/cmake/CMakeApp.txt)
 
 add_executable( ${PROJECT_NAME} ${SOURCE})
 
+#link_directories( ${link_directories} ./build/ciderpress/diskimg
 target_link_libraries (
 ${PROJECT_NAME}
 ${LIBRARY_NAME}
 pthread
+${PROJECT_ROOT}/ciderpress/diskimg
 ${Poco_LIBRARIES}
 )
 

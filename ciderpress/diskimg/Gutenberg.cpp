@@ -64,7 +64,7 @@ header followed by 6502 instructions).  There's no apparent link between
 the value and the type of data in the file.
 */
 
-const int kMaxSectors = 32;
+//const int kMaxSectors = 32;
 const int kMaxVolNameLen = 9;
 const int kSctSize = 256;
 const int kVTOCTrack = 17;
@@ -73,20 +73,22 @@ const int kCatalogEntryOffset = 0x10;   // first entry in cat sect starts here
 const int kCatalogEntrySize = 16;       // length in bytes of catalog entries
 const int kCatalogEntriesPerSect = 15;  // #of entries per catalog sector
 const int kEntryDeleted = 0x40;     // this is used to designate deleted files
-const int kEntryUnused = 0x00;      // this is track# in never-used entries
-const int kMaxTSPairs = 0x7a;           // 122 entries for 256-byte sectors
-const int kTSOffset = 0x0c;             // first T/S entry in a T/S list
+//const int kEntryUnused = 0x00;      // this is track# in never-used entries
+//const int kMaxTSPairs = 0x7a;           // 122 entries for 256-byte sectors
+//const int kTSOffset = 0x0c;             // first T/S entry in a T/S list
 
-const int kMaxTSIterations = 32;
+//const int kMaxTSIterations = 32;
 
 /*
  * Get a pointer to the Nth entry in a catalog sector.
  */
+#if 0
 static inline uint8_t* GetCatalogEntryPtr(uint8_t* basePtr, int entryNum)
 {
     assert(entryNum >= 0 && entryNum < kCatalogEntriesPerSect);
     return basePtr + kCatalogEntryOffset + entryNum * kCatalogEntrySize;
 }
+#endif
 
 
 /*

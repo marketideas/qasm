@@ -31,13 +31,13 @@ const int kVTOCTrack = 17;
 const int kVTOCSector = 0;
 const int kSctSize = 256;
 
-const int kCatalogEntrySize = 0x23;     // length in bytes of catalog entries
-const int kCatalogEntriesPerSect = 7;   // #of entries per catalog sector
+//const int kCatalogEntrySize = 0x23;     // length in bytes of catalog entries
+//const int kCatalogEntriesPerSect = 7;   // #of entries per catalog sector
 const int kMaxTSPairs = 0x7a;           // 122 entries for 256-byte sectors
-const int kTSOffset = 0x0c;             // first T/S entry in a T/S list
+//const int kTSOffset = 0x0c;             // first T/S entry in a T/S list
 
-const int kMaxTSIterations = 32;
-const int kMaxCatalogIterations = 64;
+//const int kMaxTSIterations = 32;
+//const int kMaxCatalogIterations = 64;
 
 
 /*

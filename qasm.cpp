@@ -1,5 +1,6 @@
 #include "app.h"
 #include "asm.h"
+#include "DiskImg.h"
 
 #define CLASS PAL_APPCLASS
 
