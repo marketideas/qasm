@@ -815,6 +815,7 @@ CLASS::~CLASS()
 }
 void CLASS::init(void)
 {
+	TFileProcessor::init();
 	std::string s;
 	lines.clear();
 
