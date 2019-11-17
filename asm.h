@@ -347,6 +347,7 @@ public:
 
 	std::string savepath;
 	TSymbol *currentsym;
+	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;

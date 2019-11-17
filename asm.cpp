@@ -30,7 +30,7 @@ void CLASS::print(uint32_t lineno)
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
-	uint8_t commentcol=tabs[2];
+	uint8_t commentcol = tabs[2];
 
 	uint32_t b = 4; // how many bytes show on the first line
 
@@ -194,17 +194,17 @@ void CLASS::print(uint32_t lineno)
 	}
 	else
 	{
-		pcol += printf("%s ",printlable.c_str());
+		pcol += printf("%s ", printlable.c_str());
 		while (pcol < tabs[0])
 		{
 			pcol += printf(" ");
 		}
-		pcol+=printf("%s ",opcode.c_str());
+		pcol += printf("%s ", opcode.c_str());
 		while (pcol < tabs[1])
 		{
 			pcol += printf(" ");
 		}
-		pcol+=printf("%s ",operand.c_str());
+		pcol += printf("%s ", operand.c_str());
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinstyle))
@@ -945,32 +945,69 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
-	fnd = findSymbol(sym);
-
-	if ((fnd != NULL) && (!replace))
+	if (sym.length() > 0)
 	{
-		return (NULL);  // it is a duplicate
-	}
+		TSymbol s;
+		s.name = sym;
+		s.opcode = 0;
+		s.namelc = Poco::toLower(sym);
+		s.stype = 0;
+		s.value = val;
+		s.used = false;
+		s.cb = NULL;
+		std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 
-	if (fnd != NULL)
-	{
-		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
-		fnd->value = val;
-		return (fnd);
-	}
+		if (sym[0] == ':')
+		{
+			//local symbol
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				fnd = findSymbol(sym);
+				if ((fnd != NULL) && (!replace))
+				{
+					goto out;
+				}
 
-	//printf("addSymbol |%s|\n",sym.c_str());
-	TSymbol s;
-	s.name = sym;
-	s.opcode = 0;
-	s.namelc = Poco::toLower(sym);
-	s.stype = 0;
-	s.value = val;
-	s.used = false;
-	s.cb = NULL;
-	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
-	symbols.insert(p);
-	res = findSymbol(sym);
+				if (fnd != NULL)
+				{
+					fnd->value = val;
+					res = fnd;
+					goto out;
+				}
+				if (currentsym != NULL)
+				{
+					currentsym->locals.insert(p);
+				}
+				res = findSymbol(sym);
+				goto out;
+			}
+		}
+		else
+		{
+			fnd = findSymbol(sym);
+
+			if ((fnd != NULL) && (!replace))
+			{
+				goto out;
+			}
+
+			if (fnd != NULL)
+			{
+				//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
+				fnd->value = val;
+				res = fnd;
+				goto out;
+			}
+
+			symbols.insert(p);
+			res = findSymbol(sym);
+		}
+	}
+out:
 	return (res);
 }
 
@@ -978,15 +1015,37 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
-	//printf("finding: %s\n",symname.c_str());
-	auto itr = symbols.find(Poco::toUpper(symname));
-	if (itr != symbols.end())
+	if (symname.length() > 0)
 	{
-		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
-		res = &itr->second;
-
-		return (res);
+		if (symname[0] == ':')
+		{
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				auto itr = currentsym->locals.find(Poco::toUpper(symname));
+				if (itr != currentsym->locals.end())
+				{
+					res = &itr->second;
+					goto out;
+				}
+			}
+		}
+		else
+		{
+			//printf("finding: %s\n",symname.c_str());
+			auto itr = symbols.find(Poco::toUpper(symname));
+			if (itr != symbols.end())
+			{
+				//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
+				res = &itr->second;
+				goto out;
+			}
+		}
 	}
+out:
 	return (res);
 }
 
@@ -1166,9 +1225,9 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			line.flags |= FLAG_FORCELONG;
 			break;
 	}
-	if (line.expr_value>=0x100)
+	if (line.expr_value >= 0x100)
 	{
-		line.flags|=FLAG_FORCEABS;
+		line.flags |= FLAG_FORCEABS;
 	}
 
 
@@ -1321,6 +1380,7 @@ void CLASS::initpass(void)
 	}
 	relocatable = false;
 	currentsym = NULL;
+	currentsymstr="";
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
@@ -1359,9 +1419,9 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
-			if (isDebug()>=1)
+			if (isDebug() >= 1)
 			{
-				savepath+="1";  // append this to the end to help with testing against other assemblers
+				savepath += "1"; // append this to the end to help with testing against other assemblers
 			}
 			printf("saving to file: %s\n", savepath.c_str());
 
@@ -1664,7 +1724,7 @@ void CLASS::process(void)
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
 			line.truncdata = truncdata;
-			memcpy(line.tabs,tabs,sizeof(tabs));
+			memcpy(line.tabs, tabs, sizeof(tabs));
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
@@ -1688,13 +1748,22 @@ void CLASS::process(void)
 						sym = addVariable(line.lable, ls, true);
 						if (sym == NULL) { dupsym = true; }
 						break;
+
 					case ':':
-						break;
 					default:
 						if (pass == 0)
 						{
 							sym = addSymbol(line.lable, PC.currentpc, false);
-							if (sym == NULL) { dupsym = true; }
+							if (sym == NULL)
+							{
+								dupsym = true;
+								line.setError(errDupSymbol);
+							}
+						}
+						if (c != ':')
+						{
+							currentsym = findSymbol(line.lable);
+							currentsymstr=line.lable;
 						}
 						break;
 				}
