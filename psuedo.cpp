@@ -375,7 +375,12 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	if (a.pass > 0)
 	{
 		s = Poco::toUpper(Poco::trim(line.operand_expr));
-		if (s == "RTN")
+		if (s=="")
+		{
+			a.listing=true;
+			a.skiplist=true;
+		}
+		else if (s == "RTN")
 		{
 			if (a.LSTstack.size())
 			{

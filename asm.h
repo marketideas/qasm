@@ -82,7 +82,7 @@ const std::string errStrings[errMAX + 1] =
 	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
-	"Relative branch offset too large",
+	"Bad branch",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Duplicate Symbol",

@@ -24,7 +24,10 @@ set(SOURCE
 
 #find_package(OpenSSL REQUIRED)
 find_package( Poco REQUIRED Foundation Util XML JSON )
+
+if ( ${CIDER} )
 find_package( ZLIB )
+endif ( ${CIDER} )
 
 include_directories(BEFORE 
   ${PROJECT_ROOT}
