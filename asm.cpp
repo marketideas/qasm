@@ -56,7 +56,7 @@ void CLASS::print(uint32_t lineno)
 			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
 			if (errorText != "")
 			{
-				printf("%s", errorText.c_str());
+				printf(" (%s)", errorText.c_str());
 			}
 			printf("\n");
 		}
@@ -213,7 +213,11 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
+		pcol += printf(":[Error] %s", errStrings[errorcode].c_str());
+		if (errorText.length() > 0)
+		{
+			pcol += printf(" (%s)",errorText.c_str());
+		}
 	}
 	else if (!commentprinted)
 	{
@@ -1357,7 +1361,6 @@ void CLASS::initpass(void)
 	s = Poco::trim(Poco::toUpper(s));
 
 	cpumode = MODE_65816;
-	mx = 0x00;
 
 	if (s == "M65816")
 	{
@@ -1377,10 +1380,15 @@ void CLASS::initpass(void)
 	else
 	{
 		printf("Unknown CPU type in .ini\n");
+		mx = 0x00;
 	}
+	mx = getInt("asm.startmx", mx);;
+
+	savepath = getConfig("option.objfile", "");
+
 	relocatable = false;
 	currentsym = NULL;
-	currentsymstr="";
+	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
@@ -1407,7 +1415,6 @@ void CLASS::initpass(void)
 	}
 	curLUP.clear();
 	curDO.clear();
-	savepath = "";
 }
 
 void CLASS::complete(void)
@@ -1419,10 +1426,6 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
-			if (isDebug() >= 1)
-			{
-				savepath += "1"; // append this to the end to help with testing against other assemblers
-			}
 			printf("saving to file: %s\n", savepath.c_str());
 
 			std::ofstream f(savepath);
@@ -1763,7 +1766,7 @@ void CLASS::process(void)
 						if (c != ':')
 						{
 							currentsym = findSymbol(line.lable);
-							currentsymstr=line.lable;
+							currentsymstr = line.lable;
 						}
 						break;
 				}
