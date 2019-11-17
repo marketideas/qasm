@@ -1357,7 +1357,6 @@ void CLASS::initpass(void)
 	s = Poco::trim(Poco::toUpper(s));
 
 	cpumode = MODE_65816;
-	mx = 0x00;
 
 	if (s == "M65816")
 	{
@@ -1377,7 +1376,10 @@ void CLASS::initpass(void)
 	else
 	{
 		printf("Unknown CPU type in .ini\n");
+		mx=0x00;
 	}
+	mx = getInt("asm.startmx",mx);;
+
 	relocatable = false;
 	currentsym = NULL;
 	currentsymstr="";

@@ -576,6 +576,10 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 					bytelen++;
 				}
 			}
+			if ( ((m==syn_absx) || (m==syn_diix))  && ((sym.opcode==4) || (sym.opcode==5)))  // these are STX,LDX
+			{
+				err=true;
+			}
 			if ((m == syn_absx) || (m == syn_abs) || (m == syn_absy))
 			{
 				if ((line.flags & FLAG_FORCEABS) || (line.expr_value >= 0x100))
@@ -829,7 +833,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BNE", 0x03, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BPL", 0x00, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BRA", 0x40, 0, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("BRK", 0x00, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("BRK", 0x00, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("BRL", 0x20, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVC", 0x01, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVS", 0x81, 0, OPHANDLER(&CLASS::doBRANCH));
