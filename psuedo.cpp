@@ -445,7 +445,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand_expr));
+	std::string os = Poco::toUpper(Poco::trim(line.operand));
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
