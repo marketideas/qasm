@@ -441,44 +441,47 @@ int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	return (0);
 }
+
+char hexVal( char c )
+{
+    char v = -1;
+
+    if ((c >= '0') && (c <= '9'))
+    {
+        v = c - '0';
+    }
+    else if ((c >= 'a') && (c <= 'f'))
+    {
+        v = c - 'a' + 10;
+    }
+    else if ((c >= 'A') && (c <= 'F'))
+    {
+        v = c - 'A' + 10;
+    }
+
+    return v;
+}
+
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand));
+    std::string os = Poco::trim(line.operand);
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
 
-	if (os.length() == 0)
-	{
-		// case where HEX has no operand, Merlin does not flag as error
-		//line.setError(errIllegalCharOperand);
-		bytect = 0;
-		goto out;
-	}
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
 
-		if ((c >= '0') && (c <= '9'))
-		{
-			c = c - '0';
-		}
-		else if ((c >= 'a') && (c <= 'f'))
-		{
-			c = c - 'a' + 10;
-		}
-		else if ((c >= 'A') && (c <= 'F'))
-		{
-			c = c - 'A' + 10;
-		}
-		else if (c == ',')
+		if (c == ',')
 		{
 			continue;
 		}
-		else
+        char hv = hexVal(c);
+		if( hv < 0 )
 		{
 			line.setError(errIllegalCharOperand);
 			bytect = 0;
@@ -489,10 +492,10 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		switch (ct)
 		{
 			case 0:
-				b = (c << 4);
+				b = (hv << 4);
 				break;
 			case 1:
-				b |= c;
+				b |= hv;
 				break;
 		}
 		ct = (ct + 1) & 0x01;
@@ -506,6 +509,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			bytect++;
 		}
 	}
+
 	if (ct & 0x01) // we got an odd number of nibbles
 	{
 		line.setError(errBadOperand);
@@ -516,6 +520,96 @@ out:
 	return bytect;
 }
 
+int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+    std::string os = line.operand;
+
+	uint32_t bytect = 0;
+	uint8_t b = 0;
+	uint8_t ct = 0;
+    char delimiter = 0;
+    uint32_t ss = 0;
+
+	for ( uint32_t i = 0; i < os.length(); ++i )
+	{
+        char c = os[i];
+
+        // are we inside a delimited string?
+        if( delimiter )
+        {
+            if( c == delimiter )
+            {
+                bytect += (i - ss);
+
+                if( a.pass > 0 )
+                {
+                    for( ; ss < i; ++ss )
+                    {
+                        c = os[ss];
+                        if( delimiter >= '\'' )
+                            c |= 0x80;
+                        line.outbytes.push_back(c);
+                    }
+                }
+                
+                delimiter = 0;
+                ss = 0;
+                continue;
+            }
+        }
+        else
+        {
+            // No, check for seperator characters
+            if( c == ',' || c == ' ' )
+            {
+                continue;
+            }
+
+            // Is this a hex char?
+            char hv = hexVal(c);
+            if( hv < 0 )
+            {
+                // if not a hex value, then consider the character to be the string delimiter
+                delimiter = c;
+                ss = i + 1;
+                continue;
+            }
+
+            // Got a hex char, append to hex string and see if we've got a byte
+            switch (ct)
+            {
+                case 0:
+                    b = (hv << 4);
+                    break;
+                case 1:
+                    b |= hv;
+                    break;
+            }
+            ct = (ct + 1) & 0x01;
+            if (!ct)
+            {
+                if (a.pass > 0)
+                {
+                    line.outbytes.push_back(b);
+                }
+                b = 0;
+                bytect++;
+            }
+        }
+	}
+
+    if( delimiter || (ct & 0x01) ) // error w/unterminated string or we got an odd number of nibbles in hex value
+	{
+		line.setError(errBadOperand);
+		bytect = 0;
+	}
+out:
+	line.outbytect = bytect;
+	return bytect;
+
+}
 
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
@@ -576,7 +670,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_TR:
 			res = doTR(a, line, opinfo);
 			break;
-
+        case P_ASC:
+            res = doASC(a, line, opinfo);
+            break;
 	}
 	return (res);
 }

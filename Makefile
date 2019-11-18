@@ -55,7 +55,7 @@ reformat:
 	qasm -x REFORMAT  src/main.s
 	
 compare:
-	-bcompare . ../lane_hex &
+	-bcompare . ../lane_qasm &
 
 asm:
 	

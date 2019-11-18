@@ -18,6 +18,7 @@ enum
 	P_LUP,
 	P_DO,
 	P_TR,
+    P_ASC,
 
 	P_MAX
 };
@@ -36,6 +37,7 @@ public:
 	int doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+    int doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 };
 
 #undef CLASS
