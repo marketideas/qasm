@@ -182,7 +182,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			{
 				value = 0xFFFFFFFF;
 				line.setError(errBadOperand);
-				line.errorText = line.operand_expr2;
+				//line.errorText = line.operand_expr2;
 			}
 
 			setOpcode(line, op);
@@ -226,7 +226,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 			op = (m == syn_abs ? 0x64 : op);
 			op = (m == syn_absx ? 0x74 : op);
 
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = (op == 0x64) ? 0x9C : op;
@@ -236,7 +236,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 2:		// TSB
 			res++;
 			op = (m == syn_abs ? 0x04 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x0C;
@@ -245,7 +245,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 3:		// TRB
 			res++;
 			op = (m == syn_abs ? 0x14 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x1C;
@@ -487,14 +487,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			cc = 0x01;
 			op = 0x80;
 			bbb = 0x02;
-			//if ((mx&0x02)==0)
-			//{
-			//	bytelen++;
-			//}
-
 		}
 
-		else if ((bbb > 0) && (line.expr_value >= 0x100))
+		else if ((bbb > 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 		{
 			bbb |= 0x02;
 			bytelen++;
@@ -575,6 +570,10 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 				{
 					bytelen++;
 				}
+			}
+			if ( ((m==syn_absx) || (m==syn_diix))  && ((sym.opcode==4) || (sym.opcode==5)))  // these are STX,LDX
+			{
+				err=true;
 			}
 			if ((m == syn_absx) || (m == syn_abs) || (m == syn_absy))
 			{
@@ -829,7 +828,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BNE", 0x03, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BPL", 0x00, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BRA", 0x40, 0, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("BRK", 0x00, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("BRK", 0x00, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("BRL", 0x20, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVC", 0x01, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVS", 0x81, 0, OPHANDLER(&CLASS::doBRANCH));

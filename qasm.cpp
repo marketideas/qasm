@@ -20,6 +20,8 @@ programOption PAL::appOptions[] =
 #endif
 	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
 	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", " <command>", false, false},
+	{ "objfile", "o", "write output to file", " <file>", false, false},
+
 	{ "", "", "", "", false, false}
 };
 

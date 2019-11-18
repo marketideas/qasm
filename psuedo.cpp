@@ -221,8 +221,11 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	int outct = 0;
 	int wordsize = 2;
 	int endian = 0;
-	std::string oper = line.operand_expr;
+	std::string oper = line.operand;
 	std::string op = Poco::toUpper(Poco::trim(line.opcode));
+
+	//printf("DFB TOK1 : |%s|\n", oper.c_str());
+
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
 
@@ -255,38 +258,49 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
 	{
-		//printf("%s\n",(*itr).c_str());
 		//evaluate each of these strings, check for errors on pass 2
 
 		std::string expr = *itr;
+
+		//printf("DFB TOK : |%s|\n", expr.c_str());
+
 		int64_t eval_result = 0;
 		uint8_t shift;
 		int r;
 		uint8_t b;
 
-		shift = 0;
-		r = eval.evaluate(expr, eval_result, shift);
-		if (r < 0)
+		if (expr.length() > 0)
 		{
-			//printf("eval error %d |%s|\n", r,expr.c_str());
-			if (a.pass > 0)
+			if (expr[0] == '#')
 			{
-				line.setError(errBadEvaluation);
+				expr[0] = ' ';
+				expr = Poco::trim(expr);
+			}
+			shift = 0;
+			eval_result = 0;
+			//printf("DFB EVAL: |%s|\n", expr.c_str());
+			r = eval.evaluate(expr, eval_result, shift);
+			if (r < 0)
+			{
+				//printf("error\n");
+				if (a.pass > 0)
+				{
+					line.setError(errBadEvaluation);
+				}
+			}
+			if (shift == '>')
+			{
+				eval_result = (eval_result) & 0xFF;
+			}
+			if (shift == '<')
+			{
+				eval_result = (eval_result >> 8) & 0xFF;
+			}
+			else if ((shift == '^') || (shift == '|'))
+			{
+				eval_result = (eval_result >> 16) & 0xFF;
 			}
 		}
-		if (shift == '>')
-		{
-			eval_result = (eval_result) & 0xFF;
-		}
-		if (shift == '<')
-		{
-			eval_result = (eval_result >> 8) & 0xFF;
-		}
-		else if ((shift == '^') || (shift == '|'))
-		{
-			eval_result = (eval_result >> 16) & 0xFF;
-		}
-
 
 		outct += wordsize;
 		if (a.pass > 0)
@@ -375,10 +389,10 @@ int CLASS::doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	if (a.pass > 0)
 	{
 		s = Poco::toUpper(Poco::trim(line.operand_expr));
-		if (s=="")
+		if (s == "")
 		{
-			a.listing=true;
-			a.skiplist=true;
+			a.listing = true;
+			a.skiplist = true;
 		}
 		else if (s == "RTN")
 		{
@@ -427,44 +441,47 @@ int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	return (0);
 }
+
+char hexVal( char c )
+{
+    char v = -1;
+
+    if ((c >= '0') && (c <= '9'))
+    {
+        v = c - '0';
+    }
+    else if ((c >= 'a') && (c <= 'f'))
+    {
+        v = c - 'a' + 10;
+    }
+    else if ((c >= 'A') && (c <= 'F'))
+    {
+        v = c - 'A' + 10;
+    }
+
+    return v;
+}
+
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand_expr));
+    std::string os = Poco::trim(line.operand);
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
 
-	if (os.length() == 0)
-	{
-		// case where HEX has no operand, Merlin does not flag as error
-		//line.setError(errIllegalCharOperand);
-		bytect = 0;
-		goto out;
-	}
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
 
-		if ((c >= '0') && (c <= '9'))
-		{
-			c = c - '0';
-		}
-		else if ((c >= 'a') && (c <= 'f'))
-		{
-			c = c - 'a' + 10;
-		}
-		else if ((c >= 'A') && (c <= 'F'))
-		{
-			c = c - 'A' + 10;
-		}
-		else if (c == ',')
+		if (c == ',')
 		{
 			continue;
 		}
-		else
+        c = hexVal(c);
+		if( c < 0 )
 		{
 			line.setError(errIllegalCharOperand);
 			bytect = 0;
@@ -492,6 +509,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			bytect++;
 		}
 	}
+
 	if (ct & 0x01) // we got an odd number of nibbles
 	{
 		line.setError(errBadOperand);
@@ -501,7 +519,6 @@ out:
 	line.outbytect = bytect;
 	return bytect;
 }
-
 
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
@@ -560,7 +577,7 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			res = doDO(a, line, opinfo);
 			break;
 		case P_TR:
-			res=doTR(a,line,opinfo);
+			res = doTR(a, line, opinfo);
 			break;
 
 	}
