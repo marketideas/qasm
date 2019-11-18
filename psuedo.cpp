@@ -605,7 +605,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		line.setError(errBadOperand);
 		bytect = 0;
 	}
-out:
+
 	line.outbytect = bytect;
 	return bytect;
 
