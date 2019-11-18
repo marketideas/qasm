@@ -5,7 +5,7 @@ project(QAsm)
 
 set(CIDER "0")
 
-set(CMAKE_BUILD_TYPE DEBUG)
+#set(CMAKE_BUILD_TYPE DEBUG)
 set(APPVERSION "4.0.9")
 set(LIBRARY_NAME pal)
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
@@ -24,7 +24,10 @@ set(SOURCE
 
 #find_package(OpenSSL REQUIRED)
 find_package( Poco REQUIRED Foundation Util XML JSON )
+
+if ( ${CIDER} )
 find_package( ZLIB )
+endif ( ${CIDER} )
 
 include_directories(BEFORE 
   ${PROJECT_ROOT}

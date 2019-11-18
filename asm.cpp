@@ -30,7 +30,7 @@ void CLASS::print(uint32_t lineno)
 	static bool checked = false;
 	static bool nc1 = false;
 	bool nc = false;
-	uint8_t commentcol=tabs[2];
+	uint8_t commentcol = tabs[2];
 
 	uint32_t b = 4; // how many bytes show on the first line
 
@@ -56,7 +56,7 @@ void CLASS::print(uint32_t lineno)
 			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
 			if (errorText != "")
 			{
-				printf("%s", errorText.c_str());
+				printf(" (%s)", errorText.c_str());
 			}
 			printf("\n");
 		}
@@ -194,17 +194,17 @@ void CLASS::print(uint32_t lineno)
 	}
 	else
 	{
-		pcol += printf("%s ",printlable.c_str());
+		pcol += printf("%s ", printlable.c_str());
 		while (pcol < tabs[0])
 		{
 			pcol += printf(" ");
 		}
-		pcol+=printf("%s ",opcode.c_str());
+		pcol += printf("%s ", opcode.c_str());
 		while (pcol < tabs[1])
 		{
 			pcol += printf(" ");
 		}
-		pcol+=printf("%s ",operand.c_str());
+		pcol += printf("%s ", operand.c_str());
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinstyle))
@@ -213,7 +213,11 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		pcol += printf(":[Error] %s %s", errStrings[errorcode].c_str(), errorText.c_str());
+		pcol += printf(":[Error] %s", errStrings[errorcode].c_str());
+		if (errorText.length() > 0)
+		{
+			pcol += printf(" (%s)", errorText.c_str());
+		}
 	}
 	else if (!commentprinted)
 	{
@@ -315,9 +319,12 @@ void CLASS::set(std::string line)
 	int i = 0;
 	int x;
 	char c, delim;
+	bool isascii;
+	std::string opupper;
 
 	clear();
 
+	isascii = false;
 	delim = 0;
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
@@ -376,6 +383,39 @@ void CLASS::set(std::string line)
 				}
 				else
 				{
+					// SGQ
+					// this is bad, but the only way I currently know how to do this.
+					// the problem is, is that the ASCII generating psuedo-ops in Merlin
+					// use any char > space and less than apostrophe, and > apostrophe
+					// as delimiters.
+					// however, those characters also contain valid opcode expression characters
+					// so we see a character here, it looks like a delim, and we keep reading to EOL
+					// which might include a comment.  All of that, then goes into the operand, and
+					// comments cause errors on evaluation.
+					// So, at this point in the code, we must determine if the opcode is one of our
+					// ascii psuedo-ops and treat the first char as a delim.
+					// otherwise, we must parse the operand as an express.
+					// this parser should know NOTHING about what the code does...but it needs to in
+					// this case.
+
+					opupper = Poco::toUpper(opcode);
+					if (opupper.length() > 0)
+					{
+						if (
+						    (opupper == "STRL")
+						    || (opupper == "STR")
+						    || (opupper == "ASC")
+						    || (opupper == "DCI")
+						    || (opupper == "INV")
+						    || (opupper == "FLS")
+						    || (opupper == "REV")
+						)
+						{
+							isascii = true;
+						}
+
+					}
+
 					state = 4;
 				}
 				break;
@@ -388,8 +428,9 @@ void CLASS::set(std::string line)
 				else if (c > ' ')
 				{
 					operand += c;
-					if (c == '\'')
+					if ((c <= '/') && (isascii))
 					{
+						delim = c;
 						state = 8;
 					}
 					else
@@ -399,15 +440,18 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 5:
-				if ((c == '\'') || (c == '"'))
+				if (c > ' ')
 				{
-					delim = c;
-					operand += c;
-					state = 8;
-				}
-				else if (c > ' ')
-				{
-					operand += c;
+					if ((c == '\'') || (c == '"'))
+					{
+						delim = c;
+						operand += c;
+						state = 8;
+					}
+					else
+					{
+						operand += c;
+					}
 				}
 				else
 				{
@@ -424,8 +468,13 @@ void CLASS::set(std::string line)
 			case 7:
 				comment += c;
 				break;
+			case 9:
+				break;
 			case 8:
-				if (c == delim)
+				if (c < ' ')
+				{
+				}
+				else if (c == delim)
 				{
 					operand += c;
 					state = 5;
@@ -434,8 +483,6 @@ void CLASS::set(std::string line)
 				{
 					operand += c;
 				}
-				break;
-			case 9:
 				break;
 		}
 	}
@@ -945,32 +992,69 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
-	fnd = findSymbol(sym);
-
-	if ((fnd != NULL) && (!replace))
+	if (sym.length() > 0)
 	{
-		return (NULL);  // it is a duplicate
-	}
+		TSymbol s;
+		s.name = sym;
+		s.opcode = 0;
+		s.namelc = Poco::toLower(sym);
+		s.stype = 0;
+		s.value = val;
+		s.used = false;
+		s.cb = NULL;
+		std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
 
-	if (fnd != NULL)
-	{
-		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
-		fnd->value = val;
-		return (fnd);
-	}
+		if (sym[0] == ':')
+		{
+			//local symbol
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				fnd = findSymbol(sym);
+				if ((fnd != NULL) && (!replace))
+				{
+					goto out;
+				}
 
-	//printf("addSymbol |%s|\n",sym.c_str());
-	TSymbol s;
-	s.name = sym;
-	s.opcode = 0;
-	s.namelc = Poco::toLower(sym);
-	s.stype = 0;
-	s.value = val;
-	s.used = false;
-	s.cb = NULL;
-	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
-	symbols.insert(p);
-	res = findSymbol(sym);
+				if (fnd != NULL)
+				{
+					fnd->value = val;
+					res = fnd;
+					goto out;
+				}
+				if (currentsym != NULL)
+				{
+					currentsym->locals.insert(p);
+				}
+				res = findSymbol(sym);
+				goto out;
+			}
+		}
+		else
+		{
+			fnd = findSymbol(sym);
+
+			if ((fnd != NULL) && (!replace))
+			{
+				goto out;
+			}
+
+			if (fnd != NULL)
+			{
+				//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
+				fnd->value = val;
+				res = fnd;
+				goto out;
+			}
+
+			symbols.insert(p);
+			res = findSymbol(sym);
+		}
+	}
+out:
 	return (res);
 }
 
@@ -978,15 +1062,37 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
-	//printf("finding: %s\n",symname.c_str());
-	auto itr = symbols.find(Poco::toUpper(symname));
-	if (itr != symbols.end())
+	if (symname.length() > 0)
 	{
-		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
-		res = &itr->second;
-
-		return (res);
+		if (symname[0] == ':')
+		{
+			if (currentsym == NULL)
+			{
+				goto out;
+			}
+			else
+			{
+				auto itr = currentsym->locals.find(Poco::toUpper(symname));
+				if (itr != currentsym->locals.end())
+				{
+					res = &itr->second;
+					goto out;
+				}
+			}
+		}
+		else
+		{
+			//printf("finding: %s\n",symname.c_str());
+			auto itr = symbols.find(Poco::toUpper(symname));
+			if (itr != symbols.end())
+			{
+				//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
+				res = &itr->second;
+				goto out;
+			}
+		}
 	}
+out:
 	return (res);
 }
 
@@ -1166,9 +1272,9 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			line.flags |= FLAG_FORCELONG;
 			break;
 	}
-	if (line.expr_value>=0x100)
+	if (line.expr_value >= 0x100)
 	{
-		line.flags|=FLAG_FORCEABS;
+		line.flags |= FLAG_FORCEABS;
 	}
 
 
@@ -1298,7 +1404,6 @@ void CLASS::initpass(void)
 	s = Poco::trim(Poco::toUpper(s));
 
 	cpumode = MODE_65816;
-	mx = 0x00;
 
 	if (s == "M65816")
 	{
@@ -1318,9 +1423,15 @@ void CLASS::initpass(void)
 	else
 	{
 		printf("Unknown CPU type in .ini\n");
+		mx = 0x00;
 	}
+	mx = getInt("asm.startmx", mx);;
+
+	savepath = getConfig("option.objfile", "");
+
 	relocatable = false;
-	currentsym = NULL;
+	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
+	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;
 	passcomplete = false;
@@ -1347,7 +1458,6 @@ void CLASS::initpass(void)
 	}
 	curLUP.clear();
 	curDO.clear();
-	savepath = "";
 }
 
 void CLASS::complete(void)
@@ -1359,10 +1469,6 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
-			if (isDebug()>=1)
-			{
-				savepath+="1";  // append this to the end to help with testing against other assemblers
-			}
 			printf("saving to file: %s\n", savepath.c_str());
 
 			std::ofstream f(savepath);
@@ -1664,7 +1770,7 @@ void CLASS::process(void)
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
 			line.truncdata = truncdata;
-			memcpy(line.tabs,tabs,sizeof(tabs));
+			memcpy(line.tabs, tabs, sizeof(tabs));
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
@@ -1688,13 +1794,22 @@ void CLASS::process(void)
 						sym = addVariable(line.lable, ls, true);
 						if (sym == NULL) { dupsym = true; }
 						break;
+
 					case ':':
-						break;
 					default:
 						if (pass == 0)
 						{
 							sym = addSymbol(line.lable, PC.currentpc, false);
-							if (sym == NULL) { dupsym = true; }
+							if (sym == NULL)
+							{
+								dupsym = true;
+								line.setError(errDupSymbol);
+							}
+						}
+						if (c != ':')
+						{
+							currentsym = findSymbol(line.lable);
+							currentsymstr = line.lable;
 						}
 						break;
 				}
@@ -1712,12 +1827,11 @@ void CLASS::process(void)
 
 			int64_t value = -1;
 			x = evaluate(line, line.operand_expr, value);
-			//line.eval_result=x;
 
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
-				line.expr_value = value;
+				line.expr_value = (uint32_t)value;
 			}
 			else
 			{

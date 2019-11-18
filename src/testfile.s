@@ -14,10 +14,10 @@ lexpr       =     $010203
 immed       =     $123456     
 neg         equ   -16         
 
-//]var1 = v1234
+]var1 		= v1234
 
                               ;lst off
-start00:                      
+start00                      
             brk               ;$00
             ora   (dp,x)      
             cop   $BA         

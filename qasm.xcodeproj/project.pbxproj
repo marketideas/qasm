@@ -544,7 +544,7 @@
 		2F5E548F237BAC9A0091163D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1120;
 				ORGANIZATIONNAME = "Lane Roathe";
 				TargetAttributes = {
 					2F5E5496237BAC9A0091163D = {
@@ -558,6 +558,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = 2F5E548E237BAC9A0091163D;
 			productRefGroup = 2F5E5498237BAC9A0091163D /* Products */;
@@ -716,6 +717,7 @@
 		2F5E549F237BAC9A0091163D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 32JVURPAZ7;
 				LIBRARY_SEARCH_PATHS = (
@@ -729,6 +731,7 @@
 		2F5E54A0237BAC9A0091163D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 32JVURPAZ7;
 				LIBRARY_SEARCH_PATHS = (

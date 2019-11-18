@@ -18,13 +18,26 @@ endif
 
 all:
 	-mkdir -p ./build
-	-cd ./build && cmake .. && $(MAKE) $S
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
+
+release:
+	-rm -rf ./build
+	-mkdir -p ./build
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=RELEASE .. && $(MAKE) $S
+
+debug:
+	-rm -rf ./build
+	-mkdir -p ./build
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
+
 
 distclean:
 	rm -rf ./build 
+	-rm -rf ./testout
 
 clean:
 	-rm -rf ./build
+	-rm -rf ./testout
 
 depend:
 	-cd ./build && $(MAKE) depend
@@ -42,7 +55,7 @@ reformat:
 	qasm -x REFORMAT  src/main.s
 	
 compare:
-	-bcompare . ../lane_hex &
+	-bcompare . ../lane_qasm &
 
 asm:
 	

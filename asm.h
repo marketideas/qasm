@@ -82,7 +82,7 @@ const std::string errStrings[errMAX + 1] =
 	"Bad opcode",
 	"Opcode not available under CPU mode",
 	"Byte output differs between passes",
-	"Relative branch offset too large",
+	"Bad branch",
 	"Forward Reference to symbol",
 	"Unable to redefine symbol",
 	"Duplicate Symbol",
@@ -347,6 +347,9 @@ public:
 
 	std::string savepath;
 	TSymbol *currentsym;
+	TSymbol topSymbol;
+
+	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;
@@ -408,6 +411,7 @@ public:
 	int doNoPattern(MerlinLine &line, TSymbol &sym);
 	int doMVN(MerlinLine &line, TSymbol &sym);
 	int doPER(MerlinLine &line, TSymbol &sym);
+	int doBRK(MerlinLine & line, TSymbol & sym);
 
 	int doEQU(MerlinLine &line, TSymbol &sym);
 	int doXC(MerlinLine &line, TSymbol &sym);

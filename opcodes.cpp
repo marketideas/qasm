@@ -182,7 +182,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			{
 				value = 0xFFFFFFFF;
 				line.setError(errBadOperand);
-				line.errorText = line.operand_expr2;
+				//line.errorText = line.operand_expr2;
 			}
 
 			setOpcode(line, op);
@@ -226,7 +226,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 			op = (m == syn_abs ? 0x64 : op);
 			op = (m == syn_absx ? 0x74 : op);
 
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = (op == 0x64) ? 0x9C : op;
@@ -236,7 +236,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 2:		// TSB
 			res++;
 			op = (m == syn_abs ? 0x04 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x0C;
@@ -245,7 +245,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 3:		// TRB
 			res++;
 			op = (m == syn_abs ? 0x14 : op);
-			if ((op != 0) && (line.expr_value >= 0x100))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x1C;
@@ -416,15 +416,38 @@ int CLASS::doBRANCH(MerlinLine & line, TSymbol & sym)
 		int32_t o32 = (int32_t)(o64 & 0xFFFFFFFF);
 		int32_t offset = o32 - line.startpc - res;
 
-		// SGQ should check under/over flows
-
+		bool err = false;
+		if (res == 2) // short branch
+		{
+			if ((offset < -128) || (offset > 127))
+			{
+				err = true;
+				op=0x00; // merlin does this
+			}
+		}
+		else if (res == 3) // long branch
+		{
+			if ((offset < -32768) || (offset > 32767))
+			{
+				err = true;
+				// for BRL, merlin DOES NOT kill the opcode
+				//op=0x00; // merlin does this
+			}
+		}
 		//printf("offset %d\n", offset);
+
 		setOpcode(line, op);
 		for (i = 0; i < (res - 1); i++)
 		{
-			line.outbytes.push_back(offset >> (i * 8));
+			uint8_t v=(offset >> (i*8));
+			v=err?0x00:v;
+			line.outbytes.push_back(v);
 		}
 		line.outbytect = res;
+		if (err)
+		{
+			line.setError(errBadBranch);
+		}
 	}
 	return (res);
 }
@@ -464,14 +487,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			cc = 0x01;
 			op = 0x80;
 			bbb = 0x02;
-			//if ((mx&0x02)==0)
-			//{
-			//	bytelen++;
-			//}
-
 		}
 
-		else if ((bbb > 0) && (line.expr_value >= 0x100))
+		else if ((bbb > 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
 		{
 			bbb |= 0x02;
 			bytelen++;
@@ -546,14 +564,18 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			{
 				err = true;
 			}
-			if (m==syn_imm)
+			if (m == syn_imm)
 			{
-				if ((mx&0x01)==0)
+				if ((mx & 0x01) == 0)
 				{
 					bytelen++;
 				}
 			}
-			if ((m == syn_absx) || (m == syn_abs) || (m==syn_absy))
+			if ( ((m==syn_absx) || (m==syn_diix))  && ((sym.opcode==4) || (sym.opcode==5)))  // these are STX,LDX
+			{
+				err=true;
+			}
+			if ((m == syn_absx) || (m == syn_abs) || (m == syn_absy))
 			{
 				if ((line.flags & FLAG_FORCEABS) || (line.expr_value >= 0x100))
 				{
@@ -589,7 +611,7 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 		}
 		else
 		{
-			if ((m == syn_absx) || (m==syn_abs))
+			if ((m == syn_absx) || (m == syn_abs))
 			{
 				if ((line.flags & FLAG_FORCEABS) || (line.expr_value >= 0x100))
 				{
@@ -728,6 +750,30 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	return (res);
 }
 
+int CLASS::doBRK(MerlinLine & line, TSymbol & sym)
+{
+	UNUSED(sym);
+
+	int res = 1;
+	int bytes=0;
+
+	if (line.operand_expr!="")
+	{
+		bytes++;
+	}
+	if (pass > 0)
+	{
+		setOpcode(line, sym.opcode);
+		for (int i=0;i<bytes;i++)
+		{
+			line.outbytes.push_back((line.expr_value>>(8*i))&0xFF);
+		}
+
+		line.outbytect = res+bytes;
+	}
+	return (res+bytes);
+}
+
 void CLASS::insertOpcodes(void)
 {
 	pushopcode("=",   0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
@@ -758,12 +804,13 @@ void CLASS::insertOpcodes(void)
 	pushopcode("TTL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SKP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TR",  P_TR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("ASC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("DCI", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("INV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("FLS", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("REV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("STR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("ASC", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("DCI", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("INV", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("FLS", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("REV", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("STR", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("STRL", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DA",  P_DATA, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DW",  P_DATA, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DDB", P_DATA, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -806,7 +853,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BNE", 0x03, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BPL", 0x00, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BRA", 0x40, 0, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("BRK", 0x00, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("BRK", 0x00, 1, OPHANDLER(&CLASS::doBRK));
 	pushopcode("BRL", 0x20, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVC", 0x01, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVS", 0x81, 0, OPHANDLER(&CLASS::doBRANCH));
@@ -872,11 +919,15 @@ void CLASS::insertOpcodes(void)
 	pushopcode("TAX", 0xAA, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TAY", 0xA8, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TCD", 0x5B, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TAD", 0x5B, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TCS", 0x1B, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TAS", 0x1B, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TDC", 0x7B, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TDA", 0x7B, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TRB", 0x03, OP_A, OPHANDLER(&CLASS::doNoPattern));
 	pushopcode("TSB", 0x02, OP_A, OPHANDLER(&CLASS::doNoPattern));
 	pushopcode("TSC", 0x3B, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("TSA", 0x3B, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TSX", 0xBA, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TXA", 0x8A, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("TXS", 0x9A, 0, OPHANDLER(&CLASS::doBYTE));
@@ -886,6 +937,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("WAI", 0xCB, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("WDM", 0x42, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("XBA", 0xEB, 0, OPHANDLER(&CLASS::doBYTE));
+	pushopcode("SWA", 0xEB, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("XCE", 0xFB, 0, OPHANDLER(&CLASS::doBYTE));
 }
 
