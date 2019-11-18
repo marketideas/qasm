@@ -18,7 +18,7 @@ endif
 
 all:
 	-mkdir -p ./build
-	-cd ./build && cmake .. && $(MAKE) $S
+	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
 
 release:
 	-rm -rf ./build
@@ -33,9 +33,11 @@ debug:
 
 distclean:
 	rm -rf ./build 
+	-rm -rf ./testout
 
 clean:
 	-rm -rf ./build
+	-rm -rf ./testout
 
 depend:
 	-cd ./build && $(MAKE) depend
