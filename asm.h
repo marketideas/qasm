@@ -409,6 +409,7 @@ public:
 	int doNoPattern(MerlinLine &line, TSymbol &sym);
 	int doMVN(MerlinLine &line, TSymbol &sym);
 	int doPER(MerlinLine &line, TSymbol &sym);
+	int doBRK(MerlinLine & line, TSymbol & sym);
 
 	int doEQU(MerlinLine &line, TSymbol &sym);
 	int doXC(MerlinLine &line, TSymbol &sym);

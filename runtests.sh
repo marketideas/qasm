@@ -7,8 +7,15 @@ rm -f $TMPFILE
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
 
-SRC=`ls ./testdata`
+SRC=`ls ./testdata | grep -E '^([0-9]+)(.*)\.[Ss]'`
 
+#for S in $SRC ; do
+#	echo $S
+#done
+#exit
+
+TOTAL=0
+FAILCT=0
 
 for S in $SRC ; do
 
@@ -21,11 +28,22 @@ for S in $SRC ; do
 	./qasm -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
 
 	R=?$
-	echo $S " " $S1
-	cat $TMPFILE | grep "End qASM assembly"
+	#echo $S " " $S1
+	R=`cat $TMPFILE | grep "End qASM assembly"`
+	E=`echo $R | awk -e '{ print $6; }'`
+	ect=`echo $(($E))`
+	P="PASS:          "
+	TOTAL=$(($TOTAL+1))
+	if [ $ect != 0 ] ; then
+		printf 'FAIL: (%3s)    ' $ect
 
+		FAILCT=$(($FAILCT+1))
+	else
+		printf "PASS:          "
+	fi
+	echo " $S"
 done
-ls -l $OUTDIR
+echo "Total: $TOTAL  Fail: $FAILCT"
 
 
 

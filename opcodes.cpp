@@ -750,6 +750,30 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	return (res);
 }
 
+int CLASS::doBRK(MerlinLine & line, TSymbol & sym)
+{
+	UNUSED(sym);
+
+	int res = 1;
+	int bytes=0;
+
+	if (line.operand_expr!="")
+	{
+		bytes++;
+	}
+	if (pass > 0)
+	{
+		setOpcode(line, sym.opcode);
+		for (int i=0;i<bytes;i++)
+		{
+			line.outbytes.push_back((line.expr_value>>(8*i))&0xFF);
+		}
+
+		line.outbytect = res+bytes;
+	}
+	return (res+bytes);
+}
+
 void CLASS::insertOpcodes(void)
 {
 	pushopcode("=",   0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
@@ -828,7 +852,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BNE", 0x03, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BPL", 0x00, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BRA", 0x40, 0, OPHANDLER(&CLASS::doBRANCH));
-	pushopcode("BRK", 0x00, 1, OPHANDLER(&CLASS::doAddress));
+	pushopcode("BRK", 0x00, 1, OPHANDLER(&CLASS::doBRK));
 	pushopcode("BRL", 0x20, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVC", 0x01, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BVS", 0x81, 0, OPHANDLER(&CLASS::doBRANCH));

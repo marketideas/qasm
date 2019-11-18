@@ -1784,7 +1784,6 @@ void CLASS::process(void)
 
 			int64_t value = -1;
 			x = evaluate(line, line.operand_expr, value);
-			//line.eval_result=x;
 
 			if (x == 0)
 			{
