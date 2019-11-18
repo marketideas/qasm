@@ -28,6 +28,8 @@ class CLASS
 public:
 	CLASS();
 	~CLASS();
+	uint32_t doShift(uint32_t value, uint8_t shift);
+
 	int ProcessOpcode(T65816Asm  &a, MerlinLine &line, TSymbol &opinfo);
 	int doLST(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doDUM(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);

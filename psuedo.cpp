@@ -14,13 +14,30 @@ CLASS::~CLASS()
 }
 
 
+uint32_t CLASS::doShift(uint32_t value, uint8_t shift)
+{
+	if (shift == '<')
+	{
+		value = (value) & 0xFF;
+	}
+	if (shift == '>')
+	{
+		value = (value >> 8) & 0xFF;
+	}
+	else if ((shift == '^') || (shift == '|'))
+	{
+		value = (value >> 16) & 0xFF;
+	}
+	return (value);
+}
+
 int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
 	TEvaluator eval(a);
 
-	int64_t eval_result = 0;
+	int64_t eval_value = 0;
 	uint8_t shift;
 	uint32_t result32;
 	int res = 0;
@@ -51,8 +68,8 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		}
 
 		shift = 0;
-		eval_result = 0;
-		int x = eval.evaluate(line.operand_expr, eval_result, shift);
+		eval_value = 0;
+		int x = eval.evaluate(line.operand_expr, eval_value, shift);
 
 		if (x < 0)
 		{
@@ -65,7 +82,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			goto out;
 		}
 
-		result32 = eval_result & 0xFFFFFFFF;
+		result32 = eval_value & 0xFFFFFFFF;
 		a.curDO.doskip = (result32 != 0) ? false : true;
 
 		goto out;
@@ -227,7 +244,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	//printf("DFB TOK1 : |%s|\n", oper.c_str());
 
 
-	line.eval_result=0; // since this is an data  p-op, clear the global 'bad operand' flag
+	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
 
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
@@ -291,18 +308,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					line.setError(errBadEvaluation);
 				}
 			}
-			if (shift == '<')
-			{
-				eval_value = (eval_value) & 0xFF;
-			}
-			if (shift == '>')
-			{
-				eval_value = (eval_value >> 8) & 0xFF;
-			}
-			else if ((shift == '^') || (shift == '|'))
-			{
-				eval_value = (eval_value >> 16) & 0xFF;
-			}
+			eval_value = doShift(eval_value, shift);
 		}
 
 		outct += wordsize;
@@ -339,23 +345,87 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	UNUSED(opinfo);
 
 	int res = 0;
-	int32_t v = line.expr_value;
-	if (line.eval_result != 0)
-	{
-		line.setError(errForwardRef);
-	}
-	else if ((v < 0) || (((a.PC.currentpc&0xFFFF) + v) >= 0x10000)) // no neg, or crossing bank bound
-	{
-		line.setError(errOverflow);
-	}
-	else
-	{
-		res = v;
 
-		line.datafillbyte =  0x00;
-		line.datafillct = v;
+	TEvaluator eval(a);
 
+	int64_t eval_value = 0;
+	uint8_t shift;
+
+	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
+	line.flags|=FLAG_FORCEADDRPRINT;
+	std::string s;
+	Poco::StringTokenizer tok(line.operand, ",", Poco::StringTokenizer::TOK_TRIM |
+	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+
+	int32_t datact = 0;
+	uint8_t fill = 0x0;
+	bool pagefill = false;
+	int32_t v = 0;
+
+
+	int ct = 0;
+	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+	{
+		s = *itr;
+		if (ct == 0)
+		{
+			if (s == "\\")
+			{
+				pagefill = true;
+			}
+			else
+			{
+
+				shift = 0;
+				eval_value = 0;
+				int x = eval.evaluate(s, eval_value, shift);
+				if (x < 0)
+				{
+					line.setError(errBadOperand);
+					goto out;
+				}
+				eval_value = doShift(eval_value, shift);
+				datact = eval_value & 0xFFFF;
+				if (datact < 0)
+				{
+					line.setError(errBadOperand);
+					goto out;
+				}
+			}
+		}
+		else if (ct == 1)
+		{
+
+			shift = 0;
+			eval_value = 0;
+			int x = eval.evaluate(s, eval_value, shift);
+			if (x < 0)
+			{
+				line.setError(errBadOperand);
+				goto out;
+			}
+			eval_value = doShift(eval_value, shift);
+			fill = eval_value & 0xFF;
+		}
+		else if (ct > 1)
+		{
+			line.setError(errBadOperand);
+		}
+		ct++;
 	}
+
+	line.datafillbyte =  fill;
+	v = datact;
+	if (pagefill)
+	{
+		v=line.startpc&0xFF;
+		v=0x100-v;
+	}
+	line.datafillct = (uint16_t)v & 0xFFFF;
+	res=line.datafillct;
+
+out:
+	//printf("res=%d %04X\n",res,res);
 	return (res);
 }
 
@@ -471,7 +541,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	std::string os = Poco::trim(line.operand);
 
-	line.eval_result=0; // since this is an data  p-op, clear the global 'bad operand' flag
+	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
@@ -543,7 +613,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint32_t ss = 0;
 	std::vector<uint8_t> bytes;
 
-	line.eval_result=0; // since this is an ASCII p-op, clear the global 'bad operand' flag
+	line.eval_result = 0; // since this is an ASCII p-op, clear the global 'bad operand' flag
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
@@ -697,8 +767,10 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					firstbyte = b;
 				}
 				b1 = b & 0x7F;
-				if ((andval!=0xFF) || (orval!=0x00))
-					b=b1;
+				if ((andval != 0xFF) || (orval != 0x00))
+				{
+					b = b1;
+				}
 				if ((b1 < 0x60))
 				{
 					b &= andval; // strip whatever bits needed to flash or invert

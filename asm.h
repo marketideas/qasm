@@ -190,6 +190,7 @@ public:
 	uint8_t linemx;
 	uint8_t tabs[16];
 	bool showmx;
+	bool merlinerrors;
 	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
@@ -335,6 +336,7 @@ public:
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
+	bool merlinerrors;
 	bool allowdup;
 	uint8_t mx;
 	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816

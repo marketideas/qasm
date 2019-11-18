@@ -34,8 +34,6 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
-	bool merlinstyle = true;
-
 	if (datafillct > 0)
 	{
 		l = datafillct;
@@ -50,7 +48,7 @@ void CLASS::print(uint32_t lineno)
 	}
 	if (errorcode > 0)
 	{
-		if (merlinstyle)
+		if (merlinerrors)
 		{
 			//printf("errorcode=%d\n",errorcode);
 			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
@@ -77,7 +75,7 @@ void CLASS::print(uint32_t lineno)
 		nc = nc1;
 	}
 
-	if ((!isatty(STDOUT_FILENO)) || (merlinstyle))
+	if ((!isatty(STDOUT_FILENO)) || (merlinerrors))
 	{
 		nc = true;
 	}
@@ -207,7 +205,7 @@ void CLASS::print(uint32_t lineno)
 		pcol += printf("%s ", operand.c_str());
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
-	if ((errorcode > 0) && (!merlinstyle))
+	if ((errorcode > 0) && (!merlinerrors))
 	{
 		while (pcol < commentcol)
 		{
@@ -293,6 +291,7 @@ void CLASS::clear()
 	operand_expr = "";
 	operand_expr2 = "";
 	addrtext = "";
+	merlinerrors=false;
 	linemx = 0;
 	bytect = 0;
 	opflags = 0;
@@ -1062,6 +1061,11 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
+	std::string sym=symname;
+	if (!casesen)
+	{
+		sym=Poco::toUpper(sym);
+	}
 	if (symname.length() > 0)
 	{
 		if (symname[0] == ':')
@@ -1072,7 +1076,7 @@ TSymbol *CLASS::findSymbol(std::string symname)
 			}
 			else
 			{
-				auto itr = currentsym->locals.find(Poco::toUpper(symname));
+				auto itr = currentsym->locals.find(sym);
 				if (itr != currentsym->locals.end())
 				{
 					res = &itr->second;
@@ -1083,7 +1087,7 @@ TSymbol *CLASS::findSymbol(std::string symname)
 		else
 		{
 			//printf("finding: %s\n",symname.c_str());
-			auto itr = symbols.find(Poco::toUpper(symname));
+			auto itr = symbols.find(sym);
 			if (itr != symbols.end())
 			{
 				//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
@@ -1096,10 +1100,16 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
+TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
+
+	std::string sym=symname;
+	if (!casesen)
+	{
+		sym=Poco::toUpper(sym);
+	}
 
 	//printf("addvariable\n");
 	fnd = findVariable(sym);
@@ -1128,7 +1138,7 @@ TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
 
 	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
 
-	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
+	std::pair<std::string, TSymbol> p(sym, s);
 	variables.insert(p);
 	res = findVariable(sym);
 	return (res);
@@ -1389,6 +1399,8 @@ void CLASS::initpass(void)
 	casesen = getBool("asm.casesen", true);
 	listing = getBool("asm.lst", true);
 	showmx = getBool("asm.showmx", false);
+	merlinerrors = getBool("asm.merlinerrors", true);
+
 	trackrep = getBool("asm.trackrep", false);
 	merlincompat = getBool("asm.merlincompatible", true);
 	allowdup = getBool("asm.allowduplicate", true);
@@ -1818,6 +1830,7 @@ void CLASS::process(void)
 			line.linemx = mx;
 			line.bytect = 0;
 			line.showmx = showmx;
+			line.merlinerrors = merlinerrors;
 
 			if ((line.lable != ""))
 			{
