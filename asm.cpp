@@ -1427,8 +1427,10 @@ void CLASS::initpass(void)
 	}
 	mx = getInt("asm.startmx", mx);;
 
+
 	savepath = getConfig("option.objfile", "");
 
+	lastcarry = false;
 	relocatable = false;
 	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
 	currentsymstr = "";
@@ -1484,6 +1486,14 @@ void CLASS::complete(void)
 					{
 						f.put(line.outbytes[i]);
 					}
+				}
+				if ((line.datafillct > 0) && ((line.flags & FLAG_INDUM) == 0))
+				{
+					for (uint32_t i = 0; i < line.datafillct; i++)
+					{
+						f.put(line.datafillbyte & 0xFF);
+					}
+
 				}
 			}
 		}
@@ -1618,6 +1628,35 @@ int CLASS::getAddrMode(MerlinLine & line)
 								if (i > 0)
 								{
 									v = valEx.match(s, 0, 0);
+									if (v)
+									{
+										if (pass == 0)
+										{
+											// can only check on pass 0, because if the A"
+											// symbol is defined later, we will generate different
+											// bytes on the next pass
+
+											if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
+											{
+												// SGQ
+												// Merlin32 supports the 'A" operand for immediate
+												// mode for opcodes like "ROR A". Problem is, Merlin16
+												// does not, and 'A' could be a lable.
+												TSymbol *sym = findSymbol("A");
+												if (sym == NULL)
+												{
+													line.flags |= FLAG_FORCEIMPLIED;
+													mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
+													goto out;
+												}
+											}
+										}
+										else if (line.flags & FLAG_FORCEIMPLIED)
+										{
+											mode = syn_implied;
+											goto out;
+										}
+									}
 								}
 							}
 							if (!v)
@@ -1646,7 +1685,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 		}
 		idx++;
 	}
-
+out:
 	if (mode == syn_none)
 	{
 		mode = syn_err;
@@ -1828,6 +1867,7 @@ void CLASS::process(void)
 			int64_t value = -1;
 			x = evaluate(line, line.operand_expr, value);
 
+			line.eval_result = x;
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;

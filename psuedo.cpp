@@ -119,7 +119,7 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	TEvaluator eval(a);
 
-	int64_t eval_result = 0;
+	int64_t eval_value = 0;
 	uint8_t shift;
 	int lidx, len;
 	int res = 0;
@@ -135,16 +135,16 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		{
 
 			shift = 0;
-			eval_result = 0;
-			int x = eval.evaluate(line.operand_expr, eval_result, shift);
+			eval_value = 0;
+			int x = eval.evaluate(line.operand_expr, eval_value, shift);
 
 			a.LUPstack.push(a.curLUP);
 
 			a.curLUP.lupoffset = len;
-			a.curLUP.lupct = eval_result & 0xFFFF; // evaluate here
+			a.curLUP.lupct = eval_value & 0xFFFF; // evaluate here
 			a.curLUP.luprunning++;
 
-			if ((x < 0) || (eval_result <= 0) || (eval_result > 0x8000))
+			if ((x < 0) || (eval_value <= 0) || (eval_value > 0x8000))
 			{
 				// merlin just ignores LUP if the value is out of range
 				a.curLUP.lupct = 0;
@@ -226,6 +226,9 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	//printf("DFB TOK1 : |%s|\n", oper.c_str());
 
+
+	line.eval_result=0; // since this is an data  p-op, clear the global 'bad operand' flag
+
 	Poco::StringTokenizer tok(oper, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
 
@@ -264,7 +267,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 		//printf("DFB TOK : |%s|\n", expr.c_str());
 
-		int64_t eval_result = 0;
+		int64_t eval_value = 0;
 		uint8_t shift;
 		int r;
 		uint8_t b;
@@ -277,9 +280,9 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				expr = Poco::trim(expr);
 			}
 			shift = 0;
-			eval_result = 0;
+			eval_value = 0;
 			//printf("DFB EVAL: |%s|\n", expr.c_str());
-			r = eval.evaluate(expr, eval_result, shift);
+			r = eval.evaluate(expr, eval_value, shift);
 			if (r < 0)
 			{
 				//printf("error %d\n",r);
@@ -288,17 +291,17 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					line.setError(errBadEvaluation);
 				}
 			}
-			if (shift == '>')
-			{
-				eval_result = (eval_result) & 0xFF;
-			}
 			if (shift == '<')
 			{
-				eval_result = (eval_result >> 8) & 0xFF;
+				eval_value = (eval_value) & 0xFF;
+			}
+			if (shift == '>')
+			{
+				eval_value = (eval_value >> 8) & 0xFF;
 			}
 			else if ((shift == '^') || (shift == '|'))
 			{
-				eval_result = (eval_result >> 16) & 0xFF;
+				eval_value = (eval_value >> 16) & 0xFF;
 			}
 		}
 
@@ -309,7 +312,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			{
 				for (i = 0; i < wordsize; i++)
 				{
-					b = (eval_result >> (8 * i)) & 0xFF;
+					b = (eval_value >> (8 * i)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -319,7 +322,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				// big endian
 				for (i = 0; i < wordsize; i++)
 				{
-					b = (eval_result >> ((wordsize - 1 - i) * 8)) & 0xFF;
+					b = (eval_value >> ((wordsize - 1 - i) * 8)) & 0xFF;
 					line.outbytes.push_back(b);
 					//printf("%02X\n",b);
 				}
@@ -341,7 +344,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		line.setError(errForwardRef);
 	}
-	else if ((v < 0) || ((a.PC.currentpc + v) >= 0x10000)) // no neg, or crossing bank bound
+	else if ((v < 0) || (((a.PC.currentpc&0xFFFF) + v) >= 0x10000)) // no neg, or crossing bank bound
 	{
 		line.setError(errOverflow);
 	}
@@ -349,7 +352,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		res = v;
 
-		line.datafillbyte = line.eval_result & 0xFF;
+		line.datafillbyte =  0x00;
 		line.datafillct = v;
 
 	}
@@ -468,6 +471,8 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	std::string os = Poco::trim(line.operand);
 
+	line.eval_result=0; // since this is an data  p-op, clear the global 'bad operand' flag
+
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
@@ -538,6 +543,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint32_t ss = 0;
 	std::vector<uint8_t> bytes;
 
+	line.eval_result=0; // since this is an ASCII p-op, clear the global 'bad operand' flag
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
