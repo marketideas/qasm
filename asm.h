@@ -17,9 +17,10 @@
 #define FLAG_DP		   0x08
 #define FLAG_BIGNUM    0x10
 #define FLAG_INDUM     0x20
+#define FLAG_FORCEIMPLIED 0x40
 
 #define FLAG_FORCEADDRPRINT 0x0100
-#define FLAG_NOLINEPRINT 0x2000
+#define FLAG_NOLINEPRINT 0x0200
 
 #define OP_A       0x0001
 #define OP_XY      0x0002
@@ -189,6 +190,7 @@ public:
 	uint8_t linemx;
 	uint8_t tabs[16];
 	bool showmx;
+	bool merlinerrors;
 	uint8_t truncdata;
 	uint32_t lineno;
 	uint32_t flags;
@@ -197,7 +199,7 @@ public:
 	uint32_t addressmode;
 	uint32_t expr_value;
 	uint8_t expr_shift;  // after an eval, this byte will reflect any shift code on expr (|^<>)
-	uint32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
+	int32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
 	uint32_t errorcode;
 	std::string errorText;
 
@@ -334,6 +336,7 @@ public:
 	bool showmx;
 	bool trackrep;
 	bool merlincompat;
+	bool merlinerrors;
 	bool allowdup;
 	uint8_t mx;
 	uint8_t cpumode; // 0=6502, 1=65C02, 2=65816
@@ -344,6 +347,7 @@ public:
 	uint32_t dumstartaddr;
 	bool skiplist; // used if lst is on, but LST opcode turns it off
 	uint32_t lineno;
+	bool lastcarry;
 
 	std::string savepath;
 	TSymbol *currentsym;
