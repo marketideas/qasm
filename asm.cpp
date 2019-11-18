@@ -216,7 +216,7 @@ void CLASS::print(uint32_t lineno)
 		pcol += printf(":[Error] %s", errStrings[errorcode].c_str());
 		if (errorText.length() > 0)
 		{
-			pcol += printf(" (%s)",errorText.c_str());
+			pcol += printf(" (%s)", errorText.c_str());
 		}
 	}
 	else if (!commentprinted)
@@ -392,8 +392,9 @@ void CLASS::set(std::string line)
 				else if (c > ' ')
 				{
 					operand += c;
-					if (c == '\'')
+					if (c <= '/')
 					{
+						delim = c;
 						state = 8;
 					}
 					else
@@ -403,15 +404,18 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 5:
-				if ((c == '\'') || (c == '"'))
+				if (c > ' ')
 				{
-					delim = c;
-					operand += c;
-					state = 8;
-				}
-				else if (c > ' ')
-				{
-					operand += c;
+					if ((c == '\'') || (c == '"'))
+					{
+						delim = c;
+						operand += c;
+						state = 8;
+					}
+					else
+					{
+						operand += c;
+					}
 				}
 				else
 				{
@@ -428,18 +432,21 @@ void CLASS::set(std::string line)
 			case 7:
 				comment += c;
 				break;
+			case 9:
+				break;
 			case 8:
-				if (c == delim)
+				if (c < ' ')
+				{
+				}
+				else if (c == delim)
 				{
 					operand += c;
-					state = 5;
+					state=5;
 				}
 				else
 				{
-					operand += c;
+					operand+=c;
 				}
-				break;
-			case 9:
 				break;
 		}
 	}
@@ -1387,7 +1394,7 @@ void CLASS::initpass(void)
 	savepath = getConfig("option.objfile", "");
 
 	relocatable = false;
-	currentsym = NULL;
+	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
 	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;

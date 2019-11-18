@@ -1,2 +1,19 @@
-2019-11-17 - BRK does not detect a lable that can't be evaluated
-2019-11-17 - ASCII parsing in both eval and for ASC type commands
+  (0)	2019-11-17 - BRK does not detect a lable that can't be evaluated
+  (0)	2019-11-17 - ASCII parsing in both eval and for ASC type commands
+  (0)	2019-11-17 - IF processing for character compare mode
+  (0)	2019-11-17 - 
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+  (0)	2019-11-17 -
+
