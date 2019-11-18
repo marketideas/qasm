@@ -319,9 +319,12 @@ void CLASS::set(std::string line)
 	int i = 0;
 	int x;
 	char c, delim;
+	bool isascii;
+	std::string opupper;
 
 	clear();
 
+	isascii = false;
 	delim = 0;
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
@@ -380,6 +383,39 @@ void CLASS::set(std::string line)
 				}
 				else
 				{
+					// SGQ
+					// this is bad, but the only way I currently know how to do this.
+					// the problem is, is that the ASCII generating psuedo-ops in Merlin
+					// use any char > space and less than apostrophe, and > apostrophe
+					// as delimiters.
+					// however, those characters also contain valid opcode expression characters
+					// so we see a character here, it looks like a delim, and we keep reading to EOL
+					// which might include a comment.  All of that, then goes into the operand, and
+					// comments cause errors on evaluation.
+					// So, at this point in the code, we must determine if the opcode is one of our
+					// ascii psuedo-ops and treat the first char as a delim.
+					// otherwise, we must parse the operand as an express.
+					// this parser should know NOTHING about what the code does...but it needs to in
+					// this case.
+
+					opupper = Poco::toUpper(opcode);
+					if (opupper.length() > 0)
+					{
+						if (
+						    (opupper == "STRL")
+						    || (opupper == "STR")
+						    || (opupper == "ASC")
+						    || (opupper == "DCI")
+						    || (opupper == "INV")
+						    || (opupper == "FLS")
+						    || (opupper == "REV")
+						)
+						{
+							isascii = true;
+						}
+
+					}
+
 					state = 4;
 				}
 				break;
@@ -392,7 +428,7 @@ void CLASS::set(std::string line)
 				else if (c > ' ')
 				{
 					operand += c;
-					if (c <= '/')
+					if ((c <= '/') && (isascii))
 					{
 						delim = c;
 						state = 8;
@@ -441,11 +477,11 @@ void CLASS::set(std::string line)
 				else if (c == delim)
 				{
 					operand += c;
-					state=5;
+					state = 5;
 				}
 				else
 				{
-					operand+=c;
+					operand += c;
 				}
 				break;
 		}
