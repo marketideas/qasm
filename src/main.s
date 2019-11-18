@@ -360,11 +360,12 @@ L00BC       bit     L00BC
 
 * Data Storage Tests
 
+            hex		;no error
             hex     11,22,33,44,55,66,77,88,99 
             hex     112233445566778899F 
             hex     112233445I566778899FF 
 
-            hex     aabb,CC,0123456789ABCDEFabcdef,ff 
+            hex     aabb,CC,0123456789abcdefABCDEF,ff 
 
             ds      36      
             da      $A55A   

@@ -441,44 +441,47 @@ int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	return (0);
 }
+
+char hexVal( char c )
+{
+    char v = -1;
+
+    if ((c >= '0') && (c <= '9'))
+    {
+        v = c - '0';
+    }
+    else if ((c >= 'a') && (c <= 'f'))
+    {
+        v = c - 'a' + 10;
+    }
+    else if ((c >= 'A') && (c <= 'F'))
+    {
+        v = c - 'A' + 10;
+    }
+
+    return v;
+}
+
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-	std::string os = Poco::toUpper(Poco::trim(line.operand_expr));
+    std::string os = Poco::trim(line.operand);
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t ct = 0;
 
-	if (os.length() == 0)
-	{
-		// case where HEX has no operand, Merlin does not flag as error
-		//line.setError(errIllegalCharOperand);
-		bytect = 0;
-		goto out;
-	}
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
 		char c = os[i];
 
-		if ((c >= '0') && (c <= '9'))
-		{
-			c = c - '0';
-		}
-		else if ((c >= 'a') && (c <= 'f'))
-		{
-			c = c - 'a' + 10;
-		}
-		else if ((c >= 'A') && (c <= 'F'))
-		{
-			c = c - 'A' + 10;
-		}
-		else if (c == ',')
+		if (c == ',')
 		{
 			continue;
 		}
-		else
+        c = hexVal(c);
+		if( c < 0 )
 		{
 			line.setError(errIllegalCharOperand);
 			bytect = 0;
@@ -506,6 +509,7 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			bytect++;
 		}
 	}
+
 	if (ct & 0x01) // we got an odd number of nibbles
 	{
 		line.setError(errBadOperand);
@@ -515,7 +519,6 @@ out:
 	line.outbytect = bytect;
 	return bytect;
 }
-
 
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
