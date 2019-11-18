@@ -41,6 +41,7 @@ public:
         Unknown = 0,
         Number,
         Symbol,
+        Ascii,
         Shift,
         Operator,
         LeftParen,
@@ -71,6 +72,8 @@ public:
     std::deque<Token> shuntingYard(const std::deque<Token>& tokens);
     std::deque<Token> exprToTokens(const std::string& expr);
     int parseNumber(std::string n, int64_t &val);
+    int parseAscii(std::string n, int64_t &val);
+
     int evaluate(std::string &expr, int64_t &res, uint8_t &_shiftmode);
 
 };

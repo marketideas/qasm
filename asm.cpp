@@ -34,8 +34,6 @@ void CLASS::print(uint32_t lineno)
 
 	uint32_t b = 4; // how many bytes show on the first line
 
-	bool merlinstyle = true;
-
 	if (datafillct > 0)
 	{
 		l = datafillct;
@@ -50,7 +48,7 @@ void CLASS::print(uint32_t lineno)
 	}
 	if (errorcode > 0)
 	{
-		if (merlinstyle)
+		if (merlinerrors)
 		{
 			//printf("errorcode=%d\n",errorcode);
 			printf("\n%s in line: %d", errStrings[errorcode].c_str(), lineno + 1);
@@ -77,7 +75,7 @@ void CLASS::print(uint32_t lineno)
 		nc = nc1;
 	}
 
-	if ((!isatty(STDOUT_FILENO)) || (merlinstyle))
+	if ((!isatty(STDOUT_FILENO)) || (merlinerrors))
 	{
 		nc = true;
 	}
@@ -207,7 +205,7 @@ void CLASS::print(uint32_t lineno)
 		pcol += printf("%s ", operand.c_str());
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
-	if ((errorcode > 0) && (!merlinstyle))
+	if ((errorcode > 0) && (!merlinerrors))
 	{
 		while (pcol < commentcol)
 		{
@@ -293,6 +291,7 @@ void CLASS::clear()
 	operand_expr = "";
 	operand_expr2 = "";
 	addrtext = "";
+	merlinerrors = false;
 	linemx = 0;
 	bytect = 0;
 	opflags = 0;
@@ -377,10 +376,12 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 3:
+			{
 				if (c > ' ')
 				{
 					opcode += c;
 				}
+#if 1
 				else
 				{
 					// SGQ
@@ -418,7 +419,41 @@ void CLASS::set(std::string line)
 
 					state = 4;
 				}
-				break;
+#else
+				else
+				{
+					// SGQ
+					// this is bad, but the only way I currently know how to do this.
+					// the problem is, is that the ASCII generating psuedo-ops in Merlin
+					// use any char > space and less than apostrophe, and > apostrophe
+					// as delimiters.
+					// however, those characters also contain valid opcode expression characters
+					// so we see a character here, it looks like a delim, and we keep reading to EOL
+					// which might include a comment.  All of that, then goes into the operand, and
+					// comments cause errors on evaluation.
+					// So, at this point in the code, we must determine if the opcode is one of our
+					// ascii psuedo-ops and treat the first char as a delim.
+					// otherwise, we must parse the operand as an express.
+					// this parser should know NOTHING about what the code does...but it needs to in
+					// this case.
+
+					opupper = Poco::toUpper(opcode);
+
+					auto itr = a.opcodes.find(op);
+					if (itr != a.opcodes.end())
+					{
+						TSymbol s = itr->second;
+						if (1)
+						{
+							isascii = true;
+						}
+					}
+
+					state = 4;
+				}
+#endif
+			}
+			break;
 			case 4:  // read whitespace between opcode and operand
 				if (c == ';')
 				{
@@ -987,11 +1022,18 @@ void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallba
 	opcodes.insert(p);
 }
 
-TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
+TSymbol *CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
+
+	//printf("addSymbol: |%s|\n",sym.c_str());
 	if (sym.length() > 0)
 	{
 		TSymbol s;
@@ -1002,7 +1044,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 		s.value = val;
 		s.used = false;
 		s.cb = NULL;
-		std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
+		std::pair<std::string, TSymbol> p(sym, s);
 
 		if (sym[0] == ':')
 		{
@@ -1062,6 +1104,11 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
 	if (symname.length() > 0)
 	{
 		if (symname[0] == ':')
@@ -1072,7 +1119,7 @@ TSymbol *CLASS::findSymbol(std::string symname)
 			}
 			else
 			{
-				auto itr = currentsym->locals.find(Poco::toUpper(symname));
+				auto itr = currentsym->locals.find(sym);
 				if (itr != currentsym->locals.end())
 				{
 					res = &itr->second;
@@ -1083,7 +1130,7 @@ TSymbol *CLASS::findSymbol(std::string symname)
 		else
 		{
 			//printf("finding: %s\n",symname.c_str());
-			auto itr = symbols.find(Poco::toUpper(symname));
+			auto itr = symbols.find(sym);
 			if (itr != symbols.end())
 			{
 				//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
@@ -1096,10 +1143,16 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
+TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
+
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
 
 	//printf("addvariable\n");
 	fnd = findVariable(sym);
@@ -1128,7 +1181,7 @@ TSymbol *CLASS::addVariable(std::string sym, std::string val, bool replace)
 
 	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
 
-	std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
+	std::pair<std::string, TSymbol> p(sym, s);
 	variables.insert(p);
 	res = findVariable(sym);
 	return (res);
@@ -1389,6 +1442,8 @@ void CLASS::initpass(void)
 	casesen = getBool("asm.casesen", true);
 	listing = getBool("asm.lst", true);
 	showmx = getBool("asm.showmx", false);
+	merlinerrors = getBool("asm.merlinerrors", true);
+
 	trackrep = getBool("asm.trackrep", false);
 	merlincompat = getBool("asm.merlincompatible", true);
 	allowdup = getBool("asm.allowduplicate", true);
@@ -1427,8 +1482,10 @@ void CLASS::initpass(void)
 	}
 	mx = getInt("asm.startmx", mx);;
 
+
 	savepath = getConfig("option.objfile", "");
 
+	lastcarry = false;
 	relocatable = false;
 	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
 	currentsymstr = "";
@@ -1484,6 +1541,14 @@ void CLASS::complete(void)
 					{
 						f.put(line.outbytes[i]);
 					}
+				}
+				if ((line.datafillct > 0) && ((line.flags & FLAG_INDUM) == 0))
+				{
+					for (uint32_t i = 0; i < line.datafillct; i++)
+					{
+						f.put(line.datafillbyte & 0xFF);
+					}
+
 				}
 			}
 		}
@@ -1618,6 +1683,35 @@ int CLASS::getAddrMode(MerlinLine & line)
 								if (i > 0)
 								{
 									v = valEx.match(s, 0, 0);
+									if (v)
+									{
+										if (pass == 0)
+										{
+											// can only check on pass 0, because if the A"
+											// symbol is defined later, we will generate different
+											// bytes on the next pass
+
+											if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
+											{
+												// SGQ
+												// Merlin32 supports the 'A" operand for immediate
+												// mode for opcodes like "ROR A". Problem is, Merlin16
+												// does not, and 'A' could be a lable.
+												TSymbol *sym = findSymbol("A");
+												if (sym == NULL)
+												{
+													line.flags |= FLAG_FORCEIMPLIED;
+													mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
+													goto out;
+												}
+											}
+										}
+										else if (line.flags & FLAG_FORCEIMPLIED)
+										{
+											mode = syn_implied;
+											goto out;
+										}
+									}
 								}
 							}
 							if (!v)
@@ -1646,7 +1740,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 		}
 		idx++;
 	}
-
+out:
 	if (mode == syn_none)
 	{
 		mode = syn_err;
@@ -1779,6 +1873,7 @@ void CLASS::process(void)
 			line.linemx = mx;
 			line.bytect = 0;
 			line.showmx = showmx;
+			line.merlinerrors = merlinerrors;
 
 			if ((line.lable != ""))
 			{
@@ -1828,6 +1923,7 @@ void CLASS::process(void)
 			int64_t value = -1;
 			x = evaluate(line, line.operand_expr, value);
 
+			line.eval_result = x;
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;

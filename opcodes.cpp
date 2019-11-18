@@ -226,7 +226,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 			op = (m == syn_abs ? 0x64 : op);
 			op = (m == syn_absx ? 0x74 : op);
 
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
 			{
 				res++;
 				op = (op == 0x64) ? 0x9C : op;
@@ -236,7 +236,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 2:		// TSB
 			res++;
 			op = (m == syn_abs ? 0x04 : op);
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x0C;
@@ -245,7 +245,7 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 		case 3:		// TRB
 			res++;
 			op = (m == syn_abs ? 0x14 : op);
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
+			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
 			{
 				res++;
 				op = 0x1C;
@@ -422,7 +422,7 @@ int CLASS::doBRANCH(MerlinLine & line, TSymbol & sym)
 			if ((offset < -128) || (offset > 127))
 			{
 				err = true;
-				op=0x00; // merlin does this
+				op = 0x00; // merlin does this
 			}
 		}
 		else if (res == 3) // long branch
@@ -439,8 +439,8 @@ int CLASS::doBRANCH(MerlinLine & line, TSymbol & sym)
 		setOpcode(line, op);
 		for (i = 0; i < (res - 1); i++)
 		{
-			uint8_t v=(offset >> (i*8));
-			v=err?0x00:v;
+			uint8_t v = (offset >> (i * 8));
+			v = err ? 0x00 : v;
 			line.outbytes.push_back(v);
 		}
 		line.outbytect = res;
@@ -489,7 +489,7 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			bbb = 0x02;
 		}
 
-		else if ((bbb > 0) && ((line.expr_value >= 0x100) || (line.flags&FLAG_FORCEABS)))
+		else if ((bbb > 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
 		{
 			bbb |= 0x02;
 			bytelen++;
@@ -571,9 +571,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 					bytelen++;
 				}
 			}
-			if ( ((m==syn_absx) || (m==syn_diix))  && ((sym.opcode==4) || (sym.opcode==5)))  // these are STX,LDX
+			if ( ((m == syn_absx) || (m == syn_diix))  && ((sym.opcode == 4) || (sym.opcode == 5))) // these are STX,LDX
 			{
-				err=true;
+				err = true;
 			}
 			if ((m == syn_absx) || (m == syn_abs) || (m == syn_absy))
 			{
@@ -747,6 +747,30 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 		setOpcode(line, sym.opcode);
 		line.outbytect = res;
 	}
+
+	// SGQ merlin32 apparently tracks XCE instructions when tracking MX status
+	// who know how they determine this. I am assuming the NEXT instruction
+	// after a SEC/CLC instruction must be an XCE
+	if (sym.opcode == 0x38) // SEC
+	{
+		lastcarry = true;
+	}
+	else if (sym.opcode == 0x18) // CLC
+	{
+		lastcarry = false;
+	}
+	else if (sym.opcode==0xFB)  // XCE
+	{
+		if (trackrep)
+		{
+			if (lastcarry)
+			{
+				mx=0x03;
+			}
+		}
+	}
+
+
 	return (res);
 }
 
@@ -755,23 +779,23 @@ int CLASS::doBRK(MerlinLine & line, TSymbol & sym)
 	UNUSED(sym);
 
 	int res = 1;
-	int bytes=0;
+	int bytes = 0;
 
-	if (line.operand_expr!="")
+	if (line.operand_expr != "")
 	{
 		bytes++;
 	}
 	if (pass > 0)
 	{
 		setOpcode(line, sym.opcode);
-		for (int i=0;i<bytes;i++)
+		for (int i = 0; i < bytes; i++)
 		{
-			line.outbytes.push_back((line.expr_value>>(8*i))&0xFF);
+			line.outbytes.push_back((line.expr_value >> (8 * i)) & 0xFF);
 		}
 
-		line.outbytect = res+bytes;
+		line.outbytect = res + bytes;
 	}
-	return (res+bytes);
+	return (res + bytes);
 }
 
 void CLASS::insertOpcodes(void)
