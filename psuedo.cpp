@@ -282,7 +282,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			r = eval.evaluate(expr, eval_result, shift);
 			if (r < 0)
 			{
-				//printf("error\n");
+				//printf("error %d\n",r);
 				if (a.pass > 0)
 				{
 					line.setError(errBadEvaluation);
@@ -444,29 +444,29 @@ int CLASS::doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 char hexVal( char c )
 {
-    char v = -1;
+	char v = -1;
 
-    if ((c >= '0') && (c <= '9'))
-    {
-        v = c - '0';
-    }
-    else if ((c >= 'a') && (c <= 'f'))
-    {
-        v = c - 'a' + 10;
-    }
-    else if ((c >= 'A') && (c <= 'F'))
-    {
-        v = c - 'A' + 10;
-    }
+	if ((c >= '0') && (c <= '9'))
+	{
+		v = c - '0';
+	}
+	else if ((c >= 'a') && (c <= 'f'))
+	{
+		v = c - 'a' + 10;
+	}
+	else if ((c >= 'A') && (c <= 'F'))
+	{
+		v = c - 'A' + 10;
+	}
 
-    return v;
+	return v;
 }
 
 int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-    std::string os = Poco::trim(line.operand);
+	std::string os = Poco::trim(line.operand);
 
 	uint32_t bytect = 0;
 	uint8_t b = 0;
@@ -480,8 +480,8 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		{
 			continue;
 		}
-        char hv = hexVal(c);
-		if( hv < 0 )
+		char hv = hexVal(c);
+		if ( hv < 0 )
 		{
 			line.setError(errIllegalCharOperand);
 			bytect = 0;
@@ -520,91 +520,205 @@ out:
 	return bytect;
 }
 
+// the handler for STR,STRL,REV,FLS,INV,DCI,ASC
 int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
-    std::string os = line.operand;
+	std::string os = line.operand;
+	std::string op = Poco::toUpper(line.opcode);
 
+	uint8_t lastdelimbyte = 0x00;
+	uint8_t firstdelim = 0xFF;
 	uint32_t bytect = 0;
 	uint8_t b = 0;
+	uint8_t b1;
 	uint8_t ct = 0;
-    char delimiter = 0;
-    uint32_t ss = 0;
+	char delimiter = 0;
+	uint32_t ss = 0;
+	std::vector<uint8_t> bytes;
 
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
-        char c = os[i];
+		char c = os[i];
 
-        // are we inside a delimited string?
-        if( delimiter )
-        {
-            if( c == delimiter )
-            {
-                bytect += (i - ss);
+		// are we inside a delimited string?
+		if ( delimiter )
+		{
+			if ( c == delimiter )
+			{
+				bytect += (i - ss);
 
-                if( a.pass > 0 )
-                {
-                    for( ; ss < i; ++ss )
-                    {
-                        c = os[ss];
-                        if( delimiter >= '\'' )
-                            c |= 0x80;
-                        line.outbytes.push_back(c);
-                    }
-                }
-                
-                delimiter = 0;
-                ss = 0;
-                continue;
-            }
-        }
-        else
-        {
-            // No, check for seperator characters
-            if( c == ',' || c == ' ' )
-            {
-                continue;
-            }
+				if ( a.pass > 0 )
+				{
+					for ( ; ss < i; ++ss )
+					{
+						c = os[ss];
+						if ( delimiter >= '\'' )
+						{
+							c &= 0x7F;
+						}
+						else
+						{
+							c |= 0x80;
+						}
+						lastdelimbyte = c;
+						bytes.push_back(c);
+						//line.outbytes.push_back(c);
+					}
+				}
 
-            // Is this a hex char?
-            char hv = hexVal(c);
-            if( hv < 0 )
-            {
-                // if not a hex value, then consider the character to be the string delimiter
-                delimiter = c;
-                ss = i + 1;
-                continue;
-            }
+				delimiter = 0;
+				ss = 0;
+				continue;
+			}
+		}
+		else
+		{
+			// No, check for seperator characters
+			if ( c == ',' || c == ' ' )
+			{
+				continue;
+			}
 
-            // Got a hex char, append to hex string and see if we've got a byte
-            switch (ct)
-            {
-                case 0:
-                    b = (hv << 4);
-                    break;
-                case 1:
-                    b |= hv;
-                    break;
-            }
-            ct = (ct + 1) & 0x01;
-            if (!ct)
-            {
-                if (a.pass > 0)
-                {
-                    line.outbytes.push_back(b);
-                }
-                b = 0;
-                bytect++;
-            }
-        }
+			// Is this a hex char?
+			char hv = hexVal(c);
+			if ( hv < 0 )
+			{
+				// if not a hex value, then consider the character to be the string delimiter
+				delimiter = c;
+				if (firstdelim == 0xFF)
+				{
+					firstdelim = c;
+				}
+				else if (delimiter != firstdelim)
+				{
+					line.setError(errIllegalCharOperand);
+				}
+				ss = i + 1;
+				continue;
+			}
+
+			// Got a hex char, append to hex string and see if we've got a byte
+			switch (ct)
+			{
+				case 0:
+					b = (hv << 4);
+					break;
+				case 1:
+					b |= hv;
+					break;
+			}
+			ct = (ct + 1) & 0x01;
+			if (!ct)
+			{
+				if (a.pass > 0)
+				{
+					bytes.push_back(b);
+					//line.outbytes.push_back(b);
+				}
+				b = 0;
+				bytect++;
+			}
+		}
 	}
 
-    if( delimiter || (ct & 0x01) ) // error w/unterminated string or we got an odd number of nibbles in hex value
+	if ( delimiter || (ct & 0x01) ) // error w/unterminated string or we got an odd number of nibbles in hex value
 	{
 		line.setError(errBadOperand);
 		bytect = 0;
 	}
+	else  // now figure out what psuedo op we are and transfer the data to outbytect
+	{
+		uint32_t i;
+		bool reverse = false;
+		bool dci = false;
+		uint8_t andval = 0xFF;
+		uint8_t orval = 0x00;
+		uint8_t addlen = 0;
+		uint8_t firstbyte = 0x00;
+		uint32_t truebytect = bytes.size();
+		const char *ptr = (const char *)op.c_str();
+		//printf("bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
+		switch (strhash(ptr) )
+		{
+			case strhash((const char *)"STRL"):
+				addlen = 2;
+				break;
+			case strhash((const char *)"STR"):
+				addlen = 1;
+				break;
+			case strhash((const char *)"REV"):
+				reverse = true;
+				break;
+			case strhash((const char *)"FLS"):
+				andval = (uint8_t)~0xC0;
+				orval = (uint8_t)0x40;
+				break;
+			case strhash((const char *)"INV"):
+				andval = (uint8_t)~0xC0;
+				orval = 0x00;
+				break;
+			case strhash((const char *)"DCI"):
+				dci = true;
+				break;
+			case strhash((const char *)"ASC"):
+				break;
+			default:
+				line.setError(errBadOpcode);
+				bytect = 0;
+				addlen = 0;
+				break;
+		}
+		if (a.pass > 0)
+		{
+			for (i = 0; i < addlen; i++)  // if a string, push length
+			{
+				line.outbytes.push_back((truebytect >> (i * 8)) & 0xFF);
+			}
+			for (i = 0; i < truebytect; i++)
+			{
+				if (reverse)
+				{
+					b = bytes[bytect - i - 1];
+				}
+				else
+				{
+					b = bytes[i];
+				}
+				if (!i)
+				{
+					firstbyte = b;
+				}
+				b1 = b & 0x7F;
+				if ((andval!=0xFF) || (orval!=0x00))
+					b=b1;
+				if ((b1 < 0x60))
+				{
+					b &= andval; // strip whatever bits needed to flash or invert
+					b |= orval;
+				}
+				if ((dci) && (i == (truebytect - 1)))
+				{
+					// this one might be a bug. I am going to compare the first byte in the string for
+					// bit seven, and invert it on this byte. The confusion arises because this text string
+					// could have high ASCII, but low HEX values.
+					if (firstbyte < 0x80)
+					{
+						b |= 0x80;
+					}
+					else
+					{
+						b &= 0x7F;
+					}
+				}
+				line.outbytes.push_back(b);
+			}
+		}
+		bytect = bytect + addlen;
+
+	}
+	//printf("XXX bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
 
 	line.outbytect = bytect;
 	return bytect;
@@ -670,9 +784,9 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_TR:
 			res = doTR(a, line, opinfo);
 			break;
-        case P_ASC:
-            res = doASC(a, line, opinfo);
-            break;
+		case P_ASC:
+			res = doASC(a, line, opinfo);
+			break;
 	}
 	return (res);
 }
