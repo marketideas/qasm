@@ -27,16 +27,18 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     int state = 0;
     char c;
     char delim;
-    std::string ident, asc;
+    std::string ident;
+    //, asc;
 
     std::string ops = "+-*//^!.&()";
     std::string c1;
     char *tokptr;
     char *tptr;
     bool numexpect;
+    bool highascii = false;
     Token::Type t;
 
-    delim=0;
+    delim = 0;
     numexpect = true;
     for (const auto* p = expr.c_str(); *p; ++p)
     {
@@ -56,18 +58,20 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                 if ((c < ' ') || (c == delim))
                 {
                     // SGQ - convert ascii to a number here
-                    asc = "0";
-                    //printf("ident=|%s|\n",ident.c_str());
+                    //asc = "0";
+                    //printf("ascii ident=|%s|\n", ident.c_str());
                     if (ident.length() > 0)
                     {
                         // SGQ - convert ascii to a number here
                     }
-                    t = Token::Type::Number;
+                    ident = delim + ident + delim;
+
+                    t = Token::Type::Ascii;
                     int pr = 1;            // precedence
-                    bool ra = false;        // rightAssociative
+                    bool ra = false;
                     tokens.push_back(Token
                     {
-                        t, asc, pr, ra
+                        t, ident, pr, ra
                     });
                     ident = "";
                     state = 0;
@@ -75,6 +79,8 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                     {
                         p--;
                     }
+                    highascii = false;
+                    delim = 0;
                 }
                 else
                 {
@@ -150,6 +156,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                 {
                     delim = c;
                     state = 11;
+                    highascii = true;
                     numexpect = false;
                 }
                 else if (((c == '-') || (c == '+')) && (numexpect))
@@ -220,7 +227,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 token.type = Token::Type::Number;
                 if (token.str == "*")
                 {
-                    sprintf(buff, "%u", assembler.PC.currentpc);
+                    sprintf(buff, "$%X", assembler.PC.currentpc);
                     token.str = buff;
                 }
                 else
@@ -231,7 +238,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                     if (sym != NULL)
                     {
                         sym->used = true;
-                        sprintf(buff, "%d", sym->value);
+                        sprintf(buff, "$%X", sym->value);
                         token.str = buff;
                     }
                     else
@@ -243,6 +250,7 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 }
                 queue.push_back(token);
                 break;
+            case Token::Type::Ascii:
             case Token::Type::Number:
                 // If the token is a number, then add it to the output queue
                 queue.push_back(token);
@@ -363,9 +371,54 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
     return queue;
 }
 
+int CLASS::parseAscii(std::string n, int64_t &val)
+{
+    int res = -1;
+    val = 0;
+    bool err = false;
+    uint64_t tval = 0;
+    bool high = false;
+    uint8_t c;
+
+    uint32_t l = n.length();
+    for (uint32_t i = 0; i < l - 1; i++)
+    {
+        c = n[i];
+        if (i == 0)
+        {
+            if (c == '"')
+            {
+                high = true;
+            }
+        }
+        else
+        {
+            tval <<= 8;
+            if (high)
+            {
+                c |= 0x80;
+            }
+            else
+            {
+                c &= 0x7F;
+            }
+            tval = ((tval & 0xFFFFFF00) | c);
+        }
+    }
+
+    if (!err)
+    {
+        val = (uint32_t)(tval & 0xFFFFFFFF);
+        res = 0;
+    }
+
+    //printf("parseASCII |%s| %d %016lX\n", n.c_str(), res, val);
+    return (res);
+}
+
 int CLASS::parseNumber(std::string n, int64_t &val)
 {
-    int res = DEF_VAL;
+    int res = -1;
     int state = 0;
     char c;
     std::string s;
@@ -376,8 +429,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
     int64_t tval = 0;
     val = 0;
 
-
-
+    //printf("parseNumber |%s|\n",n.c_str());
     i = 0;
     l = n.length();
     s = "";
@@ -483,12 +535,13 @@ int CLASS::parseNumber(std::string n, int64_t &val)
         }
     }
 
-    if (tval > (int64_t)0xFFFFFFFF)
+    uint32_t tv = (uint32_t)tval;
+    uint64_t tv1 = tv;
+    if (tv1 > (int64_t)0xFFFFFFFF)
     {
         setError(Token::overflowErr);
     }
 
-    //printf("parsenumber: |%s|\n",s.c_str());
 
     if ((state == 99) || (err))
     {
@@ -506,6 +559,13 @@ int CLASS::parseNumber(std::string n, int64_t &val)
         val = tval;
         //printf("value=%08lX\n", val);
         res = 0;
+    }
+    if (res != 0)
+    {
+        if (isDebug() > 2)
+        {
+            printf("parsenumber error result: %d\n", res);
+        }
     }
     return (res);
 }
@@ -527,7 +587,7 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
     // const std::string expr = "3+4*2/(1-5)^2^3"; // Wikipedia's example
     // const std::string expr = "20-30/3+4*2^3";
 
-    _shiftmode=shiftmode=0;
+    _shiftmode = shiftmode = 0;
     res = DEF_VAL;
     setError(Token::noError);
 
@@ -560,6 +620,19 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
                 //op = "Push " + token.str;
                 //printf("shouldn't get this kind of token\n");
                 break;
+            case Token::Type::Ascii:
+
+                val = 0;
+                u = parseAscii(token.str, val);
+                if (u < 0)
+                {
+                    setError(Token::numberErr);
+                    val = DEF_VAL;
+                }
+                stack.push_back(val);
+                //op = "Push " + token.str;
+                break;
+
             case Token::Type::Number:
                 val = 0;
                 u = parseNumber(token.str, val);
@@ -580,21 +653,21 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
                 {
                     rhs = stack.back();
                     stack.pop_back();
-                    shiftmode=token.str[0];
+                    shiftmode = token.str[0];
 
-                    if (token.str=="^")
+                    if (token.str == "^")
                     {
                         //rhs = (rhs >> 16) &0xFFFF ;
                     }
-                    else if (token.str=="|")
+                    else if (token.str == "|")
                     {
                         //rhs = (rhs >> 16) & 0xFFFF;
                     }
-                    else if (token.str=="<")
+                    else if (token.str == "<")
                     {
                         //rhs = (rhs << 8 ) & 0xFFFF;
                     }
-                    else if (token.str==">")
+                    else if (token.str == ">")
                     {
                         //rhs=(rhs>>8) & 0xFFFF;
                     }
@@ -698,7 +771,7 @@ out:
     {
         setError(Token::syntaxErr);
     }
-    _shiftmode=shiftmode;
+    _shiftmode = shiftmode;
     res = v;
     return (evalerror);
 }

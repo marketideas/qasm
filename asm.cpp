@@ -291,7 +291,7 @@ void CLASS::clear()
 	operand_expr = "";
 	operand_expr2 = "";
 	addrtext = "";
-	merlinerrors=false;
+	merlinerrors = false;
 	linemx = 0;
 	bytect = 0;
 	opflags = 0;
@@ -376,10 +376,12 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 3:
+			{
 				if (c > ' ')
 				{
 					opcode += c;
 				}
+#if 1
 				else
 				{
 					// SGQ
@@ -417,7 +419,41 @@ void CLASS::set(std::string line)
 
 					state = 4;
 				}
-				break;
+#else
+				else
+				{
+					// SGQ
+					// this is bad, but the only way I currently know how to do this.
+					// the problem is, is that the ASCII generating psuedo-ops in Merlin
+					// use any char > space and less than apostrophe, and > apostrophe
+					// as delimiters.
+					// however, those characters also contain valid opcode expression characters
+					// so we see a character here, it looks like a delim, and we keep reading to EOL
+					// which might include a comment.  All of that, then goes into the operand, and
+					// comments cause errors on evaluation.
+					// So, at this point in the code, we must determine if the opcode is one of our
+					// ascii psuedo-ops and treat the first char as a delim.
+					// otherwise, we must parse the operand as an express.
+					// this parser should know NOTHING about what the code does...but it needs to in
+					// this case.
+
+					opupper = Poco::toUpper(opcode);
+
+					auto itr = a.opcodes.find(op);
+					if (itr != a.opcodes.end())
+					{
+						TSymbol s = itr->second;
+						if (1)
+						{
+							isascii = true;
+						}
+					}
+
+					state = 4;
+				}
+#endif
+			}
+			break;
 			case 4:  // read whitespace between opcode and operand
 				if (c == ';')
 				{
@@ -986,11 +1022,18 @@ void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallba
 	opcodes.insert(p);
 }
 
-TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
+TSymbol *CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
+
+	//printf("addSymbol: |%s|\n",sym.c_str());
 	if (sym.length() > 0)
 	{
 		TSymbol s;
@@ -1001,7 +1044,7 @@ TSymbol *CLASS::addSymbol(std::string sym, uint32_t val, bool replace)
 		s.value = val;
 		s.used = false;
 		s.cb = NULL;
-		std::pair<std::string, TSymbol> p(Poco::toUpper(sym), s);
+		std::pair<std::string, TSymbol> p(sym, s);
 
 		if (sym[0] == ':')
 		{
@@ -1061,10 +1104,10 @@ TSymbol *CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
-	std::string sym=symname;
+	std::string sym = symname;
 	if (!casesen)
 	{
-		sym=Poco::toUpper(sym);
+		sym = Poco::toUpper(sym);
 	}
 	if (symname.length() > 0)
 	{
@@ -1105,10 +1148,10 @@ TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
 
-	std::string sym=symname;
+	std::string sym = symname;
 	if (!casesen)
 	{
-		sym=Poco::toUpper(sym);
+		sym = Poco::toUpper(sym);
 	}
 
 	//printf("addvariable\n");
