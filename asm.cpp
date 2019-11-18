@@ -1387,7 +1387,7 @@ void CLASS::initpass(void)
 	savepath = getConfig("option.objfile", "");
 
 	relocatable = false;
-	currentsym = NULL;
+	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
 	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;

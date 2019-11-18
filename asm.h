@@ -353,6 +353,7 @@ public:
 	Poco::HashMap<std::string, TSymbol> macros;
 	Poco::HashMap<std::string, TSymbol> symbols;
 	Poco::HashMap<std::string, TSymbol> variables;
+	TSymbol topSymbol;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
