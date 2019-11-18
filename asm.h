@@ -347,13 +347,14 @@ public:
 
 	std::string savepath;
 	TSymbol *currentsym;
+	TSymbol topSymbol;
+
 	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TSymbol>opcodes;
 	Poco::HashMap<std::string, TSymbol> macros;
 	Poco::HashMap<std::string, TSymbol> symbols;
 	Poco::HashMap<std::string, TSymbol> variables;
-	TSymbol topSymbol;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
