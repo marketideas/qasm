@@ -1,29 +1,38 @@
 Merlin Compatible assembler/linker (and more) for linux
 
 This project is FAR from complete...as I have just gotten it to compile all 256 65816 opcodes.
-The program will read/compile linux based Merlin syntax files (.s), as well as original Merlin 8/16/16+ files in Merlin format
-(high bit set), compressed spaces, and only a <CR> to end lines.  I plan on adding a mode that will process and convert to linux style so
-files can be converted for easy editing under linux.
 
-Merlin32 is great, but there are aspects of it that I don't like (always outputting assembly status and creating .txt file listings, etc)
+Update (11/19/2019) - All code generating opcodes/psuedo-ops complete.
 
-Along time ago, in the mid 1980's I wrote a Merlin compatible assembler and programming shell (with the help of Lane Roathe) for the Apple //GS
-Recently, Lane sent me the source code to that assembler. Unfortunately, because of some of the features we added to the assembler, it will not
-compile under Merlin or Merlin32.  (We actually used qasm to build qasm).
+The program will read/compile linux based Merlin syntax files (.s), as well as original Merlin 
+8/16/16+ files in Merlin format
+(high bit set), compressed spaces, and only a <CR> to end lines.  I plan on adding a mode that 
+will process and convert to linux style so files can be converted for easy editing under linux.
 
-This project will be a linux compatible version, that will compile/link the original source. However, due to speed and everything 'linux'
-I doubt the original will be used much.
+Merlin32 is great, but there are aspects of it that I don't like (always outputting assembly 
+status and creating .txt file listings, etc)
 
-I also would like to interface with the CiderPress library to allow output from the assembler/linker to write files directly to Prodos 
-based .2MG (or other) images.  That way, after a compile, the code under test can be immediately run from a GS emulator.
+Along time ago, in the mid 1980's I wrote a Merlin compatible assembler and programming shell 
+(with the help of Lane Roathe) for the Apple //GS
+Recently, Lane sent me the source code to that assembler. Unfortunately, because of some of the 
+features we added to the assembler, it will not compile under Merlin or Merlin32.  (We actually used 
+qasm to build qasm).
+
+This project will be a linux compatible version, that will compile/link the original source. 
+However, due to speed and everything 'linux' I doubt the original will be used much.
+
+I also would like to interface with the CiderPress library to allow output from the assembler/linker 
+to write files directly to Prodos based .2MG (or other) images.  That way, after a compile, the code 
+under test can be immediately run from a GS emulator.
 
 This early version relies on the Poco Foundation libraries. You must have these installed.
-Additionally, this repo relies on another repo here called 'libpal'.  Both repositories must be cloned at the same level.
+Additionally, this repo relies on another repo here called 'libpal'.  Both repositories must 
+be cloned at the same level.
 
 libpal does not have to be built. The 'qasm' compile will build all of those source files.
 
-'cmake' is used to build the Makefiles.  There is a generic Makefile in the base directory that does all of the 'cmake' stuff for you. 
-(in a 'build' directory)
+'cmake' is used to build the Makefiles.  There is a generic Makefile in the base directory that does 
+all of the 'cmake' stuff for you. (in a 'build' directory)
 
 For example:
 mkdir workdir

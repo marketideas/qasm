@@ -839,6 +839,18 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
+
+#if 0
+			// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
+			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			{
+				// so clear the bank word in all variables
+				a.PC.orgsave &= 0xFFFF;
+				a.PC.currentpc&=0xFFFF;
+				line.startpc &=0xFFFF;
+			}
+#endif
+
 			line.flags |= FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:

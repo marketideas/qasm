@@ -95,17 +95,15 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 		{
 			res = -1;
 
-		    if (syntax==SYNTAX_MERLIN)
-		    {			
-		    	char buff[32];
-		    	sprintf(buff,"$%08X",line.expr_value);
-		    	std::string s1=buff;
-				s = addVariable(line.lable, s1, true);
-			}
-			else
-			{
-				s = addVariable(line.lable, line.operand, true);
-			}
+#if 1
+			char buff[32];
+			sprintf(buff, "$%08X", line.expr_value);
+			std::string s1 = buff;
+			s = addVariable(line.lable, s1, true);
+#else
+			// do this if you want to do this more as a #define
+			s = addVariable(line.lable, line.operand, true);
+#endif
 			if (s != NULL)
 			{
 				res = 0;
@@ -295,6 +293,19 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 	res = 1 + sym.stype;
 	if (pass > 0)
 	{
+		switch(line.expr_shift)
+		{
+			case '^':
+				line.expr_value=(line.expr_value>>16)&0xFFFF;
+				break;
+			case '<':
+				line.expr_value=(line.expr_value)&0xFF;
+				break;
+			case '>':
+				line.expr_value=(line.expr_value>>8)&0xFFFF;
+				break;
+		}
+
 		//line.setError(errIncomplete);
 		setOpcode(line, sym.opcode);
 		for (i = 0; i < (res - 1); i++)
@@ -770,13 +781,13 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	{
 		lastcarry = false;
 	}
-	else if (sym.opcode==0xFB)  // XCE
+	else if (sym.opcode == 0xFB) // XCE
 	{
 		if (trackrep)
 		{
 			if (lastcarry)
 			{
-				mx=0x03;
+				mx = 0x03;
 			}
 		}
 	}

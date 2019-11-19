@@ -205,7 +205,7 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		if (isDebug() > 2)
+		if (isDebug() > 1)
 		{
 			pcol += printf("%s ", operand.c_str());
 		}
@@ -1325,39 +1325,55 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		}
 	}
 
-	switch (line.expr_shift)
+	if (line.addressmode == syn_imm)
 	{
-		case '<':
-			line.expr_value &= 0xFF;
-			line.flags |= FLAG_DP;
-			break;
-		case '>':
-			line.expr_value >>= 8;
-			line.expr_value &= 0xFFFF;
-			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
-			{
+		//printf("immediate mode\n");
+		switch (line.expr_shift)
+		{
+			case '<':
+				line.expr_value &= 0xFF;
+				break;
+			case '>':
+				line.expr_value >>= 8;
+				line.expr_value &= 0xFFFF;
+				break;
+			case '^':
+				line.expr_value = (line.expr_value >> 16) & 0xFFFF;
+				break;
+			case '|':
+				break;
+		}
+	}
+	else
+	{
+		switch (line.expr_shift)
+		{
+			case '<':
+				line.flags |= FLAG_DP;
+				break;
+			case '>':
+				if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+				{
+					// bug in M32 or not, do what it does
+					line.flags |= FLAG_FORCEABS;
+				}
+				else
+				{
+					line.flags |= FLAG_FORCELONG;
+				}
+				break;
+			case '|':
 				line.flags |= FLAG_FORCEABS;
-			}
-			break;
-		case '^':
-			line.expr_value = (line.expr_value >> 16) & 0xFFFF;
-			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
-			{
-				line.flags |= FLAG_FORCEABS;
-			}
-			break;
-		case '|':
-			if ((line.syntax & SYNTAX_MERLIN32) != SYNTAX_MERLIN32)
-			{
-				line.flags |= FLAG_FORCELONG;
-			}
-			break;
+				break;
+			case '^':
+				//line.flags |= FLAG_FORCELONG;
+				break;
+		}
 	}
 	if (line.expr_value >= 0x100)
 	{
 		line.flags |= FLAG_FORCEABS;
 	}
-
 
 	auto itr = opcodes.find(Poco::toUpper(op));
 	if (itr != opcodes.end())
