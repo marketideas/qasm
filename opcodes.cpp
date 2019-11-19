@@ -94,7 +94,18 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 		else if (isvar)
 		{
 			res = -1;
-			s = addVariable(line.lable, line.operand, true);
+
+		    if (syntax==SYNTAX_MERLIN)
+		    {			
+		    	char buff[32];
+		    	sprintf(buff,"$%08X",line.expr_value);
+		    	std::string s1=buff;
+				s = addVariable(line.lable, s1, true);
+			}
+			else
+			{
+				s = addVariable(line.lable, line.operand, true);
+			}
 			if (s != NULL)
 			{
 				res = 0;
@@ -849,7 +860,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("IF",  P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("FIN", P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("CHK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("ERR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("ERR", P_ERR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("KBD", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("LUP", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("--^", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

@@ -844,6 +844,17 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
 			break;
+		case P_ERR:
+			if (a.pass>0)
+			{
+				if ((line.expr_value!=0) || (line.eval_result<0))
+				{
+					line.setError(errErrOpcode);
+					//a.passcomplete=true; // terminate assembly
+				}
+			}
+			res=0;
+			break;
 		case P_LST:
 			res = doLST(a, line, opinfo);
 			break;

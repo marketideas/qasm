@@ -78,6 +78,7 @@ enum asmErrors
 	errBadLUPOperand,
 	errBadLabel,
 	errBadOperand,
+	errErrOpcode,
 	errMAX
 };
 
@@ -112,6 +113,7 @@ const std::string errStrings[errMAX + 1] =
 	"LUP value must be 0 < VAL <= $8000",
 	"Unknown label",
 	"Bad operand",
+	"Break",
 
 	""
 };

@@ -205,7 +205,14 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		pcol += printf("%s ", printoperand.c_str());
+		if (isDebug() > 2)
+		{
+			pcol += printf("%s ", operand.c_str());
+		}
+		else
+		{
+			pcol += printf("%s ", printoperand.c_str());
+		}
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinerrors))
@@ -290,7 +297,7 @@ void CLASS::clear()
 	opcode = "";
 	opcodelower = "";
 	operand = "";
-	printoperand="";
+	printoperand = "";
 	comment = "";
 	operand_expr = "";
 	operand_expr2 = "";
@@ -1327,20 +1334,20 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		case '>':
 			line.expr_value >>= 8;
 			line.expr_value &= 0xFFFF;
-			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 			{
 				line.flags |= FLAG_FORCEABS;
 			}
 			break;
 		case '^':
 			line.expr_value = (line.expr_value >> 16) & 0xFFFF;
-			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 			{
 				line.flags |= FLAG_FORCEABS;
 			}
 			break;
 		case '|':
-			if ((line.syntax&SYNTAX_MERLIN32)!=SYNTAX_MERLIN32)
+			if ((line.syntax & SYNTAX_MERLIN32) != SYNTAX_MERLIN32)
 			{
 				line.flags |= FLAG_FORCELONG;
 			}
@@ -1820,8 +1827,8 @@ int CLASS::substituteVariables(MerlinLine & line, std::string &outop)
 	uint32_t len, off, ct;
 
 	bool done = false;
-	operin=oper;
-	ct=0;
+	operin = oper;
+	ct = 0;
 restart:
 	while (!done)
 	{
@@ -1873,28 +1880,28 @@ restart:
 					}
 					else
 					{
-						done=true;
+						done = true;
 					}
 					offset += len;
 				}
 				else
 				{
 					offset = slen;
-					done=true;
+					done = true;
 				}
 			}
 
 		}
 		else
 		{
-			done=true;
+			done = true;
 		}
 	}
 	//printf("inoper=|%s| outoper=|%s|\n",operin.c_str(),oper.c_str());
-	if (ct>0)
+	if (ct > 0)
 	{
-		outop=oper;
-		res=ct;
+		outop = oper;
+		res = ct;
 	}
 	return (res);
 }
@@ -1996,14 +2003,14 @@ void CLASS::process(void)
 				}
 			}
 			std::string outop;
-			if (pass==0)
+			if (pass == 0)
 			{
-				line.printoperand=line.operand;
+				line.printoperand = line.operand;
 			}
-			x = substituteVariables(line,outop);
-			if (x>0)
+			x = substituteVariables(line, outop);
+			if (x > 0)
 			{
-				line.operand=outop;
+				line.operand = outop;
 			}
 			x = parseOperand(line);
 			if (x >= 0)
