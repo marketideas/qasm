@@ -160,7 +160,7 @@ nosym   equ     $3300       ;should not match anything
         lda     projalso
         lda     nosym
 
-        bra     :next
+        bra     next
 
 target0 nop
 target1 nop                 ;point everything here
@@ -186,7 +186,7 @@ t4a     jml     target0
 t4b     jml     target1
 t4c     jml     target2
 
-:next
+next
         jsr     t0
         jsr     t1a
         jsr     t1b

@@ -14,6 +14,7 @@
 //#define USE_JSON
 //#define USE_XML
 
+#define NO_TTY_SETUP
 // help text
 #define HELP_USAGE "<options> <list of files>"
 #define HELP_PURPOSE "\nMerlin 16+ Compatible 65816 Development Tool"
