@@ -155,5 +155,5 @@ LOCAL1  lda     #$2c            ;EDIT: format as ASCII
         beq     LOCAL1
 LOCAL2  lda     $2c             ;EDIT: format as ASCII
         ldx     $5678           ;put empty variable table here
-        beq     LOCAL2
+        ;beq     LOCAL2
         rts

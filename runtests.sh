@@ -27,6 +27,8 @@ for S in $SRC ; do
 
 	BASE=${S/.S/}
 	BASE=${BASE/.s/}
+	#./qasm -o 0/$OUTDIR/$S1 ./testdata/$S 
+
 	./qasm -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
 
 	R=?$

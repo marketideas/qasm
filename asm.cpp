@@ -313,14 +313,14 @@ void CLASS::clear()
 
 std::string operEx[] =
 {
-	"^(#?)([<>\\^|]?)([\"\'])(.*)(\\3)([\\S]*)", // catches the normal delims
-	"^([!$%&()*+,\\-.\\/])(.\\S*)[\\1](\\S*)",
-	"^(\\s*)(\\S*)",
+	"^(\\S*)(#?)([<>\\^|]?)([\"\'])(.*)(\\4)([\\S]*)", // catches the normal delims
+	"^(\\s*)([!-~])([!-~]*?)([^;]*)\\2(\\S*)", // catches the unusual delims
+	"^(\\s*)(\\S+)",							// captures everything else
 	""
 };
+
 std::string commentEx = "^(\\s*)((;|\\/{2}))+(.*)";
 
-// ^(\s*)(;?)(([\/]{2})?)(.*)
 void CLASS::set(std::string line)
 {
 	int state = 0;
@@ -336,13 +336,21 @@ void CLASS::set(std::string line)
 
 	isascii = false;
 	delim = 0;
-	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
 		c = tline[i++];
-		//printf("state: %d\n",state);
 		switch (state)
 		{
+			case 7:
+				if (c >= ' ')
+				{
+					comment += c;
+				}
+				else
+				{
+					i = l;
+				}
+				break;
 			case 0:  // start of line state
 				if ((c == ';') || (c == '*') || (c == '/'))
 				{
@@ -387,32 +395,63 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 3:
+			{
+				if (c > ' ')
 				{
-					if (c > ' ')
+					opcode += c;
+				}
+				else
+				{
+					i--;
+					state = 4;
+				}
+			}
+			break;
+			case 4:  // read whitespace between opcode and operand
+			{
+				std::vector<std::string> strs;
+				std::string s;
+
+				Poco::RegularExpression comEx(commentEx, 0, true);
+				restofline = Poco::trim(tline.substr(i, tline.length())) + " ";
+				//printf("ROL: |%s|\n",restofline.c_str());
+
+				strs.clear();
+				x = 0;
+				try
+				{
+					x = comEx.split(restofline, strs, 0);
+				}
+				catch (Poco::Exception &e)
+				{
+					x = 0;
+					if (isDebug() > 3)
 					{
-						opcode += c;
-					}
-					else
-					{
-						i--;
-						state = 4;
+						cout << e.displayText() << endl;
 					}
 				}
-				break;
-			case 4:  // read whitespace between opcode and operand
+				if (x > 0)
 				{
-					std::vector<std::string> strs;
-					std::string s;
+					// if the comment detector above is true, then the rest of line is comment;
+					operand = "";
+					comment = strs[0];
+					//printf("comment=%s\n", comment.c_str());
+					i = l;
+					break;
+				}
 
-					Poco::RegularExpression comEx(commentEx, 0, true);
-					restofline = Poco::trim(tline.substr(i, tline.length()))+" ";
-					//printf("ROL: |%s|\n",restofline.c_str());
-
+				int ct = 0;
+				int x = 0;
+				bool match = false;
+				s = operEx[ct];
+				while (s != "")
+				{
+					RegularExpression regex(s, 0, true);
 					strs.clear();
 					x = 0;
 					try
 					{
-						x = comEx.split(restofline, strs, 0);
+						x = regex.split(restofline, strs, 0);
 					}
 					catch (Poco::Exception &e)
 					{
@@ -424,63 +463,34 @@ void CLASS::set(std::string line)
 					}
 					if (x > 0)
 					{
-						// if the comment detector above is true, then the rest of line is comment;
-						operand = "";
-						comment = strs[0];
-						//printf("comment=%s\n",comment.c_str());
-						i = l;
+						//printf("%d regex %d match |%s|\n", ct, x, restofline.c_str());
+						operand = strs[0];
+						//printf("which=%d operand=|%s|\n",ct,operand.c_str());
+						i = operand.length();
+						restofline = restofline.substr(i, restofline.length());
+						comment = Poco::trim(restofline);
+						match = true;
 						break;
 					}
-
-					int ct = 0;
-					int x = 0;
-					bool match = false;
+					ct++;
 					s = operEx[ct];
-					while (s != "")
-					{
-						RegularExpression regex(s, 0, true);
-						strs.clear();
-						x = 0;
-						try
-						{
-							x = regex.split(restofline, strs, 0);
-						}
-						catch (Poco::Exception &e)
-						{
-							x = 0;
-							if (isDebug() > 3)
-							{
-								cout << e.displayText() << endl;
-							}
-						}
-						if (x > 0)
-						{
-							//printf("%d regex %d match |%s|\n", ct, x, restofline.c_str());
-							operand = strs[0];
-							//printf("which=%d operand=|%s|\n",ct,operand.c_str());
-							i = operand.length();
-							restofline=restofline.substr(i,restofline.length());
-							match = true;
-							break;
-						}
-						ct++;
-						s = operEx[ct];
-					}
-					i=l;
-					if (!match)
-					{
-						opcode="BAD"; // let assembler figure out this is a bad opcode
-						// SGQ maybe error here
-						//printf("---No Match %s\n", restofline.c_str());
-					}
 				}
-				break;
+				i = l;
+				if (!match)
+				{
+					opcode = ":::"; // let assembler figure out this is a bad opcode
+					// SGQ maybe error here
+					//printf("---No Match %s\n", restofline.c_str());
+				}
+			}
+			break;
 		}
 	}
 	printlable = lable;
 	x = lable.length();
 	if (x > 1)
 	{
+		// SGQ M32 syntax
 #if 0
 		while ((x > 1) && (lable[x - 1] == ':'))
 		{
@@ -676,6 +686,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 	linect = 0;
 	done = false;
 
+	p = Poco::trim(p);
 	currentdir = Poco::Path::current();
 
 	if (filecount == 0)
@@ -746,9 +757,13 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 			}
 			if ((fn.isDirectory()) || (!fn.canRead()))
 			{
-				//LOG_DEBUG << "File is a directory: " << p1 << endl;
+				LOG_DEBUG << "File is a directory: " << p1 << endl;
 				valid = false;
 			}
+		}
+		else
+		{
+			printf("file does not exist |%s|\n", p1.c_str());
 		}
 
 		newfilename = p1;
@@ -2014,6 +2029,7 @@ int CLASS::doline(int lineno, std::string line)
 	{
 		std::string fn;
 		x = processfile(l.operand, fn);
+		//printf("processfile : %d\n",x);
 		if (x < 0)
 		{
 			switch (x)
