@@ -174,7 +174,7 @@ void CLASS::print(uint32_t lineno)
 				{
 					pcol += printf("%c", comment[cc]);
 					comct++;
-					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 10)))
+					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 20)))
 					{
 						printf("\n");
 						pcol = 0;
@@ -416,6 +416,11 @@ void CLASS::set(std::string line)
 				restofline = Poco::trim(tline.substr(i, tline.length())) + " ";
 				//printf("ROL: |%s|\n",restofline.c_str());
 
+				if (restofline=="")
+				{
+					i=l;
+					break;
+				}
 				strs.clear();
 				x = 0;
 				try
@@ -478,9 +483,7 @@ void CLASS::set(std::string line)
 				i = l;
 				if (!match)
 				{
-					opcode = ":::"; // let assembler figure out this is a bad opcode
-					// SGQ maybe error here
-					//printf("---No Match %s\n", restofline.c_str());
+					// if you are here, there probably isn't an operand and/or comment after opcode
 				}
 			}
 			break;
@@ -491,7 +494,7 @@ void CLASS::set(std::string line)
 	if (x > 1)
 	{
 		// SGQ M32 syntax
-#if 0
+#if 1
 		while ((x > 1) && (lable[x - 1] == ':'))
 		{
 			lable = lable.substr(0, x - 1);
@@ -1419,7 +1422,7 @@ void CLASS::initpass(void)
 	merlinerrors = getBool("asm.merlinerrors", true);
 
 	trackrep = getBool("asm.trackrep", false);
-	merlincompat = getBool("asm.merlincompatible", true);
+	//merlincompat = getBool("asm.merlincompatible", true);
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;

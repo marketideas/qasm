@@ -335,7 +335,7 @@ public:
 	bool casesen;
 	bool showmx;
 	bool trackrep;
-	bool merlincompat;
+	//bool merlincompat;
 	bool merlinerrors;
 	bool allowdup;
 	uint8_t mx;
