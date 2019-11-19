@@ -311,6 +311,16 @@ void CLASS::clear()
 	outbytes.clear();
 }
 
+std::string operEx[] =
+{
+	"^(#?)([<>\\^|]?)([\"\'])(.*)(\\3)([\\S]*)", // catches the normal delims
+	"^([!$%&()*+,\\-.\\/])(.\\S*)[\\1](\\S*)",
+	"^(\\s*)(\\S*)",
+	""
+};
+std::string commentEx = "^(\\s*)((;|\\/{2}))+(.*)";
+
+// ^(\s*)(;?)(([\/]{2})?)(.*)
 void CLASS::set(std::string line)
 {
 	int state = 0;
@@ -319,8 +329,9 @@ void CLASS::set(std::string line)
 	int x;
 	char c, delim;
 	bool isascii;
-	std::string opupper;
-
+	std::string opupper, s;
+	std::string restofline;
+	std::string tline = line;
 	clear();
 
 	isascii = false;
@@ -328,7 +339,7 @@ void CLASS::set(std::string line)
 	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
-		c = line[i++];
+		c = tline[i++];
 		//printf("state: %d\n",state);
 		switch (state)
 		{
@@ -376,147 +387,92 @@ void CLASS::set(std::string line)
 				}
 				break;
 			case 3:
-			{
-				if (c > ' ')
 				{
-					opcode += c;
-				}
-#if 1
-				else
-				{
-					// SGQ
-					// this is bad, but the only way I currently know how to do this.
-					// the problem is, is that the ASCII generating psuedo-ops in Merlin
-					// use any char > space and less than apostrophe, and > apostrophe
-					// as delimiters.
-					// however, those characters also contain valid opcode expression characters
-					// so we see a character here, it looks like a delim, and we keep reading to EOL
-					// which might include a comment.  All of that, then goes into the operand, and
-					// comments cause errors on evaluation.
-					// So, at this point in the code, we must determine if the opcode is one of our
-					// ascii psuedo-ops and treat the first char as a delim.
-					// otherwise, we must parse the operand as an express.
-					// this parser should know NOTHING about what the code does...but it needs to in
-					// this case.
-
-					opupper = Poco::toUpper(opcode);
-					if (opupper.length() > 0)
+					if (c > ' ')
 					{
-						if (
-						    (opupper == "STRL")
-						    || (opupper == "STR")
-						    || (opupper == "ASC")
-						    || (opupper == "DCI")
-						    || (opupper == "INV")
-						    || (opupper == "FLS")
-						    || (opupper == "REV")
-						)
-						{
-							isascii = true;
-						}
-
+						opcode += c;
 					}
-
-					state = 4;
-				}
-#else
-				else
-				{
-					// SGQ
-					// this is bad, but the only way I currently know how to do this.
-					// the problem is, is that the ASCII generating psuedo-ops in Merlin
-					// use any char > space and less than apostrophe, and > apostrophe
-					// as delimiters.
-					// however, those characters also contain valid opcode expression characters
-					// so we see a character here, it looks like a delim, and we keep reading to EOL
-					// which might include a comment.  All of that, then goes into the operand, and
-					// comments cause errors on evaluation.
-					// So, at this point in the code, we must determine if the opcode is one of our
-					// ascii psuedo-ops and treat the first char as a delim.
-					// otherwise, we must parse the operand as an express.
-					// this parser should know NOTHING about what the code does...but it needs to in
-					// this case.
-
-					opupper = Poco::toUpper(opcode);
-
-					auto itr = a.opcodes.find(op);
-					if (itr != a.opcodes.end())
+					else
 					{
-						TSymbol s = itr->second;
-						if (1)
-						{
-							isascii = true;
-						}
+						i--;
+						state = 4;
 					}
-
-					state = 4;
 				}
-#endif
-			}
-			break;
+				break;
 			case 4:  // read whitespace between opcode and operand
-				if (c == ';')
 				{
-					comment += c;
-					state = 7;
-				}
-				else if (c > ' ')
-				{
-					operand += c;
-					if ((c <= '/') && (isascii))
+					std::vector<std::string> strs;
+					std::string s;
+
+					Poco::RegularExpression comEx(commentEx, 0, true);
+					restofline = Poco::trim(tline.substr(i, tline.length()))+" ";
+					//printf("ROL: |%s|\n",restofline.c_str());
+
+					strs.clear();
+					x = 0;
+					try
 					{
-						delim = c;
-						state = 8;
+						x = comEx.split(restofline, strs, 0);
 					}
-					else
+					catch (Poco::Exception &e)
 					{
-						state = 5;
+						x = 0;
+						if (isDebug() > 3)
+						{
+							cout << e.displayText() << endl;
+						}
 					}
-				}
-				break;
-			case 5:
-				if (c > ' ')
-				{
-					if ((c == '\'') || (c == '"'))
+					if (x > 0)
 					{
-						delim = c;
-						operand += c;
-						state = 8;
+						// if the comment detector above is true, then the rest of line is comment;
+						operand = "";
+						comment = strs[0];
+						//printf("comment=%s\n",comment.c_str());
+						i = l;
+						break;
 					}
-					else
+
+					int ct = 0;
+					int x = 0;
+					bool match = false;
+					s = operEx[ct];
+					while (s != "")
 					{
-						operand += c;
+						RegularExpression regex(s, 0, true);
+						strs.clear();
+						x = 0;
+						try
+						{
+							x = regex.split(restofline, strs, 0);
+						}
+						catch (Poco::Exception &e)
+						{
+							x = 0;
+							if (isDebug() > 3)
+							{
+								cout << e.displayText() << endl;
+							}
+						}
+						if (x > 0)
+						{
+							//printf("%d regex %d match |%s|\n", ct, x, restofline.c_str());
+							operand = strs[0];
+							//printf("which=%d operand=|%s|\n",ct,operand.c_str());
+							i = operand.length();
+							restofline=restofline.substr(i,restofline.length());
+							match = true;
+							break;
+						}
+						ct++;
+						s = operEx[ct];
 					}
-				}
-				else
-				{
-					state = 6;
-				}
-				break;
-			case 6:
-				if (c > ' ')
-				{
-					comment += c;
-					state = 7;
-				}
-				break;
-			case 7:
-				comment += c;
-				break;
-			case 9:
-				break;
-			case 8:
-				if (c < ' ')
-				{
-				}
-				else if (c == delim)
-				{
-					operand += c;
-					state = 5;
-				}
-				else
-				{
-					operand += c;
+					i=l;
+					if (!match)
+					{
+						opcode="BAD"; // let assembler figure out this is a bad opcode
+						// SGQ maybe error here
+						//printf("---No Match %s\n", restofline.c_str());
+					}
 				}
 				break;
 		}
@@ -525,12 +481,14 @@ void CLASS::set(std::string line)
 	x = lable.length();
 	if (x > 1)
 	{
+#if 0
 		while ((x > 1) && (lable[x - 1] == ':'))
 		{
 			lable = lable.substr(0, x - 1);
 			x--;
 		}
 		//printf("linelable: |%s|\n", lable.c_str());
+#endif
 	}
 
 	opcodelower = Poco::toLower(opcode);
@@ -915,9 +873,10 @@ int CLASS::doline(int lineno, std::string line)
 
 void CLASS::process(void)
 {
-	uint32_t len, t, pos;
 
 	uint32_t ct = lines.size();
+
+	uint32_t len, t, pos;
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
@@ -1022,7 +981,7 @@ void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallba
 	opcodes.insert(p);
 }
 
-TSymbol *CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
+TSymbol * CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1100,7 +1059,7 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::findSymbol(std::string symname)
+TSymbol * CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
@@ -1143,7 +1102,7 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
+TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1187,7 +1146,7 @@ TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 	return (res);
 }
 
-TSymbol *CLASS::findVariable(std::string symname)
+TSymbol * CLASS::findVariable(std::string symname)
 {
 	TSymbol *res = NULL;
 
@@ -1844,6 +1803,17 @@ bool CLASS::codeSkipped(void)
 
 void CLASS::process(void)
 {
+
+#if 0
+	uint32_t ct = lines.size();
+	for (uint32_t lineno = 0; lineno < ct; lineno++)
+	{
+		//MerlinLine &line = lines.at(lineno);
+		//printf("|%s| |%s| |%s| |%s|\n", line.lable.c_str()
+		//       , line.opcode.c_str(), line.operand.c_str(), line.comment.c_str());
+	}
+#else
+
 	uint32_t l;
 	int x;;
 	char c;
@@ -2015,7 +1985,7 @@ void CLASS::process(void)
 #endif
 		pass++;
 	}
-
+#endif
 }
 
 int CLASS::doline(int lineno, std::string line)
