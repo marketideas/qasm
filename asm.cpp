@@ -2,6 +2,9 @@
 #include "asm.h"
 #include "eval.h"
 #include "psuedo.h"
+#include <sys/ioctl.h>
+#include <unistd.h>
+
 
 #define CLASS MerlinLine
 
@@ -99,7 +102,7 @@ void CLASS::print(uint32_t lineno)
 		}
 	}
 	bool empty = false;
-	if ((printlable == "") && (opcode == "") && (operand == ""))
+	if ((printlable == "") && (opcode == "") && (printoperand == ""))
 	{
 		empty = true;
 	}
@@ -202,7 +205,7 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		pcol += printf("%s ", operand.c_str());
+		pcol += printf("%s ", printoperand.c_str());
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinerrors))
@@ -287,6 +290,7 @@ void CLASS::clear()
 	opcode = "";
 	opcodelower = "";
 	operand = "";
+	printoperand="";
 	comment = "";
 	operand_expr = "";
 	operand_expr2 = "";
@@ -494,7 +498,7 @@ void CLASS::set(std::string line)
 	if (x > 1)
 	{
 		// M32 syntax allows a colon after lable, and it is not part of the lable
-		if ((syntax & SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+		if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 		{
 			while ((x > 1) && (lable[x - 1] == ':'))
 			{
@@ -513,7 +517,20 @@ void CLASS::set(std::string line)
 
 CLASS::CLASS()
 {
+	int x;
 	errorct = 0;
+
+	win_columns = -1;
+	win_rows = -1;
+	struct winsize w;
+	x = ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	if (x == 0)
+	{
+		win_columns = w.ws_col;
+		win_rows = w.ws_row;
+	}
+	//printf("cols=%d rows=%d\n",win_columns,win_rows);
+
 }
 
 CLASS::~CLASS()
@@ -1158,7 +1175,7 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
 	if (fnd != NULL)
 	{
 		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
-		fnd->text = val;
+		fnd->var_text = val;
 		return (fnd);
 	}
 
@@ -1168,7 +1185,7 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
 	s.namelc = Poco::toLower(sym);
 	s.stype = 0;
 	s.value = 0;
-	s.text = val;
+	s.var_text = val;
 	s.used = false;
 	s.cb = NULL;
 
@@ -1185,7 +1202,7 @@ TSymbol * CLASS::findVariable(std::string symname)
 	TSymbol *res = NULL;
 
 	//printf("finding: %s\n",symname.c_str());
-	auto itr = variables.find(Poco::toUpper(symname));
+	auto itr = variables.find(symname);
 	if (itr != variables.end())
 	{
 		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
@@ -1204,7 +1221,7 @@ void CLASS::showVariables(void)
 
 		for (auto itr = variables.begin(); itr != variables.end(); ++itr)
 		{
-			printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
+			printf("%-16s %s\n", itr->first.c_str(), itr->second.var_text.c_str());
 		}
 		printf("\n");
 	}
@@ -1310,12 +1327,23 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		case '>':
 			line.expr_value >>= 8;
 			line.expr_value &= 0xFFFF;
+			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			{
+				line.flags |= FLAG_FORCEABS;
+			}
 			break;
 		case '^':
 			line.expr_value = (line.expr_value >> 16) & 0xFFFF;
+			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			{
+				line.flags |= FLAG_FORCEABS;
+			}
 			break;
 		case '|':
-			line.flags |= FLAG_FORCELONG;
+			if ((line.syntax&SYNTAX_MERLIN32)!=SYNTAX_MERLIN32)
+			{
+				line.flags |= FLAG_FORCELONG;
+			}
 			break;
 	}
 	if (line.expr_value >= 0x100)
@@ -1496,7 +1524,7 @@ void CLASS::initpass(void)
 	lastcarry = false;
 	relocatable = false;
 	currentsym = NULL;
-	if ((syntax & SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+	if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 	{
 		// M32 allows locals that don't have a global above. this is the catchall for that
 		currentsym = &topSymbol;    // this is the default symbol for :locals without a global above;
@@ -1704,7 +1732,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 											// symbol is defined later, we will generate different
 											// bytes on the next pass
 
-											if ((line.syntax&SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
+											if ((line.syntax & SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
 											{
 												if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
 												{
@@ -1780,63 +1808,93 @@ int CLASS::parseOperand(MerlinLine & line)
 	return (res);
 }
 
-int CLASS::substituteVariables(MerlinLine & line)
+int CLASS::substituteVariables(MerlinLine & line, std::string &outop)
 {
-	int res = -1;
+	int res = 0;
 	int x;
 	std::string::size_type offset, slen;
 	std::string oper = line.operand;
 	std::string s;
+	std::string operin;
 	TSymbol *sym;
 	uint32_t len, off, ct;
 
-	slen = oper.length();
-	if (slen > 0)
+	bool done = false;
+	operin=oper;
+	ct=0;
+restart:
+	while (!done)
 	{
-		std::vector<std::string> groups;
 
-		offset = 0;
-		RegularExpression varEx(varExpression, Poco::RegularExpression::RE_EXTRA, true);
-		Poco::RegularExpression::MatchVec  mVec;
-
-		//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
-		groups.clear();
-		ct = 0;
-		while (offset < slen)
+		slen = oper.length();
+		if (slen > 0)
 		{
-			try
-			{
-				varEx.match(oper, offset, mVec, 0);
-			}
-			catch (...)
-			{
-				offset = slen;
-			}
+			std::vector<std::string> groups;
 
-			x = mVec.size();
-			if (x > 0)
+			offset = 0;
+			RegularExpression varEx(varExpression, 0, true);
+			Poco::RegularExpression::MatchVec  mVec;
+
+			//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
+			groups.clear();
+			while (offset < slen)
 			{
-				res = 0;
-				off = mVec[0].offset;
-				len = mVec[0].length;
-				s = oper.substr(off, len);
-				sym = findVariable(s);
-				if (sym != NULL)
+				try
 				{
-					ct++;
-					if (pass > 0)
-					{
-						//printf("%d |%s|\n", ct, s.c_str());
-					}
+					varEx.match(oper, offset, mVec, 0);
 				}
-				offset += len;
-			}
-			else
-			{
-				offset = slen;
-			}
-		}
+				catch (...)
+				{
+					offset = slen;
+				}
 
+				x = mVec.size();
+				if (x > 0)
+				{
+					res = 0;
+					off = mVec[0].offset;
+					len = mVec[0].length;
+					s = oper.substr(off, len);
+					sym = findVariable(s);
+					if (sym != NULL)
+					{
+						//printf("match |%s|\n",sym->var_text.c_str());
+
+						if (sym->var_text != "")
+						{
+							oper = oper.replace(off, len, sym->var_text);
+							ct++;
+							if (pass > 0)
+							{
+								//printf("%d |%s|\n", ct, s.c_str());
+							}
+							goto restart;
+						}
+					}
+					else
+					{
+						done=true;
+					}
+					offset += len;
+				}
+				else
+				{
+					offset = slen;
+					done=true;
+				}
+			}
+
+		}
+		else
+		{
+			done=true;
+		}
+	}
+	//printf("inoper=|%s| outoper=|%s|\n",operin.c_str(),oper.c_str());
+	if (ct>0)
+	{
+		outop=oper;
+		res=ct;
 	}
 	return (res);
 }
@@ -1911,7 +1969,7 @@ void CLASS::process(void)
 						sprintf(buff, "$%X", PC.currentpc);
 						ls = buff;
 						sym = addVariable(line.lable, ls, true);
-						if (sym == NULL) { dupsym = true; }
+						//if (sym == NULL) { dupsym = true; }
 						break;
 
 					case ':':
@@ -1937,7 +1995,16 @@ void CLASS::process(void)
 					line.setError(errDupSymbol);
 				}
 			}
-			x = substituteVariables(line);
+			std::string outop;
+			if (pass==0)
+			{
+				line.printoperand=line.operand;
+			}
+			x = substituteVariables(line,outop);
+			if (x>0)
+			{
+				line.operand=outop;
+			}
 			x = parseOperand(line);
 			if (x >= 0)
 			{

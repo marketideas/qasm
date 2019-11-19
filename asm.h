@@ -18,6 +18,7 @@
 #define OPTION_FORCE_REPSEP    0x0800
 #define OPTION_NO_REPSEP       0x1000
 #define OPTION_CFG_REPSEP	   0x2000
+#define OPTION_M32_VARS		   0x4000
 
 
 #define FLAG_FORCELONG 0x01
@@ -189,6 +190,7 @@ public:
 	uint32_t syntax;
 	std::string lable;
 	std::string printlable;
+	std::string printoperand;
 	std::string opcode;
 	std::string opcodelower;
 	std::string operand;
@@ -231,6 +233,8 @@ public:
 class TFileProcessor
 {
 protected:
+	int win_columns;
+	int win_rows;
 	std::string initialdir;
 	std::vector<std::string> filenames;
 	uint32_t syntax;
@@ -310,7 +314,8 @@ class TSymbol
 public:
 	std::string namelc;
 	std::string name;
-	std::string text;
+	//std::string text;
+	std::string var_text;
 	uint32_t value;
 	uint16_t stype;
 	uint8_t opcode;
@@ -326,7 +331,8 @@ public:
 	{
 		value = 0;
 		used = false;
-		text = "";
+		//text = "";
+		var_text="";
 		name = "";
 		namelc = "";
 		stype = 0;
@@ -406,7 +412,8 @@ public:
 	void showVariables(void);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
-	int substituteVariables(MerlinLine & line);
+	int substituteVariables(MerlinLine & line, std::string &outop);
+
 	bool codeSkipped(void);
 
 	int parseOperand(MerlinLine &line);

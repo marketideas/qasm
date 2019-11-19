@@ -423,7 +423,7 @@ lup_start:
             --^             
 
 
-            lst off
+            ;lst off
 //]XCODEEND       ; Keep this at the end and put your code above this
                             ;lst off
 
