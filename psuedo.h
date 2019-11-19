@@ -19,6 +19,7 @@ enum
 	P_DO,
 	P_TR,
     P_ASC,
+    P_ERR,
 
 	P_MAX
 };

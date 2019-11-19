@@ -18,9 +18,11 @@ programOption PAL::appOptions[] =
 #ifdef DEBUG
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
 #endif
-	//{ "config", "f", "load configuration data from a <file>", " <file>", false, false},
-	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", " <command>", false, false},
-	{ "objfile", "o", "write output to file", " <file>", false, false},
+	//{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
+	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", "<command>", false, false},
+	{ "objfile", "o", "write output to file", "<file>", false, false},
+	{ "syntax", "s", "enforce syntax of other assembler [merlin16, merlin32]", "<syntax>", false, false},
+
 
 	{ "", "", "", "", false, false}
 };
