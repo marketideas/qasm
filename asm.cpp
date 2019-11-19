@@ -416,9 +416,9 @@ void CLASS::set(std::string line)
 				restofline = Poco::trim(tline.substr(i, tline.length())) + " ";
 				//printf("ROL: |%s|\n",restofline.c_str());
 
-				if (restofline=="")
+				if (restofline == "")
 				{
-					i=l;
+					i = l;
 					break;
 				}
 				strs.clear();
@@ -493,15 +493,16 @@ void CLASS::set(std::string line)
 	x = lable.length();
 	if (x > 1)
 	{
-		// SGQ M32 syntax
-#if 1
-		while ((x > 1) && (lable[x - 1] == ':'))
+		// M32 syntax allows a colon after lable, and it is not part of the lable
+		if ((syntax & SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
 		{
-			lable = lable.substr(0, x - 1);
-			x--;
+			while ((x > 1) && (lable[x - 1] == ':'))
+			{
+				lable = lable.substr(0, x - 1);
+				x--;
+			}
+			//printf("linelable: |%s|\n", lable.c_str());
 		}
-		//printf("linelable: |%s|\n", lable.c_str());
-#endif
 	}
 
 	opcodelower = Poco::toLower(opcode);
@@ -532,8 +533,23 @@ void CLASS::init(void)
 	filenames.clear();
 	starttime = GetTickCount();
 	initialdir = Poco::Path::current();
-	syntax = 0;
+	syntax = SYNTAX_MERLIN;
 	filecount = 0;
+
+	s = getConfig("option.syntax", "merlin16");
+	s = Poco::toUpper(Poco::trim(s));
+	if ((s == "MERLIN") || (s == "MERLIN16"))
+	{
+		syntax = SYNTAX_MERLIN;
+	}
+	else if (s == "MERLIN32")
+	{
+		syntax = SYNTAX_MERLIN32;
+	}
+	else if (s == "QASM")
+	{
+		syntax = SYNTAX_QASM;
+	}
 
 	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
 	tabstr = Poco::trim(tabstr);
@@ -1422,6 +1438,21 @@ void CLASS::initpass(void)
 	merlinerrors = getBool("asm.merlinerrors", true);
 
 	trackrep = getBool("asm.trackrep", false);
+	if (syntax == SYNTAX_MERLIN32)
+	{
+		trackrep = true; // can't turn this off in M32
+	}
+	else if (syntax == SYNTAX_MERLIN)
+	{
+		trackrep = false; // can't turn this ON in M16
+	}
+	else if (syntax == SYNTAX_QASM)
+	{
+		// we will allow this to be settable default off
+		trackrep = false;
+		trackrep = getBool("asm.trackrep", trackrep);
+
+	}
 	//merlincompat = getBool("asm.merlincompatible", true);
 	allowdup = getBool("asm.allowduplicate", true);
 
@@ -1464,7 +1495,12 @@ void CLASS::initpass(void)
 
 	lastcarry = false;
 	relocatable = false;
-	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
+	currentsym = NULL;
+	if ((syntax & SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+	{
+		// M32 allows locals that don't have a global above. this is the catchall for that
+		currentsym = &topSymbol;    // this is the default symbol for :locals without a global above;
+	}
 	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;
@@ -1668,18 +1704,17 @@ int CLASS::getAddrMode(MerlinLine & line)
 											// symbol is defined later, we will generate different
 											// bytes on the next pass
 
-											if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
+											if ((line.syntax&SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
 											{
-												// SGQ
-												// Merlin32 supports the 'A" operand for immediate
-												// mode for opcodes like "ROR A". Problem is, Merlin16
-												// does not, and 'A' could be a lable.
-												TSymbol *sym = findSymbol("A");
-												if (sym == NULL)
+												if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
 												{
-													line.flags |= FLAG_FORCEIMPLIED;
-													mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
-													goto out;
+													TSymbol *sym = findSymbol("A");
+													if (sym == NULL)
+													{
+														line.flags |= FLAG_FORCEIMPLIED;
+														mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
+														goto out;
+													}
 												}
 											}
 										}
@@ -1861,6 +1896,7 @@ void CLASS::process(void)
 			line.linemx = mx;
 			line.bytect = 0;
 			line.showmx = showmx;
+			line.syntax = syntax;
 			line.merlinerrors = merlinerrors;
 
 			if ((line.lable != ""))

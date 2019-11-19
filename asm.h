@@ -8,8 +8,17 @@
 #define MODE_65816 2
 
 #define SYNTAX_MERLIN 0
-#define SYNTAX_APW	  1
-#define SYNTAX_ORCA	  2
+#define SYNTAX_MERLIN32 0x01
+#define SYNTAX_APW	    0x02
+#define SYNTAX_ORCA	    0x04
+#define SYNTAX_QASM	    (0x08 | SYNTAX_MERLIN32)
+#define OPTION_ALLOW_A_OPERAND 0x0100
+#define OPTION_ALLOW_LOCAL     0x0200
+#define OPTION_ALLOW_COLON	   0x0400
+#define OPTION_FORCE_REPSEP    0x0800
+#define OPTION_NO_REPSEP       0x1000
+#define OPTION_CFG_REPSEP	   0x2000
+
 
 #define FLAG_FORCELONG 0x01
 #define FLAG_FORCEABS  0x02
@@ -177,7 +186,7 @@ class MerlinLine
 {
 public:
 
-	uint8_t syntax;
+	uint32_t syntax;
 	std::string lable;
 	std::string printlable;
 	std::string opcode;
@@ -224,7 +233,7 @@ class TFileProcessor
 protected:
 	std::string initialdir;
 	std::vector<std::string> filenames;
-	uint8_t syntax;
+	uint32_t syntax;
 	uint64_t starttime;
 	uint8_t tabs[16];
 
@@ -335,7 +344,6 @@ public:
 	bool casesen;
 	bool showmx;
 	bool trackrep;
-	//bool merlincompat;
 	bool merlinerrors;
 	bool allowdup;
 	uint8_t mx;

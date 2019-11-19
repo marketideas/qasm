@@ -29,7 +29,7 @@ for S in $SRC ; do
 	BASE=${BASE/.s/}
 	#./qasm -o 0/$OUTDIR/$S1 ./testdata/$S 
 
-	./qasm -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
+	./qasm --syntax merlin32 -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
 
 	R=?$
 	#echo $S " " $S1
