@@ -34,6 +34,7 @@ debug:
 distclean:
 	rm -rf ./build 
 	-rm -rf ./testout
+	-rm -rf ./m32out
 
 clean:
 	-rm -rf ./build

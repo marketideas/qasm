@@ -1554,6 +1554,7 @@ void CLASS::initpass(void)
 	truncdata = 0;
 	variables.clear(); // clear the variables for each pass
 
+	macros.clear();
 	while (!PCstack.empty())
 	{
 		PCstack.pop();

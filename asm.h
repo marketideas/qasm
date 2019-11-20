@@ -280,11 +280,12 @@ public:
 	{
 		clear();
 	}
-	void clear(void) {
-		lupct=0;
-		lupoffset=0;
-		luprunning=0;
-		lupskip=false;
+	void clear(void)
+	{
+		lupct = 0;
+		lupoffset = 0;
+		luprunning = 0;
+		lupskip = false;
 	}
 	uint16_t lupct;
 	bool lupskip;
@@ -299,9 +300,10 @@ public:
 	{
 		clear();
 	}
-	void clear(void) {
-		doskip=false;
-		value=0;
+	void clear(void)
+	{
+		doskip = false;
+		value = 0;
 	}
 	uint32_t value;
 	bool doskip;
@@ -334,13 +336,24 @@ public:
 		value = 0;
 		used = false;
 		//text = "";
-		var_text="";
+		var_text = "";
 		name = "";
 		namelc = "";
 		stype = 0;
 		opcode = 0;
 		locals.clear();
 	}
+};
+
+
+class TMacro
+{
+public:
+	std::string name;
+	std::string lcname;
+	uint32_t currentline;
+	std::vector<MerlinLine> lines;
+	std::vector<std::string> variables;
 };
 
 class TPsuedoOp;
@@ -371,8 +384,8 @@ public:
 
 	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
+	Poco::HashMap<std::string, TMacro> macros;
 	Poco::HashMap<std::string, TSymbol>opcodes;
-	Poco::HashMap<std::string, TSymbol> macros;
 	Poco::HashMap<std::string, TSymbol> symbols;
 	Poco::HashMap<std::string, TSymbol> variables;
 
@@ -386,6 +399,7 @@ public:
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
 	std::stack<bool> LSTstack;
+	std::stack<TMacro> curMacro;
 
 	TPsuedoOp *psuedoops;
 
