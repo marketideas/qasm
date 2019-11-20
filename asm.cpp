@@ -1342,6 +1342,11 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 				//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 				break;
 			case '|':
+				if (syntax==SYNTAX_MERLIN)
+				{ 
+					line.setError(errBadLabel);
+					line.expr_value=0;
+				}
 				break;
 		}
 	}
@@ -1554,6 +1559,7 @@ void CLASS::initpass(void)
 	truncdata = 0;
 	variables.clear(); // clear the variables for each pass
 
+	macros.clear();
 	while (!PCstack.empty())
 	{
 		PCstack.pop();

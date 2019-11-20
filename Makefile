@@ -32,8 +32,9 @@ debug:
 
 
 distclean:
-	rm -rf ./build 
-	-rm -rf ./testout
+	-rm -rf ./build 
+	-rm -rf ./qasmout
+	-rm -rf ./m32out
 
 clean:
 	-rm -rf ./build
@@ -60,13 +61,13 @@ compare:
 asm:
 	
 test1:
-	-qasm src/main.s
+	-qasm testdata/3001-lroathe.S
 
 test2:
-	-qasm src/testfile.s
+	-qasm testdata/3002-testfile.S
 
 test3:
-	-qasm src/var.s
+	-qasm testdata/3003-var.S
 	
 	
 
