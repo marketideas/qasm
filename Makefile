@@ -32,8 +32,8 @@ debug:
 
 
 distclean:
-	rm -rf ./build 
-	-rm -rf ./testout
+	-rm -rf ./build 
+	-rm -rf ./qasmout
 	-rm -rf ./m32out
 
 clean:
