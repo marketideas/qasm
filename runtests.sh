@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTDIR=./testout
+OUTDIR=./qasmout
 TMPFILE=/tmp/qasm_out.txt
 
 rm -f $TMPFILE
@@ -40,6 +40,7 @@ for S in $SRC ; do
 	MSHA="Q"
 	QSHA="M"
 
+
 	if [ -f ./m32out/$BASE.bin ] ; then
 	  MSHA=`sha256sum ./m32out/$BASE.bin | awk '{ print $1;}'` 2>/dev/null >/dev/null
     fi
@@ -47,7 +48,7 @@ for S in $SRC ; do
     if [ -f $OUTDIR/$BASE.bin ] ; then
 	   QSHA=`sha256sum $OUTDIR/$BASE.bin |awk '{print $1;}'` 2>/dev/null >/dev/null
     fi
-	#echo "$MSHA    $QSHA"
+    #echo "MSHA=$MSHA    QSHA=$QSHA"
 
 	shapass=0;
 	CX=" "

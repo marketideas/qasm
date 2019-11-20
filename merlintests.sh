@@ -18,7 +18,7 @@ for S in $SRC ; do
 	BASE=${S/.S/}
 	BASE=${BASE/.s/}
 	cd ./testdata
-	merlin32 $S 2>/dev/null >/dev/null
+	merlin32 . $S 2>/dev/null >/dev/null
 	#merlin32 . $S 2>/dev/null 
 
 	R=?$
