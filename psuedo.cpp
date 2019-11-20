@@ -18,15 +18,15 @@ uint32_t CLASS::doShift(uint32_t value, uint8_t shift)
 {
 	if (shift == '<')
 	{
-		value = (value) & 0xFF;
+		value = (value) & 0xFFFFFF;
 	}
 	if (shift == '>')
 	{
-		value = (value >> 8) & 0xFF;
+		value = (value >> 8) & 0xFFFFFF;
 	}
 	else if ((shift == '^') || (shift == '|'))
 	{
-		value = (value >> 16) & 0xFF;
+		value = (value >> 16) & 0xFFFFFF;
 	}
 	return (value);
 }

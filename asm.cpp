@@ -1331,14 +1331,15 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		switch (line.expr_shift)
 		{
 			case '<':
-				line.expr_value &= 0xFF;
+				//line.expr_value &= 0xFF;
 				break;
 			case '>':
 				line.expr_value >>= 8;
-				line.expr_value &= 0xFFFF;
+				//line.expr_value &= 0xFFFF;
 				break;
 			case '^':
-				line.expr_value = (line.expr_value >> 16) & 0xFFFF;
+				line.expr_value = (line.expr_value >> 16);
+				//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 				break;
 			case '|':
 				break;
@@ -1352,12 +1353,14 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 				line.flags |= FLAG_DP;
 				break;
 			case '>':
+#if 0
 				if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 				{
 					// bug in M32 or not, do what it does
 					line.flags |= FLAG_FORCEABS;
 				}
 				else
+#endif
 				{
 					line.flags |= FLAG_FORCELONG;
 				}
@@ -1406,13 +1409,6 @@ typedef struct
 // these are the regular expressions that determine the addressing mode
 // and extract the 'expr' part of the addr-mode
 
-// ^([_,a-z,A-Z,0-9:\]].+)\,[s,S]{1}$ // might be a better syn_s
-
-// "^([:-~][0-Z_-~]*)$"  // this is a valid identifier
-// "^([$][0-9A-Fa-f]+)$" // hex digit
-// "^([%][0-1][0-1_]+[0-1])$" - binary numbera
-// "^([0-9]+)$" - decimal number
-// "^([:-~][^\],()]*)$" - valid expression
 const TaddrMode addrRegEx[] =
 {
 	{ "^(?'expr'.+)\\,[s,S]{1}$", syn_s, "e,s"},    				// expr,s
@@ -1429,9 +1425,6 @@ const TaddrMode addrRegEx[] =
 	{"^(?'expr'.+)$", syn_abs, "absolute"},  							// expr (MUST BE LAST)
 	{"", 0, ""}
 };
-
-// keep this next line for awhile
-//	{"^#{1}(?'shift'[<,>,^,|]?)(.+)$", syn_imm, "immediate"}, 				//#expr,#^expr,#|expr,#<expr,#>expr
 
 //	one or more of any character except ][,();
 const std::string valExpression = "^([^\\]\\[,();]+)$";

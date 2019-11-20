@@ -194,9 +194,14 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 				//line.errorText = line.operand_expr2;
 			}
 
+			uint32_t v=(value & 0xFFFFFFFF);
+			//printf("val1 %08X\n",v);
+			//printf("val1 %08X\n",line.expr_value);
+
 			setOpcode(line, op);
-			line.outbytes.push_back(value & 0xFF);
-			line.outbytes.push_back(line.expr_value & 0xFF);
+			// these bytes are the two bank registers
+			line.outbytes.push_back((v>>16) & 0xFF);
+			line.outbytes.push_back((line.expr_value>>16) & 0xFF);
 
 			line.outbytect = res;
 		}
