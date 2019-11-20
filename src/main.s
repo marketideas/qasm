@@ -307,7 +307,7 @@ myQuit
             sbc     ^$012345 
             sbc     |$012345 
 
-            asll    $1234   
+            ;asll    $1234   
 
             lda     <$fff0+24 ;zp
             lda     >$fff0+24 ;ABS (lo word)
@@ -411,8 +411,8 @@ L00BC       bit     L00BC
 			asc		02,15,?123456?
 			asc		02,15,>123456>
 			asc		02,15,<123456<
-			asc		02,15,5,"123456"
-			asc		02,15,"123456
+			asc		02,15,05,"123456"
+			asc		02,15,"123456"
 			asc		0215"1234"1502
 
 			dci		8D,'Hello',8D,'there',8D
@@ -425,7 +425,7 @@ lup_start:
             --^             
 
 
-            lst off
+            ;lst off
 //]XCODEEND       ; Keep this at the end and put your code above this
                             ;lst off
 

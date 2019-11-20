@@ -18,15 +18,15 @@ uint32_t CLASS::doShift(uint32_t value, uint8_t shift)
 {
 	if (shift == '<')
 	{
-		value = (value) & 0xFF;
+		value = (value) & 0xFFFFFF;
 	}
 	if (shift == '>')
 	{
-		value = (value >> 8) & 0xFF;
+		value = (value >> 8) & 0xFFFFFF;
 	}
 	else if ((shift == '^') || (shift == '|'))
 	{
-		value = (value >> 16) & 0xFF;
+		value = (value >> 16) & 0xFFFFFF;
 	}
 	return (value);
 }
@@ -843,10 +843,33 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.PC.currentpc = a.PC.orgsave;
 				line.startpc = a.PC.orgsave;
 			}
+
+#if 0
+			// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
+			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			{
+				// so clear the bank word in all variables
+				a.PC.orgsave &= 0xFFFF;
+				a.PC.currentpc&=0xFFFF;
+				line.startpc &=0xFFFF;
+			}
+#endif
+
 			line.flags |= FLAG_FORCEADDRPRINT;
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
+			break;
+		case P_ERR:
+			if (a.pass>0)
+			{
+				if ((line.expr_value!=0) || (line.eval_result<0))
+				{
+					line.setError(errErrOpcode);
+					//a.passcomplete=true; // terminate assembly
+				}
+			}
+			res=0;
 			break;
 		case P_LST:
 			res = doLST(a, line, opinfo);

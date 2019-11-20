@@ -13,13 +13,13 @@ start nop
 	ldy #$00
 ]loop sta	$800,y
 	dey
-	bne 	]loop;]loop2
-	bne 	]myvar;
+	;dw 	]loop;]loop2
+	;bne 	]myvar;
 
 	bcs		]loop
 	bpl		]loop
 	rts
 
-	use		var
+	;use		var
 	lst on
 

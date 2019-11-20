@@ -94,7 +94,16 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 		else if (isvar)
 		{
 			res = -1;
+
+#if 1
+			char buff[32];
+			sprintf(buff, "$%08X", line.expr_value);
+			std::string s1 = buff;
+			s = addVariable(line.lable, s1, true);
+#else
+			// do this if you want to do this more as a #define
 			s = addVariable(line.lable, line.operand, true);
+#endif
 			if (s != NULL)
 			{
 				res = 0;
@@ -185,9 +194,14 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 				//line.errorText = line.operand_expr2;
 			}
 
+			uint32_t v=(value & 0xFFFFFFFF);
+			//printf("val1 %08X\n",v);
+			//printf("val1 %08X\n",line.expr_value);
+
 			setOpcode(line, op);
-			line.outbytes.push_back(value & 0xFF);
-			line.outbytes.push_back(line.expr_value & 0xFF);
+			// these bytes are the two bank registers
+			line.outbytes.push_back((v>>16) & 0xFF);
+			line.outbytes.push_back((line.expr_value>>16) & 0xFF);
 
 			line.outbytect = res;
 		}
@@ -284,6 +298,19 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 	res = 1 + sym.stype;
 	if (pass > 0)
 	{
+		switch(line.expr_shift)
+		{
+			case '^':
+				line.expr_value=(line.expr_value>>16)&0xFFFF;
+				break;
+			case '<':
+				line.expr_value=(line.expr_value)&0xFF;
+				break;
+			case '>':
+				line.expr_value=(line.expr_value>>8)&0xFFFF;
+				break;
+		}
+
 		//line.setError(errIncomplete);
 		setOpcode(line, sym.opcode);
 		for (i = 0; i < (res - 1); i++)
@@ -759,13 +786,13 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	{
 		lastcarry = false;
 	}
-	else if (sym.opcode==0xFB)  // XCE
+	else if (sym.opcode == 0xFB) // XCE
 	{
 		if (trackrep)
 		{
 			if (lastcarry)
 			{
-				mx=0x03;
+				mx = 0x03;
 			}
 		}
 	}
@@ -849,7 +876,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("IF",  P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("FIN", P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("CHK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("ERR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("ERR", P_ERR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("KBD", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("LUP", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("--^", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
