@@ -35,6 +35,14 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
 
+
+	if (a.macrostack.size()>0)
+	{
+		// if defining a macro, do nothing with this
+		return(0);
+	}
+
+
 	TEvaluator eval(a);
 
 	int64_t eval_value = 0;
@@ -165,6 +173,10 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			// don't need to do anything on pass > 0
 		}
 	}
+	else if (op==">>>")
+	{
+		// don't do anything here, let the macro call handler stuff do ths (asm.cpp)
+	}
 	else // it is EOM or <<<
 	{
 		if (a.macrostack.size() > 0)
@@ -211,78 +223,96 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	std::string op = Poco::toUpper(line.opcode);
 
-	if (op == "LUP")
+	if (a.macrostack.size() == 0) // if defining a macro (size>0), don't process here
 	{
-		line.flags |= FLAG_NOLINEPRINT;
-		len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
-		if (len >= 0)
+		if (op == "LUP")
 		{
-
-			shift = 0;
-			eval_value = 0;
-			int x = eval.evaluate(line.operand_expr, eval_value, shift);
-
-			a.LUPstack.push(a.curLUP);
-
-			a.curLUP.lupoffset = len;
-			a.curLUP.lupct = eval_value & 0xFFFF; // evaluate here
-			a.curLUP.luprunning++;
-
-			if ((x < 0) || (eval_value <= 0) || (eval_value > 0x8000))
+			line.flags |= FLAG_NOLINEPRINT;
+			len = line.lineno - 1; // MerlinLine line numbers are +1 from actual array idx
+			if (len >= 0)
 			{
-				// merlin just ignores LUP if the value is out of range
-				a.curLUP.lupct = 0;
-				a.curLUP.lupskip = true;
-			}
-		}
-		else
-		{
-			err = errUnexpectedOp;
-		}
-	}
 
-	if (op == "--^")
-	{
-		line.flags |= FLAG_NOLINEPRINT;
+				shift = 0;
+				eval_value = 0;
+				int x = eval.evaluate(line.operand_expr, eval_value, shift);
 
-		if (a.curLUP.luprunning > 0)
-		{
-			lidx = line.lineno - 1;
-			len = lidx - a.curLUP.lupoffset - 1;
+				a.LUPstack.push(a.curLUP);
 
-			if (a.curLUP.lupct > 0)
-			{
-				a.curLUP.lupct--;
-				if (a.curLUP.lupct != 0)
+				if (a.expand_macrostack.size() > 0)
 				{
-					a.lineno = a.curLUP.lupoffset;
-					goto out;
+					a.curLUP.lupoffset = a.expand_macro.currentline;
 				}
-			}
-			// kind of a silent error here, just make sure we reinitialize
-			a.curLUP.luprunning = 0;
-			a.curLUP.lupct = 0;
-			a.curLUP.lupskip = false;
+				else
+				{
+					a.curLUP.lupoffset = len;
+				}
+				a.curLUP.lupct = eval_value & 0xFFFF; // evaluate here
+				a.curLUP.luprunning++;
 
-			//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
-			if (a.LUPstack.size() > 0)
-			{
-				a.curLUP = a.LUPstack.top();
-				a.LUPstack.pop();
+				if ((x < 0) || (eval_value <= 0) || (eval_value > 0x8000))
+				{
+					// merlin just ignores LUP if the value is out of range
+					a.curLUP.lupct = 0;
+					a.curLUP.lupskip = true;
+				}
 			}
 			else
 			{
 				err = errUnexpectedOp;
 			}
 		}
-		else
+
+		if (op == "--^")
 		{
-			a.curLUP.lupskip = false;
-			// SGQ - found a '--^' without a LUP, should we just ignore?
-			//err = errUnexpectedOp;
+			line.flags |= FLAG_NOLINEPRINT;
+
+			if (a.curLUP.luprunning > 0)
+			{
+
+
+				lidx = line.lineno - 1;
+				len = lidx - a.curLUP.lupoffset - 1;
+
+				if (a.curLUP.lupct > 0)
+				{
+					a.curLUP.lupct--;
+					if (a.curLUP.lupct != 0)
+					{
+						if (a.expand_macrostack.size() > 0)
+						{
+							a.expand_macro.currentline=a.curLUP.lupoffset;
+						}
+						else
+						{
+							a.lineno = a.curLUP.lupoffset;
+						}
+						goto out;
+					}
+				}
+				// kind of a silent error here, just make sure we reinitialize
+				a.curLUP.luprunning = 0;
+				a.curLUP.lupct = 0;
+				a.curLUP.lupskip = false;
+
+				//printf("start=%d end=%d len=%d\n", a.curLUP.lupoffset, lidx, len);
+				if (a.LUPstack.size() > 0)
+				{
+					a.curLUP = a.LUPstack.top();
+					a.LUPstack.pop();
+				}
+				else
+				{
+					err = errUnexpectedOp;
+				}
+			}
+			else
+			{
+				a.curLUP.lupskip = false;
+				// SGQ - found a '--^' without a LUP, should we just ignore?
+				//err = errUnexpectedOp;
+			}
 		}
 	}
-
 out:
 	if (err > 0)
 	{
