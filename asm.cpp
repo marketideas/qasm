@@ -1117,6 +1117,28 @@ out:
 	return (res);
 }
 
+
+TMacro * CLASS::findMacro(std::string symname)
+{
+	TMacro *res = NULL;
+
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
+	if (symname.length() > 0)
+	{
+		//printf("finding: %s\n",symname.c_str());
+		auto itr = macros.find(sym);
+		if (itr != macros.end())
+		{
+			res = &itr->second;
+		}
+	}
+	return (res);
+}
+
 TSymbol * CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
@@ -1342,10 +1364,10 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 				//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 				break;
 			case '|':
-				if (syntax==SYNTAX_MERLIN)
-				{ 
+				if (syntax == SYNTAX_MERLIN)
+				{
 					line.setError(errBadLabel);
-					line.expr_value=0;
+					line.expr_value = 0;
 				}
 				break;
 		}
@@ -1559,10 +1581,9 @@ void CLASS::initpass(void)
 	truncdata = 0;
 	variables.clear(); // clear the variables for each pass
 
-	macros.clear();
-	while (!PCstack.empty())
+	while (!macrostack.empty())
 	{
-		PCstack.pop();
+		macrostack.pop();
 	}
 	while (!LUPstack.empty())
 	{
@@ -1576,6 +1597,11 @@ void CLASS::initpass(void)
 	{
 		LSTstack.pop();
 	}
+	while (!PCstack.empty())
+	{
+		PCstack.pop();
+	}
+	currentmacro.clear();
 	curLUP.clear();
 	curDO.clear();
 }
@@ -1928,6 +1954,7 @@ bool CLASS::codeSkipped(void)
 
 	res = (curLUP.lupskip) ? true : res;
 	res = (curDO.doskip) ? true : res;
+	res = currentmacro.running ? true : res;
 
 	//printf("codeskip: %d\n",res);
 
@@ -2050,7 +2077,15 @@ void CLASS::process(void)
 			x = 0;
 			if (op.length() > 0)
 			{
-				x = callOpCode(op, line);
+				TMacro *mac=findMacro(op);
+				if (mac==NULL)
+				{
+					x = callOpCode(op, line);
+				}
+				else
+				{
+					x=0;
+				}
 			}
 
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)

@@ -885,9 +885,9 @@ void CLASS::insertOpcodes(void)
 	pushopcode("SW", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("USR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
-	pushopcode("MAC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("EOM", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("<<<", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("MAC", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("EOM", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("<<<", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 
 
 	pushopcode("ADC", 0x03, OP_STD | OP_A, OPHANDLER(&CLASS::doBase6502));

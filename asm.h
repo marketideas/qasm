@@ -352,8 +352,26 @@ public:
 	std::string name;
 	std::string lcname;
 	uint32_t currentline;
-	std::vector<MerlinLine> lines;
 	std::vector<std::string> variables;
+	std::vector<MerlinLine> lines;
+	int32_t start,end;
+	bool running;
+
+	TMacro()
+	{
+		clear();
+	}
+	void clear(void)
+	{
+		name="";
+		lcname="";
+		variables.clear();
+		lines.clear();
+		currentline=0;
+		start = -1;
+		end=-1;
+		running = false;
+	}
 };
 
 class TPsuedoOp;
@@ -385,13 +403,14 @@ public:
 	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TMacro> macros;
-	Poco::HashMap<std::string, TSymbol>opcodes;
+	Poco::HashMap<std::string, TSymbol> opcodes;
 	Poco::HashMap<std::string, TSymbol> symbols;
 	Poco::HashMap<std::string, TSymbol> variables;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
+	TMacro currentmacro;
 	bool listing;
 	uint8_t truncdata; 	// for the TR opcode
 
@@ -399,7 +418,7 @@ public:
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
 	std::stack<bool> LSTstack;
-	std::stack<TMacro> curMacro;
+	std::stack<TMacro> macrostack;
 
 	TPsuedoOp *psuedoops;
 
@@ -417,6 +436,8 @@ public:
 	void pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallback cb);
 
 	int callOpCode(std::string op, MerlinLine &line);
+	TMacro *findMacro(std::string sym);
+
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
 	TSymbol *findVariable(std::string sym);

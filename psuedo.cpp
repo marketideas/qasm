@@ -130,6 +130,68 @@ out:
 	return (res);
 }
 
+int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	int res = 0;
+	int err = 0;
+
+	std::string op = Poco::toUpper(line.opcode);
+	if (op == "MAC")
+	{
+		if (a.currentmacro.running)
+		{
+			err=errUnexpectedOp;
+			goto out;
+		}
+		if (line.lable.length()==0)
+		{
+			err=errBadLabel;
+			goto out;
+		}
+		a.macrostack.push(a.currentmacro);
+		a.currentmacro.clear();
+
+		a.currentmacro.name=line.lable;
+		a.currentmacro.lcname=Poco::toLower(line.lable);
+		a.currentmacro.start=line.lineno+1;
+		a.currentmacro.running=true;
+		if (a.pass == 0)
+		{
+		}
+		else
+		{
+			// don't need to do anything on pass > 0
+		}
+	}
+	else // it is EOM or <<<
+	{
+		if (a.macrostack.size() > 0)
+		{
+			a.currentmacro.end=line.lineno;
+			a.currentmacro.running=false;
+			
+			std::pair<std::string, TMacro> p(a.currentmacro.name, a.currentmacro);
+			a.macros.insert(p);
+
+			a.currentmacro = a.macrostack.top();
+			a.macrostack.pop();
+		}
+		else
+		{
+			err = errUnexpectedOp;
+			goto out;
+		}
+	}
+out:
+	if (err)
+	{
+		line.setError(err);
+	}
+	return (res);
+}
+
 int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
@@ -340,6 +402,8 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	return (outct);
 }
 
+
+
 int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	UNUSED(opinfo);
@@ -352,7 +416,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint8_t shift;
 
 	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
-	line.flags|=FLAG_FORCEADDRPRINT;
+	line.flags |= FLAG_FORCEADDRPRINT;
 	std::string s;
 	Poco::StringTokenizer tok(line.operand, ",", Poco::StringTokenizer::TOK_TRIM |
 	                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
@@ -418,11 +482,11 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	v = datact;
 	if (pagefill)
 	{
-		v=line.startpc&0xFF;
-		v=0x100-v;
+		v = line.startpc & 0xFF;
+		v = 0x100 - v;
 	}
 	line.datafillct = (uint16_t)v & 0xFFFF;
-	res=line.datafillct;
+	res = line.datafillct;
 
 out:
 	//printf("res=%d %04X\n",res,res);
@@ -842,12 +906,12 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 #if 0
 			// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
-			if ((line.syntax&SYNTAX_MERLIN32)==SYNTAX_MERLIN32)
+			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 			{
 				// so clear the bank word in all variables
 				a.PC.orgsave &= 0xFFFF;
-				a.PC.currentpc&=0xFFFF;
-				line.startpc &=0xFFFF;
+				a.PC.currentpc &= 0xFFFF;
+				line.startpc &= 0xFFFF;
 			}
 #endif
 
@@ -856,16 +920,19 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
 			break;
+		case P_MAC:
+			res = doMAC(a, line, opinfo);
+			break;
 		case P_ERR:
-			if (a.pass>0)
+			if (a.pass > 0)
 			{
-				if ((line.expr_value!=0) || (line.eval_result<0))
+				if ((line.expr_value != 0) || (line.eval_result < 0))
 				{
 					line.setError(errErrOpcode);
 					//a.passcomplete=true; // terminate assembly
 				}
 			}
-			res=0;
+			res = 0;
 			break;
 		case P_LST:
 			res = doLST(a, line, opinfo);
