@@ -14,7 +14,7 @@ lexpr       =     $010203
 immed       =     $123456     
 neg         equ   -16         
 
-]var1 		= v1234
+*]var1 		= v1234
 
                               ;lst off
 start00                      
@@ -308,5 +308,5 @@ startF0
             inc   expr,x      
             sbcl  lexpr,x     
             lst   off         
-            sav   ./test.bin  
+            ;sav   ./test.bin  
 

@@ -665,7 +665,7 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
                     }
                     else if (token.str == "<")
                     {
-                        //rhs = (rhs << 8 ) & 0xFFFF;
+                        //rhs = (rhs) & 0xFFFF;
                     }
                     else if (token.str == ">")
                     {

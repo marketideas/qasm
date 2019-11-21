@@ -219,13 +219,13 @@ next
 :skiphex
 
 ; extract bytes from 32-bit value with short regs
-        lda     #<thirty2 + 2
-        lda     #>thirty2 + 768
+        lda     #<thirty2+2
+        lda     #>thirty2+768
         lda     #^thirty2
         rep     #$30
         mx      %00
-        lda     #<thirty2 + 3
-        lda     #>thirty2 + 1024
+        lda     #<thirty2+3
+        lda     #>thirty2+1024
         lda     #^thirty2
 
         rts
