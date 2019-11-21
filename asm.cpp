@@ -211,7 +211,14 @@ void CLASS::print(uint32_t lineno)
 		}
 		else
 		{
-			pcol += printf("%s ", printoperand.c_str());
+			if (printoperand.length() > 0)
+			{
+				pcol += printf("%s ", printoperand.c_str());
+			}
+			else
+			{
+				pcol += printf("%s ", operand.c_str());
+			}
 		}
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
@@ -292,6 +299,7 @@ void CLASS::print(uint32_t lineno)
 void CLASS::clear()
 {
 	syntax = SYNTAX_MERLIN;
+	wholetext = "";
 	lable = "";
 	printlable = "";
 	opcode = "";
@@ -345,6 +353,7 @@ void CLASS::set(std::string line)
 	std::string tline = line;
 	clear();
 
+	wholetext = line;
 	isascii = false;
 	delim = 0;
 	while (i < l)
@@ -1182,7 +1191,7 @@ out:
 	return (res);
 }
 
-TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
+TSymbol * CLASS::addVariable(std::string symname, std::string val, variable_t &vars, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1194,7 +1203,7 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
 	}
 
 	//printf("addvariable\n");
-	fnd = findVariable(sym);
+	fnd = findVariable(sym, vars);
 
 	if ((fnd != NULL) && (!replace))
 	{
@@ -1221,18 +1230,18 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, bool replace)
 	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
 
 	std::pair<std::string, TSymbol> p(sym, s);
-	variables.insert(p);
-	res = findVariable(sym);
+	vars.insert(p);
+	res = findVariable(sym, vars);
 	return (res);
 }
 
-TSymbol * CLASS::findVariable(std::string symname)
+TSymbol * CLASS::findVariable(std::string symname, variable_t &vars)
 {
 	TSymbol *res = NULL;
 
 	//printf("finding: %s\n",symname.c_str());
-	auto itr = variables.find(symname);
-	if (itr != variables.end())
+	auto itr = vars.find(symname);
+	if (itr != vars.end())
 	{
 		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
 		res = &itr->second;
@@ -1242,13 +1251,13 @@ TSymbol * CLASS::findVariable(std::string symname)
 	return (res);
 }
 
-void CLASS::showVariables(void)
+void CLASS::showVariables(variable_t &vars)
 {
 	if (variables.size() > 0)
 	{
 		printf("\nVariables:\n");
 
-		for (auto itr = variables.begin(); itr != variables.end(); ++itr)
+		for (auto itr = vars.begin(); itr != vars.end(); ++itr)
 		{
 			printf("%-16s %s\n", itr->first.c_str(), itr->second.var_text.c_str());
 		}
@@ -1295,6 +1304,44 @@ void CLASS::showSymbolTable(bool alpha)
 			for (auto itr = nummap.begin(); itr != nummap.end(); ++itr)
 			{
 				printf("0x%08X       %-16s ", itr->first, itr->second.c_str());
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
+			}
+		}
+		if (column > 0)
+		{
+			printf("\n");
+		}
+	}
+}
+
+// set alpha to true to print table sorted by name or
+// false to print by value;
+void CLASS::showMacros(bool alpha)
+{
+	if (macros.size() > 0)
+	{
+		std::map<std::string, uint32_t> alphamap;
+
+		int columns = getInt("asm.symcolumns", 3);
+		int column = columns;
+
+		for (auto itr = macros.begin(); itr != macros.end(); itr++)
+		{
+			TMacro ptr = itr->second;
+			alphamap.insert(pair<std::string, uint32_t>(ptr.name, 0));
+		}
+
+		if (alpha)
+		{
+			printf("\n\nmacros sorted alphabetically:\n\n");
+
+			for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+			{
+				printf("%-16s 0x%08X       ", itr->first.c_str(), itr->second);
 				if ( !--column )
 				{
 					printf("\n");
@@ -1585,6 +1632,10 @@ void CLASS::initpass(void)
 	{
 		macrostack.pop();
 	}
+	while (!expand_macrostack.empty())
+	{
+		expand_macrostack.pop();
+	}
 	while (!LUPstack.empty())
 	{
 		LUPstack.pop();
@@ -1602,6 +1653,7 @@ void CLASS::initpass(void)
 		PCstack.pop();
 	}
 	currentmacro.clear();
+	expand_macro.clear();
 	curLUP.clear();
 	curDO.clear();
 }
@@ -1655,8 +1707,10 @@ void CLASS::complete(void)
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
-		showVariables();
+		showVariables(variables);
+		showMacros(false);
 	}
+
 }
 
 int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
@@ -1903,7 +1957,7 @@ restart:
 					off = mVec[0].offset;
 					len = mVec[0].length;
 					s = oper.substr(off, len);
-					sym = findVariable(s);
+					sym = findVariable(s, variables);
 					if (sym != NULL)
 					{
 						//printf("match |%s|\n",sym->var_text.c_str());
@@ -1989,7 +2043,42 @@ void CLASS::process(void)
 		l = lines.size();
 		while ((lineno < l) && (!passcomplete))
 		{
-			MerlinLine &line = lines[lineno];
+
+			MerlinLine *ml = NULL;
+			bool srcline = true;
+			if (expand_macro.running)
+			{
+				srcline = false;
+				if (expand_macro.currentline >= expand_macro.len)
+				{
+					// macro is complete
+					lineno = expand_macro.sourceline + 1;
+					if (expand_macrostack.size() > 0)
+					{
+						expand_macro = expand_macrostack.top();
+						expand_macrostack.pop();
+					}
+					else
+					{
+						expand_macro.clear();
+					}
+					srcline = true;
+				}
+				else
+				{
+					ml = &expand_macro.lines[expand_macro.currentline];
+					lineno = expand_macro.sourceline;
+					expand_macro.currentline++;
+				}
+			}
+			if (srcline)
+			{
+				ml = &lines[lineno];
+			}
+
+			MerlinLine &line = *ml;
+
+			//printf("lineno=%u %s\n", lineno, line.wholetext.c_str());
 
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
@@ -2017,7 +2106,7 @@ void CLASS::process(void)
 					case ']':
 						sprintf(buff, "$%X", PC.currentpc);
 						ls = buff;
-						sym = addVariable(line.lable, ls, true);
+						sym = addVariable(line.lable, ls, variables, true);
 						//if (sym == NULL) { dupsym = true; }
 						break;
 
@@ -2045,10 +2134,8 @@ void CLASS::process(void)
 				}
 			}
 			std::string outop;
-			if (pass == 0)
-			{
-				line.printoperand = line.operand;
-			}
+			line.printoperand = line.operand;
+
 			x = substituteVariables(line, outop);
 			if (x > 0)
 			{
@@ -2077,14 +2164,30 @@ void CLASS::process(void)
 			x = 0;
 			if (op.length() > 0)
 			{
-				TMacro *mac=findMacro(op);
-				if (mac==NULL)
+				TMacro *mac = findMacro(op);
+				if (mac == NULL)
 				{
 					x = callOpCode(op, line);
 				}
 				else
 				{
-					x=0;
+					expand_macrostack.push(expand_macro);
+					expand_macro = *mac;
+
+					expand_macro.lines.clear();
+					//printf("mac start=%u end=%u\n", expand_macro.start, expand_macro.end);
+					for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
+					{
+						//printf("pushing %s\n", lines[lc].wholetext.c_str());
+						MerlinLine nl(lines[lc].wholetext);  // create a new clean line (without errors,data)
+						expand_macro.lines.push_back(nl);
+					}
+					expand_macro.running = true;
+					expand_macro.sourceline = lineno;
+					expand_macro.variables.clear();
+					// set the variables for the macro here SGQ
+					expand_macro.currentline = 0;
+					x = 0;
 				}
 			}
 
@@ -2134,7 +2237,10 @@ void CLASS::process(void)
 			{
 				if ((line.pass0bytect != line.bytect) && (line.errorcode == 0))
 				{
-					line.setError(errBadByteCount);
+					if (expand_macrostack.size() == 0)  // if macro expanding, you can't make this check
+					{
+						line.setError(errBadByteCount);
+					}
 				}
 
 				if (line.errorcode != 0)

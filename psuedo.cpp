@@ -142,21 +142,21 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		if (a.currentmacro.running)
 		{
-			err=errUnexpectedOp;
+			err = errUnexpectedOp;
 			goto out;
 		}
-		if (line.lable.length()==0)
+		if (line.lable.length() == 0)
 		{
-			err=errBadLabel;
+			err = errBadLabel;
 			goto out;
 		}
 		a.macrostack.push(a.currentmacro);
 		a.currentmacro.clear();
 
-		a.currentmacro.name=line.lable;
-		a.currentmacro.lcname=Poco::toLower(line.lable);
-		a.currentmacro.start=line.lineno+1;
-		a.currentmacro.running=true;
+		a.currentmacro.name = line.lable;
+		a.currentmacro.lcname = Poco::toLower(line.lable);
+		a.currentmacro.start = line.lineno;
+		a.currentmacro.running = true;
 		if (a.pass == 0)
 		{
 		}
@@ -169,9 +169,14 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		if (a.macrostack.size() > 0)
 		{
-			a.currentmacro.end=line.lineno;
-			a.currentmacro.running=false;
-			
+			a.currentmacro.end = line.lineno - 1;
+			a.currentmacro.len = 0;
+			if (a.currentmacro.end >= a.currentmacro.start)
+			{
+				a.currentmacro.len = a.currentmacro.end - a.currentmacro.start;
+			}
+			a.currentmacro.running = false;
+
 			std::pair<std::string, TMacro> p(a.currentmacro.name, a.currentmacro);
 			a.macros.insert(p);
 

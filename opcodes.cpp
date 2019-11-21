@@ -99,10 +99,10 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 			char buff[32];
 			sprintf(buff, "$%08X", line.expr_value);
 			std::string s1 = buff;
-			s = addVariable(line.lable, s1, true);
+			s = addVariable(line.lable, s1, variables,true);
 #else
 			// do this if you want to do this more as a #define
-			s = addVariable(line.lable, line.operand, true);
+			s = addVariable(line.lable, line.operand, variables,true);
 #endif
 			if (s != NULL)
 			{

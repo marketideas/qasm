@@ -144,6 +144,7 @@ enum
 	syn_MAX
 };
 
+
 class TOriginSection
 {
 // SGQ - if you do something unusual here, be aware of copy constructor
@@ -190,6 +191,7 @@ class MerlinLine
 public:
 
 	uint32_t syntax;
+	std::string wholetext;
 	std::string lable;
 	std::string printlable;
 	std::string printoperand;
@@ -345,16 +347,17 @@ public:
 	}
 };
 
+typedef Poco::HashMap<std::string, TSymbol> variable_t;
 
 class TMacro
 {
 public:
 	std::string name;
 	std::string lcname;
-	uint32_t currentline;
-	std::vector<std::string> variables;
+	variable_t  variables;
 	std::vector<MerlinLine> lines;
-	int32_t start,end;
+	uint32_t start,end,currentline,len;
+	uint32_t sourceline;
 	bool running;
 
 	TMacro()
@@ -367,9 +370,11 @@ public:
 		lcname="";
 		variables.clear();
 		lines.clear();
+		sourceline=0;
 		currentline=0;
-		start = -1;
-		end=-1;
+		len=0;
+		start = 0;
+		end=0;
 		running = false;
 	}
 };
@@ -405,12 +410,13 @@ public:
 	Poco::HashMap<std::string, TMacro> macros;
 	Poco::HashMap<std::string, TSymbol> opcodes;
 	Poco::HashMap<std::string, TSymbol> symbols;
-	Poco::HashMap<std::string, TSymbol> variables;
+	variable_t variables;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
 	TMacro currentmacro;
+	TMacro expand_macro;
 	bool listing;
 	uint8_t truncdata; 	// for the TR opcode
 
@@ -419,6 +425,7 @@ public:
 	std::stack<TDOstruct> DOstack;
 	std::stack<bool> LSTstack;
 	std::stack<TMacro> macrostack;
+	std::stack<TMacro> expand_macrostack;
 
 	TPsuedoOp *psuedoops;
 
@@ -440,13 +447,15 @@ public:
 
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
-	TSymbol *findVariable(std::string sym);
-	TSymbol *addVariable(std::string sym, std::string val, bool replace);
+	TSymbol *findVariable(std::string sym, variable_t &vars);
+	TSymbol *addVariable(std::string sym, std::string val, variable_t &vars,bool replace);
 
 
 	void initpass(void);
 	void showSymbolTable(bool alpha);
-	void showVariables(void);
+	void showMacros(bool alpha);
+
+	void showVariables(variable_t &vars);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line, std::string &outop);
