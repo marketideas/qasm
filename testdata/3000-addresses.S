@@ -23,6 +23,6 @@ start	nop
 		lda #<long
 		lda #>long
 		lda	#^long
-		lda	#|long
+		lda	#long
 
 		lst off

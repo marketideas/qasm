@@ -1,5 +1,10 @@
 #!/bin/bash
 
+X=
+if [ "$1""L" != "L" ] ; then
+	X=_$1
+fi
+
 OUTDIR=./m32out
 
 rm -rf $OUTDIR
@@ -18,7 +23,7 @@ for S in $SRC ; do
 	BASE=${S/.S/}
 	BASE=${BASE/.s/}
 	cd ./testdata
-	merlin32 . $S 2>/dev/null >/dev/null
+	merlin32$X . $S 2>/dev/null >/dev/null
 	#merlin32 . $S 2>/dev/null 
 
 	R=?$
