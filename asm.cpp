@@ -1239,6 +1239,11 @@ TSymbol * CLASS::findVariable(std::string symname, TVariable &vars)
 {
 	TSymbol *res = NULL;
 
+	if (!casesen)
+	{
+		symname = Poco::toUpper(symname);
+	}
+
 	if ((expand_macrostack.size() > 0) && (vars.id != expand_macro.variables.id))
 	{
 		res = findVariable(symname, expand_macro.variables);
@@ -1978,7 +1983,7 @@ restart:
 					off = mVec[0].offset;
 					len = mVec[0].length;
 					s = oper.substr(off, len);
-
+					slen = s.length();
 					sym = NULL;
 					if (expand_macrostack.size() > 0)
 					{
@@ -1995,6 +2000,7 @@ restart:
 						if (sym->var_text != "")
 						{
 							oper = oper.replace(off, len, sym->var_text);
+							slen = oper.length();
 							ct++;
 							if (pass > 0)
 							{
@@ -2201,7 +2207,11 @@ void CLASS::process(void)
 			std::string outop;
 			line.printoperand = line.operand;
 
-			x = substituteVariables(line, outop);
+			x = 0;
+			if (macrostack.size() == 0)
+			{
+				x = substituteVariables(line, outop);
+			}
 			if (x > 0)
 			{
 				line.printoperand = outop;
@@ -2243,20 +2253,23 @@ void CLASS::process(void)
 				{
 					TMacro *mac = NULL;
 					bool inoperand = false;
-					mac = findMacro(realop);
-					if (mac == NULL)
+					if (macrostack.size() == 0)
 					{
-						if (op == ">>>") // specal merlin way of calling a macro
+						mac = findMacro(realop);
+						if (mac == NULL)
 						{
-							Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
-							                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
-							std::string s = "";
-							if (tok.count() > 0)
+							if (op == ">>>") // specal merlin way of calling a macro
 							{
-								s = tok[0];
+								Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
+								                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+								std::string s = "";
+								if (tok.count() > 0)
+								{
+									s = tok[0];
+								}
+								mac = findMacro(s);
+								inoperand = true;
 							}
-							mac = findMacro(s);
-							inoperand = true;
 						}
 					}
 					if (mac == NULL)

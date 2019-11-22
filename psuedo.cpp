@@ -36,7 +36,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	UNUSED(opinfo);
 
 	TEvaluator eval(a);
-	eval.allowMX=true; // allow the built in MX symbol
+	eval.allowMX = true; // allow the built in MX symbol
 
 	int64_t eval_value = 0;
 	uint8_t shift;
@@ -141,8 +141,9 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string op = Poco::toUpper(line.opcode);
 	if (op == "MAC")
 	{
-		if (a.expand_macrostack.size()>0)
+		if (a.expand_macrostack.size() > 0)
 		{
+			line.flags |= FLAG_NOLINEPRINT;
 			goto out;
 		}
 		if (line.lable.length() == 0)
@@ -157,6 +158,12 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		a.currentmacro.lcname = Poco::toLower(line.lable);
 		a.currentmacro.start = line.lineno;
 		a.currentmacro.running = true;
+
+		if (!a.casesen)
+		{
+			a.currentmacro.name = Poco::toUpper(a.currentmacro.name);
+		}
+
 		if (a.pass == 0)
 		{
 		}
@@ -899,6 +906,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	int res = 0;
+	std::string s;
 
 	switch (opinfo.opcode)
 	{
@@ -948,6 +956,18 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
+			break;
+		case P_CAS:
+			s = Poco::toUpper(line.operand);
+			if (s == "SE")
+			{
+				a.casesen = true;
+			}
+			if (s=="IN")
+			{
+				a.casesen=false;
+			}
+			res = 0;
 			break;
 		case P_MAC:
 			res = doMAC(a, line, opinfo);
