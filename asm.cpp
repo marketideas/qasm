@@ -2030,13 +2030,38 @@ restart:
 	return (res);
 }
 
+bool CLASS::doOFF(void)
+{
+	bool res=curDO.doskip;
+	std::stack<TDOstruct> tmpstack;
+	TDOstruct doitem;
+
+	uint32_t ct=DOstack.size();
+	if (ct>0)
+	{
+		tmpstack=DOstack;
+	}
+	while(ct>0)
+	{
+		doitem=tmpstack.top();
+		tmpstack.pop();
+		if (doitem.doskip)
+		{
+			res=true;
+		}
+		ct--;
+	}
+
+	return(res);
+}
+
 // this function determines if code generation is turned off (IF,DO,LUP,MAC, etc
 bool CLASS::codeSkipped(void)
 {
 	bool res = false;
 
 	res = (curLUP.lupskip) ? true : res;
-	res = (curDO.doskip) ? true : res;
+	res = doOFF() ? true : res;
 	res = currentmacro.running ? true : res;
 
 	//printf("codeskip: %d\n",res);
@@ -2062,7 +2087,7 @@ void CLASS::process(void)
 	char c;
 	char buff[256];
 	MerlinLine errLine;
-	std::string op, operand, ls;
+	std::string op, realop, operand, ls;
 
 	pass = 0;
 	while (pass < 2)
@@ -2116,6 +2141,7 @@ void CLASS::process(void)
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
+			realop = line.opcode;
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
@@ -2194,74 +2220,85 @@ void CLASS::process(void)
 			x = 0;
 			if (op.length() > 0)
 			{
-				TMacro *mac = NULL;
-				bool inoperand = false;
-				mac = findMacro(op);
-				if (mac == NULL)
+				bool skipop = false;
+				if (doOFF())
 				{
-					if (op == ">>>") // specal merlin way of calling a macro
+					skipop = true;
+					if ((op == "fin") || (op == "else") || (op == "do") || (op == "if"))
 					{
-						Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
-						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
-						std::string s="";
-						if (tok.count()>0)
-						{
-							s=tok[0];
-						}
-						mac = findMacro(s);
-						inoperand = true;
+						skipop = false;
 					}
 				}
-				if (mac == NULL)
+				if (!skipop)
 				{
-					x = callOpCode(op, line);
-				}
-				if (mac != NULL)
-				{
-					expand_macrostack.push(expand_macro);
-					expand_macro = *mac;
-
-					expand_macro.lines.clear();
-					//printf("mac start=%u end=%u\n", expand_macro.start, expand_macro.end);
-					for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
+					TMacro *mac = NULL;
+					bool inoperand = false;
+					mac = findMacro(realop);
+					if (mac == NULL)
 					{
-						//printf("pushing %s\n", lines[lc].wholetext.c_str());
-						MerlinLine nl(lines[lc].wholetext);  // create a new clean line (without errors,data)
-						expand_macro.lines.push_back(nl);
-					}
-					expand_macro.running = true;
-					expand_macro.sourceline = lineno;
-					expand_macro.variables.vars.clear();
-					// set the variables for the macro here SGQ
-
-					std::string parms = line.operand;
-					if (inoperand)
-					{
-						Poco::StringTokenizer tok(parms, ", ", Poco::StringTokenizer::TOK_TRIM |
-						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
-						parms = "";
-						if (tok.count() > 1)
+						if (op == ">>>") // specal merlin way of calling a macro
 						{
-							parms = tok[1];
+							Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
+							                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+							std::string s = "";
+							if (tok.count() > 0)
+							{
+								s = tok[0];
+							}
+							mac = findMacro(s);
+							inoperand = true;
 						}
 					}
-					Poco::StringTokenizer tok(parms, ",;", Poco::StringTokenizer::TOK_TRIM |
-					                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
-
-					uint32_t ct = 0;
-					for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+					if (mac == NULL)
 					{
-						//evaluate each of these strings, check for errors on pass 2
-						std::string expr = *itr;
-						std::string v = "]" + Poco::NumberFormatter::format(ct + 1);
-						//printf("var: %s %s\n", v.c_str(), expr.c_str());
-						addVariable(v, expr, expand_macro.variables, true);
-						ct++;
+						x = callOpCode(op, line);
 					}
-					x = 0;
-					expand_macro.currentline = 0;
+					if (mac != NULL)
+					{
+						expand_macrostack.push(expand_macro);
+						expand_macro = *mac;
+
+						expand_macro.lines.clear();
+						//printf("mac start=%u end=%u\n", expand_macro.start, expand_macro.end);
+						for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
+						{
+							//printf("pushing %s\n", lines[lc].wholetext.c_str());
+							MerlinLine nl(lines[lc].wholetext);  // create a new clean line (without errors,data)
+							expand_macro.lines.push_back(nl);
+						}
+						expand_macro.running = true;
+						expand_macro.sourceline = lineno;
+						expand_macro.variables.vars.clear();
+						// set the variables for the macro here SGQ
+
+						std::string parms = line.operand;
+						if (inoperand)
+						{
+							Poco::StringTokenizer tok(parms, ", ", Poco::StringTokenizer::TOK_TRIM |
+							                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+							parms = "";
+							if (tok.count() > 1)
+							{
+								parms = tok[1];
+							}
+						}
+						Poco::StringTokenizer tok(parms, ",;", Poco::StringTokenizer::TOK_TRIM |
+						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+
+						uint32_t ct = 0;
+						for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+						{
+							//evaluate each of these strings, check for errors on pass 2
+							std::string expr = *itr;
+							std::string v = "]" + Poco::NumberFormatter::format(ct + 1);
+							//printf("var: %s %s\n", v.c_str(), expr.c_str());
+							addVariable(v, expr, expand_macro.variables, true);
+							ct++;
+						}
+						x = 0;
+						expand_macro.currentline = 0;
+					}
 				}
-				//}
 			}
 
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)

@@ -36,6 +36,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	UNUSED(opinfo);
 
 	TEvaluator eval(a);
+	eval.allowMX=true; // allow the built in MX symbol
 
 	int64_t eval_value = 0;
 	uint8_t shift;
