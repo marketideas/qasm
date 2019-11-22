@@ -888,6 +888,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("MAC", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("EOM", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("<<<", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode(">>>", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 
 
 	pushopcode("ADC", 0x03, OP_STD | OP_A, OPHANDLER(&CLASS::doBase6502));

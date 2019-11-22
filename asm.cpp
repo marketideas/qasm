@@ -1191,7 +1191,7 @@ out:
 	return (res);
 }
 
-TSymbol * CLASS::addVariable(std::string symname, std::string val, variable_t &vars, bool replace)
+TSymbol * CLASS::addVariable(std::string symname, std::string val, TVariable &vars, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1230,18 +1230,27 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, variable_t &v
 	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
 
 	std::pair<std::string, TSymbol> p(sym, s);
-	vars.insert(p);
+	vars.vars.insert(p);
 	res = findVariable(sym, vars);
 	return (res);
 }
 
-TSymbol * CLASS::findVariable(std::string symname, variable_t &vars)
+TSymbol * CLASS::findVariable(std::string symname, TVariable &vars)
 {
 	TSymbol *res = NULL;
 
+	if ((expand_macrostack.size() > 0) && (vars.id != expand_macro.variables.id))
+	{
+		res = findVariable(symname, expand_macro.variables);
+		if (res != NULL)
+		{
+			return (res);
+		}
+	}
+
 	//printf("finding: %s\n",symname.c_str());
-	auto itr = vars.find(symname);
-	if (itr != vars.end())
+	auto itr = vars.vars.find(symname);
+	if (itr != vars.vars.end())
 	{
 		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
 		res = &itr->second;
@@ -1251,13 +1260,13 @@ TSymbol * CLASS::findVariable(std::string symname, variable_t &vars)
 	return (res);
 }
 
-void CLASS::showVariables(variable_t &vars)
+void CLASS::showVariables(TVariable &vars)
 {
-	if (variables.size() > 0)
+	if (vars.vars.size() > 0)
 	{
 		printf("\nVariables:\n");
 
-		for (auto itr = vars.begin(); itr != vars.end(); ++itr)
+		for (auto itr = vars.vars.begin(); itr != vars.vars.end(); ++itr)
 		{
 			printf("%-16s %s\n", itr->first.c_str(), itr->second.var_text.c_str());
 		}
@@ -1361,6 +1370,17 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 	int res = -1;
 	char c;
 	std::string s;
+
+// during MACRO definition no opcodes are called (except for MAC, EOM, <<)
+	if (macrostack.size() > 0)
+	{
+		// if something on the macro stack, then a macro is being defined
+		std::string upop = Poco::toUpper(op);
+		if (!((upop == "MAC") || (upop == "EOM") || (upop == "<<<")))
+		{
+			return 0;
+		}
+	}
 
 	if (op.length() == 4) // check for 4 digit 'L' opcodes
 	{
@@ -1626,7 +1646,7 @@ void CLASS::initpass(void)
 	dumstartaddr = 0;
 	dumstart = 0;
 	truncdata = 0;
-	variables.clear(); // clear the variables for each pass
+	variables.vars.clear(); // clear the variables for each pass
 
 	while (!macrostack.empty())
 	{
@@ -1957,7 +1977,16 @@ restart:
 					off = mVec[0].offset;
 					len = mVec[0].length;
 					s = oper.substr(off, len);
-					sym = findVariable(s, variables);
+
+					sym = NULL;
+					if (expand_macrostack.size() > 0)
+					{
+						sym = findVariable(s, expand_macro.variables);
+					}
+					if (sym == NULL)
+					{
+						sym = findVariable(s, variables);
+					}
 					if (sym != NULL)
 					{
 						//printf("match |%s|\n",sym->var_text.c_str());
@@ -1992,7 +2021,7 @@ restart:
 			done = true;
 		}
 	}
-	//printf("inoper=|%s| outoper=|%s|\n",operin.c_str(),oper.c_str());
+//printf("inoper=|%s| outoper=|%s|\n",operin.c_str(),oper.c_str());
 	if (ct > 0)
 	{
 		outop = oper;
@@ -2139,6 +2168,7 @@ void CLASS::process(void)
 			x = substituteVariables(line, outop);
 			if (x > 0)
 			{
+				line.printoperand = outop;
 				line.operand = outop;
 			}
 			x = parseOperand(line);
@@ -2164,12 +2194,29 @@ void CLASS::process(void)
 			x = 0;
 			if (op.length() > 0)
 			{
-				TMacro *mac = findMacro(op);
+				TMacro *mac = NULL;
+				bool inoperand = false;
+				mac = findMacro(op);
+				if (mac == NULL)
+				{
+					if (op == ">>>") // specal merlin way of calling a macro
+					{
+						Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
+						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+						std::string s="";
+						if (tok.count()>0)
+						{
+							s=tok[0];
+						}
+						mac = findMacro(s);
+						inoperand = true;
+					}
+				}
 				if (mac == NULL)
 				{
 					x = callOpCode(op, line);
 				}
-				else
+				if (mac != NULL)
 				{
 					expand_macrostack.push(expand_macro);
 					expand_macro = *mac;
@@ -2184,11 +2231,37 @@ void CLASS::process(void)
 					}
 					expand_macro.running = true;
 					expand_macro.sourceline = lineno;
-					expand_macro.variables.clear();
+					expand_macro.variables.vars.clear();
 					// set the variables for the macro here SGQ
-					expand_macro.currentline = 0;
+
+					std::string parms = line.operand;
+					if (inoperand)
+					{
+						Poco::StringTokenizer tok(parms, ", ", Poco::StringTokenizer::TOK_TRIM |
+						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+						parms = "";
+						if (tok.count() > 1)
+						{
+							parms = tok[1];
+						}
+					}
+					Poco::StringTokenizer tok(parms, ",;", Poco::StringTokenizer::TOK_TRIM |
+					                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+
+					uint32_t ct = 0;
+					for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+					{
+						//evaluate each of these strings, check for errors on pass 2
+						std::string expr = *itr;
+						std::string v = "]" + Poco::NumberFormatter::format(ct + 1);
+						//printf("var: %s %s\n", v.c_str(), expr.c_str());
+						addVariable(v, expr, expand_macro.variables, true);
+						ct++;
+					}
 					x = 0;
+					expand_macro.currentline = 0;
 				}
+				//}
 			}
 
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)

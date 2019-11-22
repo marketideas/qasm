@@ -347,16 +347,28 @@ public:
 	}
 };
 
-typedef Poco::HashMap<std::string, TSymbol> variable_t;
+//typedef Poco::HashMap<std::string, TSymbol> variable_t;
+
+class TVariable
+{
+public:
+		uint32_t id;
+		Poco::HashMap<std::string, TSymbol> vars;
+		TVariable()
+		{
+			// SGQ - must fix this so it is guaranteed unique for each one
+			id=rand();
+		}
+};
 
 class TMacro
 {
 public:
 	std::string name;
 	std::string lcname;
-	variable_t  variables;
+	TVariable  variables;
 	std::vector<MerlinLine> lines;
-	uint32_t start,end,currentline,len;
+	uint32_t start, end, currentline, len;
 	uint32_t sourceline;
 	bool running;
 
@@ -366,15 +378,15 @@ public:
 	}
 	void clear(void)
 	{
-		name="";
-		lcname="";
-		variables.clear();
+		name = "";
+		lcname = "";
+		variables.vars.clear();
 		lines.clear();
-		sourceline=0;
-		currentline=0;
-		len=0;
+		sourceline = 0;
+		currentline = 0;
+		len = 0;
 		start = 0;
-		end=0;
+		end = 0;
 		running = false;
 	}
 };
@@ -410,7 +422,7 @@ public:
 	Poco::HashMap<std::string, TMacro> macros;
 	Poco::HashMap<std::string, TSymbol> opcodes;
 	Poco::HashMap<std::string, TSymbol> symbols;
-	variable_t variables;
+	TVariable variables;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
@@ -447,15 +459,15 @@ public:
 
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
-	TSymbol *findVariable(std::string sym, variable_t &vars);
-	TSymbol *addVariable(std::string sym, std::string val, variable_t &vars,bool replace);
+	TSymbol *findVariable(std::string sym, TVariable &vars);
+	TSymbol *addVariable(std::string sym, std::string val, TVariable &vars, bool replace);
 
 
 	void initpass(void);
 	void showSymbolTable(bool alpha);
 	void showMacros(bool alpha);
 
-	void showVariables(variable_t &vars);
+	void showVariables(TVariable &vars);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line, std::string &outop);

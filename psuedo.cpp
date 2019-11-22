@@ -165,6 +165,10 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			// don't need to do anything on pass > 0
 		}
 	}
+	else if (op == ">>>")
+	{
+		// don't do anything here, let the macro call handler stuff do ths (asm.cpp)
+	}
 	else // it is EOM or <<<
 	{
 		if (a.macrostack.size() > 0)
@@ -224,7 +228,14 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 			a.LUPstack.push(a.curLUP);
 
-			a.curLUP.lupoffset = len;
+			if (a.expand_macrostack.size() > 0)
+			{
+				a.curLUP.lupoffset = a.expand_macro.currentline;
+			}
+			else
+			{
+				a.curLUP.lupoffset = len;
+			}
 			a.curLUP.lupct = eval_value & 0xFFFF; // evaluate here
 			a.curLUP.luprunning++;
 
@@ -247,6 +258,8 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 		if (a.curLUP.luprunning > 0)
 		{
+
+
 			lidx = line.lineno - 1;
 			len = lidx - a.curLUP.lupoffset - 1;
 
@@ -255,7 +268,14 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				a.curLUP.lupct--;
 				if (a.curLUP.lupct != 0)
 				{
-					a.lineno = a.curLUP.lupoffset;
+					if (a.expand_macrostack.size() > 0)
+					{
+						a.expand_macro.currentline = a.curLUP.lupoffset;
+					}
+					else
+					{
+						a.lineno = a.curLUP.lupoffset;
+					}
 					goto out;
 				}
 			}
@@ -282,7 +302,6 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			//err = errUnexpectedOp;
 		}
 	}
-
 out:
 	if (err > 0)
 	{
