@@ -1371,12 +1371,13 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 	char c;
 	std::string s;
 
+	// 'op' is always lowercase here
+
 // during MACRO definition no opcodes are called (except for MAC, EOM, <<)
 	if (macrostack.size() > 0)
 	{
 		// if something on the macro stack, then a macro is being defined
-		std::string upop = Poco::toUpper(op);
-		if (!((upop == "MAC") || (upop == "EOM") || (upop == "<<<")))
+		if (!((op == "mac") || (op == "eom") || (op == "<<<")))
 		{
 			return 0;
 		}
@@ -1728,7 +1729,7 @@ void CLASS::complete(void)
 		showSymbolTable(true);
 		showSymbolTable(false);
 		showVariables(variables);
-		showMacros(false);
+		showMacros(true);
 	}
 
 }
@@ -2032,27 +2033,27 @@ restart:
 
 bool CLASS::doOFF(void)
 {
-	bool res=curDO.doskip;
+	bool res = curDO.doskip;
 	std::stack<TDOstruct> tmpstack;
 	TDOstruct doitem;
 
-	uint32_t ct=DOstack.size();
-	if (ct>0)
+	uint32_t ct = DOstack.size();
+	if (ct > 0)
 	{
-		tmpstack=DOstack;
+		tmpstack = DOstack;
 	}
-	while(ct>0)
+	while (ct > 0)
 	{
-		doitem=tmpstack.top();
+		doitem = tmpstack.top();
 		tmpstack.pop();
 		if (doitem.doskip)
 		{
-			res=true;
+			res = true;
 		}
 		ct--;
 	}
-
-	return(res);
+	//printf("DOOFF: %d\n",res);
+	return (res);
 }
 
 // this function determines if code generation is turned off (IF,DO,LUP,MAC, etc
@@ -2095,7 +2096,8 @@ void CLASS::process(void)
 		initpass();
 
 		l = lines.size();
-		while ((lineno < l) && (!passcomplete))
+		bool passdone = false;
+		while ((!passdone) && (!passcomplete))
 		{
 
 			MerlinLine *ml = NULL;
@@ -2127,7 +2129,15 @@ void CLASS::process(void)
 			}
 			if (srcline)
 			{
-				ml = &lines[lineno];
+				if (lineno >= l)
+				{
+					passdone = true;
+					goto passout;
+				}
+				else
+				{
+					ml = &lines[lineno];
+				}
 			}
 
 			MerlinLine &line = *ml;
@@ -2150,7 +2160,7 @@ void CLASS::process(void)
 			line.syntax = syntax;
 			line.merlinerrors = merlinerrors;
 
-			if ((line.lable != ""))
+			if ((line.lable != "") && (op != "mac"))
 			{
 				std::string lable = Poco::trim(line.lable);
 				TSymbol *sym = NULL;
@@ -2365,7 +2375,7 @@ void CLASS::process(void)
 			}
 			lineno++;
 		}
-
+passout:
 		// end of file reached here, do some final checks
 
 #if 0
