@@ -473,6 +473,8 @@ public:
 	int substituteVariables(MerlinLine & line, std::string &outop);
 
 	bool codeSkipped(void);
+	bool doOFF(void);
+
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);

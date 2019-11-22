@@ -36,6 +36,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	UNUSED(opinfo);
 
 	TEvaluator eval(a);
+	eval.allowMX=true; // allow the built in MX symbol
 
 	int64_t eval_value = 0;
 	uint8_t shift;
@@ -140,9 +141,8 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string op = Poco::toUpper(line.opcode);
 	if (op == "MAC")
 	{
-		if (a.currentmacro.running)
+		if (a.expand_macrostack.size()>0)
 		{
-			err = errUnexpectedOp;
 			goto out;
 		}
 		if (line.lable.length() == 0)
@@ -164,6 +164,7 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		{
 			// don't need to do anything on pass > 0
 		}
+		//printf("macro stack size=%zu\n",a.macrostack.size());
 	}
 	else if (op == ">>>")
 	{
@@ -171,27 +172,31 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	else // it is EOM or <<<
 	{
-		if (a.macrostack.size() > 0)
+		while (a.macrostack.size() > 0)
 		{
 			a.currentmacro.end = line.lineno - 1;
 			a.currentmacro.len = 0;
 			if (a.currentmacro.end >= a.currentmacro.start)
 			{
 				a.currentmacro.len = a.currentmacro.end - a.currentmacro.start;
+				//printf("macro len=%d\n",a.currentmacro.len);
 			}
 			a.currentmacro.running = false;
 
 			std::pair<std::string, TMacro> p(a.currentmacro.name, a.currentmacro);
+			//printf("macro insert %s\n",a.currentmacro.name.c_str());
 			a.macros.insert(p);
 
 			a.currentmacro = a.macrostack.top();
 			a.macrostack.pop();
 		}
+#if 0
 		else
 		{
 			err = errUnexpectedOp;
 			goto out;
 		}
+#endif
 	}
 out:
 	if (err)
