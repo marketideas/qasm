@@ -144,6 +144,7 @@ enum
 	syn_MAX
 };
 
+
 class TOriginSection
 {
 // SGQ - if you do something unusual here, be aware of copy constructor
@@ -190,6 +191,7 @@ class MerlinLine
 public:
 
 	uint32_t syntax;
+	std::string wholetext;
 	std::string lable;
 	std::string printlable;
 	std::string printoperand;
@@ -345,15 +347,48 @@ public:
 	}
 };
 
+//typedef Poco::HashMap<std::string, TSymbol> variable_t;
+
+class TVariable
+{
+public:
+		uint32_t id;
+		Poco::HashMap<std::string, TSymbol> vars;
+		TVariable()
+		{
+			// SGQ - must fix this so it is guaranteed unique for each one
+			id=rand();
+		}
+};
 
 class TMacro
 {
 public:
 	std::string name;
 	std::string lcname;
-	uint32_t currentline;
+	TVariable  variables;
 	std::vector<MerlinLine> lines;
-	std::vector<std::string> variables;
+	uint32_t start, end, currentline, len;
+	uint32_t sourceline;
+	bool running;
+
+	TMacro()
+	{
+		clear();
+	}
+	void clear(void)
+	{
+		name = "";
+		lcname = "";
+		variables.vars.clear();
+		lines.clear();
+		sourceline = 0;
+		currentline = 0;
+		len = 0;
+		start = 0;
+		end = 0;
+		running = false;
+	}
 };
 
 class TPsuedoOp;
@@ -385,13 +420,15 @@ public:
 	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
 	Poco::HashMap<std::string, TMacro> macros;
-	Poco::HashMap<std::string, TSymbol>opcodes;
+	Poco::HashMap<std::string, TSymbol> opcodes;
 	Poco::HashMap<std::string, TSymbol> symbols;
-	Poco::HashMap<std::string, TSymbol> variables;
+	TVariable variables;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
+	TMacro currentmacro;
+	TMacro expand_macro;
 	bool listing;
 	uint8_t truncdata; 	// for the TR opcode
 
@@ -399,7 +436,8 @@ public:
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
 	std::stack<bool> LSTstack;
-	std::stack<TMacro> curMacro;
+	std::stack<TMacro> macrostack;
+	std::stack<TMacro> expand_macrostack;
 
 	TPsuedoOp *psuedoops;
 
@@ -417,20 +455,26 @@ public:
 	void pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallback cb);
 
 	int callOpCode(std::string op, MerlinLine &line);
+	TMacro *findMacro(std::string sym);
+
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
-	TSymbol *findVariable(std::string sym);
-	TSymbol *addVariable(std::string sym, std::string val, bool replace);
+	TSymbol *findVariable(std::string sym, TVariable &vars);
+	TSymbol *addVariable(std::string sym, std::string val, TVariable &vars, bool replace);
 
 
 	void initpass(void);
 	void showSymbolTable(bool alpha);
-	void showVariables(void);
+	void showMacros(bool alpha);
+
+	void showVariables(TVariable &vars);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
 	int substituteVariables(MerlinLine & line, std::string &outop);
 
 	bool codeSkipped(void);
+	bool doOFF(void);
+
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);

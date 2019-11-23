@@ -99,10 +99,10 @@ int CLASS::doEQU(MerlinLine &line, TSymbol &sym)
 			char buff[32];
 			sprintf(buff, "$%08X", line.expr_value);
 			std::string s1 = buff;
-			s = addVariable(line.lable, s1, true);
+			s = addVariable(line.lable, s1, variables,true);
 #else
 			// do this if you want to do this more as a #define
-			s = addVariable(line.lable, line.operand, true);
+			s = addVariable(line.lable, line.operand, variables,true);
 #endif
 			if (s != NULL)
 			{
@@ -846,6 +846,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("DUM", P_DUM, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DEND", P_DEND, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("AST", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("CAS", P_CAS, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("CYC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DAT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("EXP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -885,9 +886,10 @@ void CLASS::insertOpcodes(void)
 	pushopcode("SW", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("USR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
-	pushopcode("MAC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("EOM", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("<<<", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("MAC", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("EOM", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("<<<", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode(">>>", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 
 
 	pushopcode("ADC", 0x03, OP_STD | OP_A, OPHANDLER(&CLASS::doBase6502));

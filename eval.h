@@ -68,6 +68,7 @@ protected:
 public:
     CLASS(T65816Asm &_asm);
     ~CLASS();
+    bool allowMX;
     std::string badsymbol;
     std::deque<Token> shuntingYard(const std::deque<Token>& tokens);
     std::deque<Token> exprToTokens(const std::string& expr);
