@@ -391,7 +391,7 @@ int CLASS::parseAscii(std::string n, int64_t &val)
     bool high = false;
     uint8_t c;
 
-    uint32_t l = n.length();
+    uint32_t l = (uint32_t)n.length();
     for (uint32_t i = 0; i < l - 1; i++)
     {
         c = n[i];
@@ -442,7 +442,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
     //printf("parseNumber |%s|\n",n.c_str());
     i = 0;
-    l = n.length();
+    l = (uint32_t)n.length();
     s = "";
     for (i = 0; i < l; i++)
     {
