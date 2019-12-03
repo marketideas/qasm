@@ -20,17 +20,14 @@ for S in $SRC ; do
 	S1=${S1/.S/}
 	S1=${S1/.s/}
 
-	BASE=${S/.S/}
-	BASE=${BASE/.s/}
 	cd ./testdata
 	merlin32$X . $S 2>/dev/null >/dev/null
 	#merlin32 . $S 2>/dev/null 
 
 	R=?$
-	cd - >/dev/null
-	cp ./testdata/$S1 $OUTDIR/$S1.bin 2>/dev/null
+	cd .. >/dev/null
+	mv ./testdata/$S1 $OUTDIR/$S1.bin 2>/dev/null
 	rm -f ./testdata/*.txt 2>/dev/null
-	rm -f ./testdata/$S1 2>/dev/null
 	R=?$
 
 done

@@ -899,7 +899,6 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BLT", 0x02, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BCS", 0x82, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BGE", 0x82, 0, OPHANDLER(&CLASS::doBRANCH));
-
 	pushopcode("BEQ", 0x83, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BIT", 0x01, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("BMI", 0x80, 0, OPHANDLER(&CLASS::doBRANCH));
