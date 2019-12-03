@@ -8,8 +8,18 @@
 #define MODE_65816 2
 
 #define SYNTAX_MERLIN 0
-#define SYNTAX_APW	  1
-#define SYNTAX_ORCA	  2
+#define SYNTAX_MERLIN32 0x01
+#define SYNTAX_APW	    0x02
+#define SYNTAX_ORCA	    0x04
+#define SYNTAX_QASM	    (0x08 | SYNTAX_MERLIN32)
+#define OPTION_ALLOW_A_OPERAND 0x0100
+#define OPTION_ALLOW_LOCAL     0x0200
+#define OPTION_ALLOW_COLON	   0x0400
+#define OPTION_FORCE_REPSEP    0x0800
+#define OPTION_NO_REPSEP       0x1000
+#define OPTION_CFG_REPSEP	   0x2000
+#define OPTION_M32_VARS		   0x4000
+
 
 #define FLAG_FORCELONG 0x01
 #define FLAG_FORCEABS  0x02
@@ -68,6 +78,7 @@ enum asmErrors
 	errBadLUPOperand,
 	errBadLabel,
 	errBadOperand,
+	errErrOpcode,
 	errMAX
 };
 
@@ -102,6 +113,7 @@ const std::string errStrings[errMAX + 1] =
 	"LUP value must be 0 < VAL <= $8000",
 	"Unknown label",
 	"Bad operand",
+	"Break",
 
 	""
 };
@@ -131,6 +143,7 @@ enum
 
 	syn_MAX
 };
+
 
 class TOriginSection
 {
@@ -177,9 +190,11 @@ class MerlinLine
 {
 public:
 
-	uint8_t syntax;
+	uint32_t syntax;
+	std::string wholetext;
 	std::string lable;
 	std::string printlable;
+	std::string printoperand;
 	std::string opcode;
 	std::string opcodelower;
 	std::string operand;
@@ -222,9 +237,11 @@ public:
 class TFileProcessor
 {
 protected:
+	int win_columns;
+	int win_rows;
 	std::string initialdir;
 	std::vector<std::string> filenames;
-	uint8_t syntax;
+	uint32_t syntax;
 	uint64_t starttime;
 	uint8_t tabs[16];
 
@@ -265,11 +282,12 @@ public:
 	{
 		clear();
 	}
-	void clear(void) {
-		lupct=0;
-		lupoffset=0;
-		luprunning=0;
-		lupskip=false;
+	void clear(void)
+	{
+		lupct = 0;
+		lupoffset = 0;
+		luprunning = 0;
+		lupskip = false;
 	}
 	uint16_t lupct;
 	bool lupskip;
@@ -284,9 +302,10 @@ public:
 	{
 		clear();
 	}
-	void clear(void) {
-		doskip=false;
-		value=0;
+	void clear(void)
+	{
+		doskip = false;
+		value = 0;
 	}
 	uint32_t value;
 	bool doskip;
@@ -301,7 +320,8 @@ class TSymbol
 public:
 	std::string namelc;
 	std::string name;
-	std::string text;
+	//std::string text;
+	std::string var_text;
 	uint32_t value;
 	uint16_t stype;
 	uint8_t opcode;
@@ -317,12 +337,57 @@ public:
 	{
 		value = 0;
 		used = false;
-		text = "";
+		//text = "";
+		var_text = "";
 		name = "";
 		namelc = "";
 		stype = 0;
 		opcode = 0;
 		locals.clear();
+	}
+};
+
+//typedef Poco::HashMap<std::string, TSymbol> variable_t;
+
+class TVariable
+{
+public:
+		uint32_t id;
+		Poco::HashMap<std::string, TSymbol> vars;
+		TVariable()
+		{
+			// SGQ - must fix this so it is guaranteed unique for each one
+			id=rand();
+		}
+};
+
+class TMacro
+{
+public:
+	std::string name;
+	std::string lcname;
+	TVariable  variables;
+	std::vector<MerlinLine> lines;
+	uint32_t start, end, currentline, len;
+	uint32_t sourceline;
+	bool running;
+
+	TMacro()
+	{
+		clear();
+	}
+	void clear(void)
+	{
+		name = "";
+		lcname = "";
+		variables.vars.clear();
+		lines.clear();
+		sourceline = 0;
+		currentline = 0;
+		len = 0;
+		start = 0;
+		end = 0;
+		running = false;
 	}
 };
 
@@ -335,7 +400,6 @@ public:
 	bool casesen;
 	bool showmx;
 	bool trackrep;
-	bool merlincompat;
 	bool merlinerrors;
 	bool allowdup;
 	uint8_t mx;
@@ -355,14 +419,16 @@ public:
 
 	std::string currentsymstr;
 	std::vector<MerlinLine> lines;
-	Poco::HashMap<std::string, TSymbol>opcodes;
-	Poco::HashMap<std::string, TSymbol> macros;
+	Poco::HashMap<std::string, TMacro> macros;
+	Poco::HashMap<std::string, TSymbol> opcodes;
 	Poco::HashMap<std::string, TSymbol> symbols;
-	Poco::HashMap<std::string, TSymbol> variables;
+	TVariable variables;
 
 	TOriginSection PC;
 	TLUPstruct curLUP;
 	TDOstruct curDO;
+	TMacro currentmacro;
+	TMacro expand_macro;
 	bool listing;
 	uint8_t truncdata; 	// for the TR opcode
 
@@ -370,6 +436,8 @@ public:
 	std::stack<TLUPstruct> LUPstack;
 	std::stack<TDOstruct> DOstack;
 	std::stack<bool> LSTstack;
+	std::stack<TMacro> macrostack;
+	std::stack<TMacro> expand_macrostack;
 
 	TPsuedoOp *psuedoops;
 
@@ -387,19 +455,26 @@ public:
 	void pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallback cb);
 
 	int callOpCode(std::string op, MerlinLine &line);
+	TMacro *findMacro(std::string sym);
+
 	TSymbol *findSymbol(std::string sym);
 	TSymbol *addSymbol(std::string sym, uint32_t val, bool replace);
-	TSymbol *findVariable(std::string sym);
-	TSymbol *addVariable(std::string sym, std::string val, bool replace);
+	TSymbol *findVariable(std::string sym, TVariable &vars);
+	TSymbol *addVariable(std::string sym, std::string val, TVariable &vars, bool replace);
 
 
 	void initpass(void);
 	void showSymbolTable(bool alpha);
-	void showVariables(void);
+	void showMacros(bool alpha);
+
+	void showVariables(TVariable &vars);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
 
-	int substituteVariables(MerlinLine & line);
+	int substituteVariables(MerlinLine & line, std::string &outop);
+
 	bool codeSkipped(void);
+	bool doOFF(void);
+
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);

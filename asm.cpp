@@ -2,6 +2,9 @@
 #include "asm.h"
 #include "eval.h"
 #include "psuedo.h"
+#include <sys/ioctl.h>
+#include <unistd.h>
+
 
 #define CLASS MerlinLine
 
@@ -99,7 +102,7 @@ void CLASS::print(uint32_t lineno)
 		}
 	}
 	bool empty = false;
-	if ((printlable == "") && (opcode == "") && (operand == ""))
+	if ((printlable == "") && (opcode == "") && (printoperand == ""))
 	{
 		empty = true;
 	}
@@ -174,7 +177,7 @@ void CLASS::print(uint32_t lineno)
 				{
 					pcol += printf("%c", comment[cc]);
 					comct++;
-					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 10)))
+					if ((comment[cc] <= ' ') && (pcol >= (commentcol + savpcol + 20)))
 					{
 						printf("\n");
 						pcol = 0;
@@ -202,7 +205,21 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf(" ");
 		}
-		pcol += printf("%s ", operand.c_str());
+		if (isDebug() > 1)
+		{
+			pcol += printf("%s ", operand.c_str());
+		}
+		else
+		{
+			if (printoperand.length() > 0)
+			{
+				pcol += printf("%s ", printoperand.c_str());
+			}
+			else
+			{
+				pcol += printf("%s ", operand.c_str());
+			}
+		}
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
 	if ((errorcode > 0) && (!merlinerrors))
@@ -282,11 +299,13 @@ void CLASS::print(uint32_t lineno)
 void CLASS::clear()
 {
 	syntax = SYNTAX_MERLIN;
+	wholetext = "";
 	lable = "";
 	printlable = "";
 	opcode = "";
 	opcodelower = "";
 	operand = "";
+	printoperand = "";
 	comment = "";
 	operand_expr = "";
 	operand_expr2 = "";
@@ -311,27 +330,47 @@ void CLASS::clear()
 	outbytes.clear();
 }
 
+std::string operEx[] =
+{
+	"^(\\S*)(#?)([<>\\^|]?)([\"\'])(.*)(\\4)([\\S]*)", // catches the normal delims
+	"^(\\s*)([!-~])([!-~]*?)([^;]*)\\2(\\S*)", // catches the unusual delims
+	"^(\\s*)(\\S+)",							// captures everything else
+	""
+};
+
+std::string commentEx = "^(\\s*)((;|\\/{2}))+(.*)";
+
 void CLASS::set(std::string line)
 {
 	int state = 0;
-	int l = line.length();
+	int l = (int)line.length();
 	int i = 0;
 	int x;
 	char c, delim;
 	bool isascii;
-	std::string opupper;
-
+	std::string opupper, s;
+	std::string restofline;
+	std::string tline = line;
 	clear();
 
+	wholetext = line;
 	isascii = false;
 	delim = 0;
-	//printf("line: |%s|\n", line.c_str());
 	while (i < l)
 	{
-		c = line[i++];
-		//printf("state: %d\n",state);
+		c = tline[i++];
 		switch (state)
 		{
+			case 7:
+				if (c >= ' ')
+				{
+					comment += c;
+				}
+				else
+				{
+					i = l;
+				}
+				break;
 			case 0:  // start of line state
 				if ((c == ';') || (c == '*') || (c == '/'))
 				{
@@ -381,156 +420,109 @@ void CLASS::set(std::string line)
 				{
 					opcode += c;
 				}
-#if 1
 				else
 				{
-					// SGQ
-					// this is bad, but the only way I currently know how to do this.
-					// the problem is, is that the ASCII generating psuedo-ops in Merlin
-					// use any char > space and less than apostrophe, and > apostrophe
-					// as delimiters.
-					// however, those characters also contain valid opcode expression characters
-					// so we see a character here, it looks like a delim, and we keep reading to EOL
-					// which might include a comment.  All of that, then goes into the operand, and
-					// comments cause errors on evaluation.
-					// So, at this point in the code, we must determine if the opcode is one of our
-					// ascii psuedo-ops and treat the first char as a delim.
-					// otherwise, we must parse the operand as an express.
-					// this parser should know NOTHING about what the code does...but it needs to in
-					// this case.
-
-					opupper = Poco::toUpper(opcode);
-					if (opupper.length() > 0)
-					{
-						if (
-						    (opupper == "STRL")
-						    || (opupper == "STR")
-						    || (opupper == "ASC")
-						    || (opupper == "DCI")
-						    || (opupper == "INV")
-						    || (opupper == "FLS")
-						    || (opupper == "REV")
-						)
-						{
-							isascii = true;
-						}
-
-					}
-
+					i--;
 					state = 4;
 				}
-#else
-				else
-				{
-					// SGQ
-					// this is bad, but the only way I currently know how to do this.
-					// the problem is, is that the ASCII generating psuedo-ops in Merlin
-					// use any char > space and less than apostrophe, and > apostrophe
-					// as delimiters.
-					// however, those characters also contain valid opcode expression characters
-					// so we see a character here, it looks like a delim, and we keep reading to EOL
-					// which might include a comment.  All of that, then goes into the operand, and
-					// comments cause errors on evaluation.
-					// So, at this point in the code, we must determine if the opcode is one of our
-					// ascii psuedo-ops and treat the first char as a delim.
-					// otherwise, we must parse the operand as an express.
-					// this parser should know NOTHING about what the code does...but it needs to in
-					// this case.
-
-					opupper = Poco::toUpper(opcode);
-
-					auto itr = a.opcodes.find(op);
-					if (itr != a.opcodes.end())
-					{
-						TSymbol s = itr->second;
-						if (1)
-						{
-							isascii = true;
-						}
-					}
-
-					state = 4;
-				}
-#endif
 			}
 			break;
 			case 4:  // read whitespace between opcode and operand
-				if (c == ';')
+			{
+				std::vector<std::string> strs;
+				std::string s;
+
+				Poco::RegularExpression comEx(commentEx, 0, true);
+				restofline = Poco::trim(tline.substr(i, tline.length())) + " ";
+				//printf("ROL: |%s|\n",restofline.c_str());
+
+				if (restofline == "")
 				{
-					comment += c;
-					state = 7;
+					i = l;
+					break;
 				}
-				else if (c > ' ')
+				strs.clear();
+				x = 0;
+				try
 				{
-					operand += c;
-					if ((c <= '/') && (isascii))
-					{
-						delim = c;
-						state = 8;
-					}
-					else
-					{
-						state = 5;
-					}
+					x = comEx.split(restofline, strs, 0);
 				}
-				break;
-			case 5:
-				if (c > ' ')
+				catch (Poco::Exception &e)
 				{
-					if ((c == '\'') || (c == '"'))
+					x = 0;
+					if (isDebug() > 3)
 					{
-						delim = c;
-						operand += c;
-						state = 8;
-					}
-					else
-					{
-						operand += c;
+						cout << e.displayText() << endl;
 					}
 				}
-				else
+				if (x > 0)
 				{
-					state = 6;
+					// if the comment detector above is true, then the rest of line is comment;
+					operand = "";
+					comment = strs[0];
+					//printf("comment=%s\n", comment.c_str());
+					i = l;
+					break;
 				}
-				break;
-			case 6:
-				if (c > ' ')
+
+				int ct = 0;
+				int x = 0;
+				bool match = false;
+				s = operEx[ct];
+				while (s != "")
 				{
-					comment += c;
-					state = 7;
+					RegularExpression regex(s, 0, true);
+					strs.clear();
+					x = 0;
+					try
+					{
+						x = regex.split(restofline, strs, 0);
+					}
+					catch (Poco::Exception &e)
+					{
+						x = 0;
+						if (isDebug() > 3)
+						{
+							cout << e.displayText() << endl;
+						}
+					}
+					if (x > 0)
+					{
+						//printf("%d regex %d match |%s|\n", ct, x, restofline.c_str());
+						operand = strs[0];
+						//printf("which=%d operand=|%s|\n",ct,operand.c_str());
+						i = (int)operand.length();
+						restofline = restofline.substr(i, restofline.length());
+						comment = Poco::trim(restofline);
+						match = true;
+						break;
+					}
+					ct++;
+					s = operEx[ct];
 				}
-				break;
-			case 7:
-				comment += c;
-				break;
-			case 9:
-				break;
-			case 8:
-				if (c < ' ')
+				i = l;
+				if (!match)
 				{
+					// if you are here, there probably isn't an operand and/or comment after opcode
 				}
-				else if (c == delim)
-				{
-					operand += c;
-					state = 5;
-				}
-				else
-				{
-					operand += c;
-				}
-				break;
+			}
+			break;
 		}
 	}
 	printlable = lable;
-	x = lable.length();
+	x = (int)lable.length();
 	if (x > 1)
 	{
-		while ((x > 1) && (lable[x - 1] == ':'))
+		// M32 syntax allows a colon after lable, and it is not part of the lable
+		if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
 		{
-			lable = lable.substr(0, x - 1);
-			x--;
+			while ((x > 1) && (lable[x - 1] == ':'))
+			{
+				lable = lable.substr(0, x - 1);
+				x--;
+			}
+			//printf("linelable: |%s|\n", lable.c_str());
 		}
-		//printf("linelable: |%s|\n", lable.c_str());
 	}
 
 	opcodelower = Poco::toLower(opcode);
@@ -541,7 +533,20 @@ void CLASS::set(std::string line)
 
 CLASS::CLASS()
 {
+	int x;
 	errorct = 0;
+
+	win_columns = -1;
+	win_rows = -1;
+	struct winsize w;
+	x = ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	if (x == 0)
+	{
+		win_columns = w.ws_col;
+		win_rows = w.ws_row;
+	}
+	//printf("cols=%d rows=%d\n",win_columns,win_rows);
+
 }
 
 CLASS::~CLASS()
@@ -561,8 +566,23 @@ void CLASS::init(void)
 	filenames.clear();
 	starttime = GetTickCount();
 	initialdir = Poco::Path::current();
-	syntax = 0;
+	syntax = SYNTAX_MERLIN;
 	filecount = 0;
+
+	s = getConfig("option.syntax", "merlin16");
+	s = Poco::toUpper(Poco::trim(s));
+	if ((s == "MERLIN") || (s == "MERLIN16"))
+	{
+		syntax = SYNTAX_MERLIN;
+	}
+	else if (s == "MERLIN32")
+	{
+		syntax = SYNTAX_MERLIN32;
+	}
+	else if (s == "QASM")
+	{
+		syntax = SYNTAX_QASM;
+	}
 
 	std::string tabstr = getConfig("reformat.tabs", "8,16,32");
 	tabstr = Poco::trim(tabstr);
@@ -718,6 +738,7 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 	linect = 0;
 	done = false;
 
+	p = Poco::trim(p);
 	currentdir = Poco::Path::current();
 
 	if (filecount == 0)
@@ -788,9 +809,13 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 			}
 			if ((fn.isDirectory()) || (!fn.canRead()))
 			{
-				//LOG_DEBUG << "File is a directory: " << p1 << endl;
+				LOG_DEBUG << "File is a directory: " << p1 << endl;
 				valid = false;
 			}
+		}
+		else
+		{
+			printf("file does not exist |%s|\n", p1.c_str());
 		}
 
 		newfilename = p1;
@@ -915,9 +940,10 @@ int CLASS::doline(int lineno, std::string line)
 
 void CLASS::process(void)
 {
-	uint32_t len, t, pos;
 
-	uint32_t ct = lines.size();
+	uint32_t ct = (uint32_t)lines.size();
+
+	uint32_t len, t, pos;
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
@@ -1022,7 +1048,7 @@ void CLASS::pushopcode(std::string op, uint8_t opcode, uint16_t flags, TOpCallba
 	opcodes.insert(p);
 }
 
-TSymbol *CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
+TSymbol * CLASS::addSymbol(std::string symname, uint32_t val, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1100,7 +1126,29 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::findSymbol(std::string symname)
+
+TMacro * CLASS::findMacro(std::string symname)
+{
+	TMacro *res = NULL;
+
+	std::string sym = symname;
+	if (!casesen)
+	{
+		sym = Poco::toUpper(sym);
+	}
+	if (symname.length() > 0)
+	{
+		//printf("finding: %s\n",symname.c_str());
+		auto itr = macros.find(sym);
+		if (itr != macros.end())
+		{
+			res = &itr->second;
+		}
+	}
+	return (res);
+}
+
+TSymbol * CLASS::findSymbol(std::string symname)
 {
 	TSymbol *res = NULL;
 
@@ -1143,7 +1191,7 @@ out:
 	return (res);
 }
 
-TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
+TSymbol * CLASS::addVariable(std::string symname, std::string val, TVariable &vars, bool replace)
 {
 	TSymbol *res = NULL;
 	TSymbol *fnd = NULL;
@@ -1155,7 +1203,7 @@ TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 	}
 
 	//printf("addvariable\n");
-	fnd = findVariable(sym);
+	fnd = findVariable(sym, vars);
 
 	if ((fnd != NULL) && (!replace))
 	{
@@ -1165,7 +1213,7 @@ TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 	if (fnd != NULL)
 	{
 		//printf("replacing symbol: %s %08X\n",sym.c_str(),val);
-		fnd->text = val;
+		fnd->var_text = val;
 		return (fnd);
 	}
 
@@ -1175,25 +1223,39 @@ TSymbol *CLASS::addVariable(std::string symname, std::string val, bool replace)
 	s.namelc = Poco::toLower(sym);
 	s.stype = 0;
 	s.value = 0;
-	s.text = val;
+	s.var_text = val;
 	s.used = false;
 	s.cb = NULL;
 
 	//printf("addvariable: %s %s\n", s.name.c_str(), s.text.c_str());
 
 	std::pair<std::string, TSymbol> p(sym, s);
-	variables.insert(p);
-	res = findVariable(sym);
+	vars.vars.insert(p);
+	res = findVariable(sym, vars);
 	return (res);
 }
 
-TSymbol *CLASS::findVariable(std::string symname)
+TSymbol * CLASS::findVariable(std::string symname, TVariable &vars)
 {
 	TSymbol *res = NULL;
 
+	if (!casesen)
+	{
+		symname = Poco::toUpper(symname);
+	}
+
+	if ((expand_macrostack.size() > 0) && (vars.id != expand_macro.variables.id))
+	{
+		res = findVariable(symname, expand_macro.variables);
+		if (res != NULL)
+		{
+			return (res);
+		}
+	}
+
 	//printf("finding: %s\n",symname.c_str());
-	auto itr = variables.find(Poco::toUpper(symname));
-	if (itr != variables.end())
+	auto itr = vars.vars.find(symname);
+	if (itr != vars.vars.end())
 	{
 		//printf("Found: %s 0x%08X\n",itr->second.name.c_str(),itr->second.value);
 		res = &itr->second;
@@ -1203,15 +1265,15 @@ TSymbol *CLASS::findVariable(std::string symname)
 	return (res);
 }
 
-void CLASS::showVariables(void)
+void CLASS::showVariables(TVariable &vars)
 {
-	if (variables.size() > 0)
+	if (vars.vars.size() > 0)
 	{
 		printf("\nVariables:\n");
 
-		for (auto itr = variables.begin(); itr != variables.end(); ++itr)
+		for (auto itr = vars.vars.begin(); itr != vars.vars.end(); ++itr)
 		{
-			printf("%-16s %s\n", itr->first.c_str(), itr->second.text.c_str());
+			printf("%-16s %s\n", itr->first.c_str(), itr->second.var_text.c_str());
 		}
 		printf("\n");
 	}
@@ -1270,11 +1332,61 @@ void CLASS::showSymbolTable(bool alpha)
 	}
 }
 
+// set alpha to true to print table sorted by name or
+// false to print by value;
+void CLASS::showMacros(bool alpha)
+{
+	if (macros.size() > 0)
+	{
+		std::map<std::string, uint32_t> alphamap;
+
+		int columns = getInt("asm.symcolumns", 3);
+		int column = columns;
+
+		for (auto itr = macros.begin(); itr != macros.end(); itr++)
+		{
+			TMacro ptr = itr->second;
+			alphamap.insert(pair<std::string, uint32_t>(ptr.name, 0));
+		}
+
+		if (alpha)
+		{
+			printf("\n\nmacros sorted alphabetically:\n\n");
+
+			for (auto itr = alphamap.begin(); itr != alphamap.end(); ++itr)
+			{
+				printf("%-16s 0x%08X       ", itr->first.c_str(), itr->second);
+				if ( !--column )
+				{
+					printf("\n");
+					column = columns;
+				}
+			}
+		}
+		if (column > 0)
+		{
+			printf("\n");
+		}
+	}
+}
+
 int CLASS::callOpCode(std::string op, MerlinLine &line)
 {
 	int res = -1;
 	char c;
 	std::string s;
+
+	// 'op' is always lowercase here
+
+// during MACRO definition no opcodes are called (except for MAC, EOM, <<)
+	if (macrostack.size() > 0)
+	{
+		// if something on the macro stack, then a macro is being defined
+		if (!((op == "mac") || (op == "eom") || (op == "<<<")))
+		{
+			return 0;
+		}
+	}
 
 	if (op.length() == 4) // check for 4 digit 'L' opcodes
 	{
@@ -1308,28 +1420,63 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		}
 	}
 
-	switch (line.expr_shift)
+	if (line.addressmode == syn_imm)
 	{
-		case '<':
-			line.expr_value &= 0xFF;
-			line.flags |= FLAG_DP;
-			break;
-		case '>':
-			line.expr_value >>= 8;
-			line.expr_value &= 0xFFFF;
-			break;
-		case '^':
-			line.expr_value = (line.expr_value >> 16) & 0xFFFF;
-			break;
-		case '|':
-			line.flags |= FLAG_FORCELONG;
-			break;
+		//printf("immediate mode\n");
+		switch (line.expr_shift)
+		{
+			case '<':
+				//line.expr_value &= 0xFF;
+				break;
+			case '>':
+				line.expr_value >>= 8;
+				//line.expr_value &= 0xFFFF;
+				break;
+			case '^':
+				line.expr_value = (line.expr_value >> 16);
+				//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
+				break;
+			case '|':
+				if (syntax == SYNTAX_MERLIN)
+				{
+					line.setError(errBadLabel);
+					line.expr_value = 0;
+				}
+				break;
+		}
+	}
+	else
+	{
+		switch (line.expr_shift)
+		{
+			case '<':
+				line.flags |= FLAG_DP;
+				break;
+			case '>':
+#if 0
+				if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+				{
+					// bug in M32 or not, do what it does
+					line.flags |= FLAG_FORCEABS;
+				}
+				else
+#endif
+				{
+					line.flags |= FLAG_FORCELONG;
+				}
+				break;
+			case '|':
+				line.flags |= FLAG_FORCEABS;
+				break;
+			case '^':
+				//line.flags |= FLAG_FORCELONG;
+				break;
+		}
 	}
 	if (line.expr_value >= 0x100)
 	{
 		line.flags |= FLAG_FORCEABS;
 	}
-
 
 	auto itr = opcodes.find(Poco::toUpper(op));
 	if (itr != opcodes.end())
@@ -1362,13 +1509,6 @@ typedef struct
 // these are the regular expressions that determine the addressing mode
 // and extract the 'expr' part of the addr-mode
 
-// ^([_,a-z,A-Z,0-9:\]].+)\,[s,S]{1}$ // might be a better syn_s
-
-// "^([:-~][0-Z_-~]*)$"  // this is a valid identifier
-// "^([$][0-9A-Fa-f]+)$" // hex digit
-// "^([%][0-1][0-1_]+[0-1])$" - binary numbera
-// "^([0-9]+)$" - decimal number
-// "^([:-~][^\],()]*)$" - valid expression
 const TaddrMode addrRegEx[] =
 {
 	{ "^(?'expr'.+)\\,[s,S]{1}$", syn_s, "e,s"},    				// expr,s
@@ -1385,9 +1525,6 @@ const TaddrMode addrRegEx[] =
 	{"^(?'expr'.+)$", syn_abs, "absolute"},  							// expr (MUST BE LAST)
 	{"", 0, ""}
 };
-
-// keep this next line for awhile
-//	{"^#{1}(?'shift'[<,>,^,|]?)(.+)$", syn_imm, "immediate"}, 				//#expr,#^expr,#|expr,#<expr,#>expr
 
 //	one or more of any character except ][,();
 const std::string valExpression = "^([^\\]\\[,();]+)$";
@@ -1445,7 +1582,22 @@ void CLASS::initpass(void)
 	merlinerrors = getBool("asm.merlinerrors", true);
 
 	trackrep = getBool("asm.trackrep", false);
-	merlincompat = getBool("asm.merlincompatible", true);
+	if (syntax == SYNTAX_MERLIN32)
+	{
+		trackrep = true; // can't turn this off in M32
+	}
+	else if (syntax == SYNTAX_MERLIN)
+	{
+		trackrep = false; // can't turn this ON in M16
+	}
+	else if (syntax == SYNTAX_QASM)
+	{
+		// we will allow this to be settable default off
+		trackrep = false;
+		trackrep = getBool("asm.trackrep", trackrep);
+
+	}
+	//merlincompat = getBool("asm.merlincompatible", true);
 	allowdup = getBool("asm.allowduplicate", true);
 
 	skiplist = false;
@@ -1487,7 +1639,12 @@ void CLASS::initpass(void)
 
 	lastcarry = false;
 	relocatable = false;
-	currentsym = &topSymbol;  // this is the default symbol for :locals without a global above;
+	currentsym = NULL;
+	if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+	{
+		// M32 allows locals that don't have a global above. this is the catchall for that
+		currentsym = &topSymbol;    // this is the default symbol for :locals without a global above;
+	}
 	currentsymstr = "";
 	lineno = 0;
 	errorct = 0;
@@ -1495,11 +1652,15 @@ void CLASS::initpass(void)
 	dumstartaddr = 0;
 	dumstart = 0;
 	truncdata = 0;
-	variables.clear(); // clear the variables for each pass
+	variables.vars.clear(); // clear the variables for each pass
 
-	while (!PCstack.empty())
+	while (!macrostack.empty())
 	{
-		PCstack.pop();
+		macrostack.pop();
+	}
+	while (!expand_macrostack.empty())
+	{
+		expand_macrostack.pop();
 	}
 	while (!LUPstack.empty())
 	{
@@ -1513,6 +1674,12 @@ void CLASS::initpass(void)
 	{
 		LSTstack.pop();
 	}
+	while (!PCstack.empty())
+	{
+		PCstack.pop();
+	}
+	currentmacro.clear();
+	expand_macro.clear();
 	curLUP.clear();
 	curDO.clear();
 }
@@ -1531,7 +1698,7 @@ void CLASS::complete(void)
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
-			uint32_t l = lines.size();
+			uint32_t l = (uint32_t)lines.size();
 			while (lineno < l)
 			{
 				MerlinLine &line = lines.at(lineno++);
@@ -1566,8 +1733,10 @@ void CLASS::complete(void)
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
-		showVariables();
+		showVariables(variables);
+		showMacros(true);
 	}
+
 }
 
 int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
@@ -1691,18 +1860,17 @@ int CLASS::getAddrMode(MerlinLine & line)
 											// symbol is defined later, we will generate different
 											// bytes on the next pass
 
-											if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
+											if ((line.syntax & SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
 											{
-												// SGQ
-												// Merlin32 supports the 'A" operand for immediate
-												// mode for opcodes like "ROR A". Problem is, Merlin16
-												// does not, and 'A' could be a lable.
-												TSymbol *sym = findSymbol("A");
-												if (sym == NULL)
+												if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
 												{
-													line.flags |= FLAG_FORCEIMPLIED;
-													mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
-													goto out;
+													TSymbol *sym = findSymbol("A");
+													if (sym == NULL)
+													{
+														line.flags |= FLAG_FORCEIMPLIED;
+														mode = syn_implied; // if the label hasn't been defined yet, assume Immediate addressing
+														goto out;
+													}
 												}
 											}
 										}
@@ -1768,64 +1936,129 @@ int CLASS::parseOperand(MerlinLine & line)
 	return (res);
 }
 
-int CLASS::substituteVariables(MerlinLine & line)
+int CLASS::substituteVariables(MerlinLine & line, std::string &outop)
 {
-	int res = -1;
+	int res = 0;
 	int x;
 	std::string::size_type offset, slen;
 	std::string oper = line.operand;
 	std::string s;
+	std::string operin;
 	TSymbol *sym;
 	uint32_t len, off, ct;
 
-	slen = oper.length();
-	if (slen > 0)
+	bool done = false;
+	operin = oper;
+	ct = 0;
+restart:
+	while (!done)
 	{
-		std::vector<std::string> groups;
 
-		offset = 0;
-		RegularExpression varEx(varExpression, Poco::RegularExpression::RE_EXTRA, true);
-		Poco::RegularExpression::MatchVec  mVec;
-
-		//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
-		groups.clear();
-		ct = 0;
-		while (offset < slen)
+		slen = oper.length();
+		if (slen > 0)
 		{
-			try
-			{
-				varEx.match(oper, offset, mVec, 0);
-			}
-			catch (...)
-			{
-				offset = slen;
-			}
+			std::vector<std::string> groups;
 
-			x = mVec.size();
-			if (x > 0)
+			offset = 0;
+			RegularExpression varEx(varExpression, 0, true);
+			Poco::RegularExpression::MatchVec  mVec;
+
+			//printf("|%s|%s|\n", varExpression.c_str(), oper.c_str());
+			groups.clear();
+			while (offset < slen)
 			{
-				res = 0;
-				off = mVec[0].offset;
-				len = mVec[0].length;
-				s = oper.substr(off, len);
-				sym = findVariable(s);
-				if (sym != NULL)
+				try
 				{
-					ct++;
-					if (pass > 0)
-					{
-						//printf("%d |%s|\n", ct, s.c_str());
-					}
+					varEx.match(oper, offset, mVec, 0);
 				}
-				offset += len;
-			}
-			else
-			{
-				offset = slen;
-			}
-		}
+				catch (...)
+				{
+					offset = slen;
+				}
 
+				x = (int)mVec.size();
+				if (x > 0)
+				{
+					res = 0;
+					off = (uint32_t)mVec[0].offset;
+					len = (uint32_t)mVec[0].length;
+					s = oper.substr(off, len);
+					slen = s.length();
+					sym = NULL;
+					if (expand_macrostack.size() > 0)
+					{
+						sym = findVariable(s, expand_macro.variables);
+					}
+					if (sym == NULL)
+					{
+						sym = findVariable(s, variables);
+					}
+					if (sym != NULL)
+					{
+						//printf("match |%s|\n",sym->var_text.c_str());
+
+						if (sym->var_text != "")
+						{
+							oper = oper.replace(off, len, sym->var_text);
+							slen = oper.length();
+							ct++;
+							if (pass > 0)
+							{
+								//printf("%d |%s|\n", ct, s.c_str());
+							}
+							goto restart;
+						}
+					}
+					else
+					{
+						done = true;
+					}
+					offset += len;
+				}
+				else
+				{
+					offset = slen;
+					done = true;
+				}
+			}
+
+		}
+		else
+		{
+			done = true;
+		}
 	}
+//printf("inoper=|%s| outoper=|%s|\n",operin.c_str(),oper.c_str());
+	if (ct > 0)
+	{
+		outop = oper;
+		res = ct;
+	}
+	return (res);
+}
+
+bool CLASS::doOFF(void)
+{
+	bool res = curDO.doskip;
+	std::stack<TDOstruct> tmpstack;
+	TDOstruct doitem;
+
+	uint32_t ct = (uint32_t)DOstack.size();
+	if (ct > 0)
+	{
+		tmpstack = DOstack;
+	}
+	while (ct > 0)
+	{
+		doitem = tmpstack.top();
+		tmpstack.pop();
+		if (doitem.doskip)
+		{
+			res = true;
+		}
+		ct--;
+	}
+	//printf("DOOFF: %d\n",res);
 	return (res);
 }
 
@@ -1835,7 +2068,8 @@ bool CLASS::codeSkipped(void)
 	bool res = false;
 
 	res = (curLUP.lupskip) ? true : res;
-	res = (curDO.doskip) ? true : res;
+	res = doOFF() ? true : res;
+	res = currentmacro.running ? true : res;
 
 	//printf("codeskip: %d\n",res);
 
@@ -1844,22 +2078,77 @@ bool CLASS::codeSkipped(void)
 
 void CLASS::process(void)
 {
+
+#if 0
+	uint32_t ct = lines.size();
+	for (uint32_t lineno = 0; lineno < ct; lineno++)
+	{
+		//MerlinLine &line = lines.at(lineno);
+		//printf("|%s| |%s| |%s| |%s|\n", line.lable.c_str()
+		//       , line.opcode.c_str(), line.operand.c_str(), line.comment.c_str());
+	}
+#else
+
 	uint32_t l;
 	int x;;
 	char c;
 	char buff[256];
 	MerlinLine errLine;
-	std::string op, operand, ls;
+	std::string op, realop, operand, ls;
 
 	pass = 0;
 	while (pass < 2)
 	{
 		initpass();
 
-		l = lines.size();
-		while ((lineno < l) && (!passcomplete))
+		l = (uint32_t)lines.size();
+		bool passdone = false;
+		while ((!passdone) && (!passcomplete))
 		{
-			MerlinLine &line = lines[lineno];
+
+			MerlinLine *ml = NULL;
+			bool srcline = true;
+			if (expand_macro.running)
+			{
+				srcline = false;
+				if (expand_macro.currentline >= expand_macro.len)
+				{
+					// macro is complete
+					lineno = expand_macro.sourceline + 1;
+					if (expand_macrostack.size() > 0)
+					{
+						expand_macro = expand_macrostack.top();
+						expand_macrostack.pop();
+					}
+					else
+					{
+						expand_macro.clear();
+					}
+					srcline = true;
+				}
+				else
+				{
+					ml = &expand_macro.lines[expand_macro.currentline];
+					lineno = expand_macro.sourceline;
+					expand_macro.currentline++;
+				}
+			}
+			if (srcline)
+			{
+				if (lineno >= l)
+				{
+					passdone = true;
+					goto passout;
+				}
+				else
+				{
+					ml = &lines[lineno];
+				}
+			}
+
+			MerlinLine &line = *ml;
+
+			//printf("lineno=%u %s\n", lineno, line.wholetext.c_str());
 
 			line.eval_result = 0;
 			line.lineno = lineno + 1;
@@ -1868,14 +2157,16 @@ void CLASS::process(void)
 			//printf("lineno: %d %d |%s|\n",lineno,l,line.operand.c_str());
 
 			op = Poco::toLower(line.opcode);
+			realop = line.opcode;
 			operand = Poco::toLower(line.operand);
 			line.startpc = PC.currentpc;
 			line.linemx = mx;
 			line.bytect = 0;
 			line.showmx = showmx;
+			line.syntax = syntax;
 			line.merlinerrors = merlinerrors;
 
-			if ((line.lable != ""))
+			if ((line.lable != "") && (op != "mac"))
 			{
 				std::string lable = Poco::trim(line.lable);
 				TSymbol *sym = NULL;
@@ -1886,8 +2177,8 @@ void CLASS::process(void)
 					case ']':
 						sprintf(buff, "$%X", PC.currentpc);
 						ls = buff;
-						sym = addVariable(line.lable, ls, true);
-						if (sym == NULL) { dupsym = true; }
+						sym = addVariable(line.lable, ls, variables, true);
+						//if (sym == NULL) { dupsym = true; }
 						break;
 
 					case ':':
@@ -1913,7 +2204,19 @@ void CLASS::process(void)
 					line.setError(errDupSymbol);
 				}
 			}
-			x = substituteVariables(line);
+			std::string outop;
+			line.printoperand = line.operand;
+
+			x = 0;
+			if (macrostack.size() == 0)
+			{
+				x = substituteVariables(line, outop);
+			}
+			if (x > 0)
+			{
+				line.printoperand = outop;
+				line.operand = outop;
+			}
 			x = parseOperand(line);
 			if (x >= 0)
 			{
@@ -1937,7 +2240,88 @@ void CLASS::process(void)
 			x = 0;
 			if (op.length() > 0)
 			{
-				x = callOpCode(op, line);
+				bool skipop = false;
+				if (doOFF())
+				{
+					skipop = true;
+					if ((op == "fin") || (op == "else") || (op == "do") || (op == "if"))
+					{
+						skipop = false;
+					}
+				}
+				if (!skipop)
+				{
+					TMacro *mac = NULL;
+					bool inoperand = false;
+					if (macrostack.size() == 0)
+					{
+						mac = findMacro(realop);
+						if (mac == NULL)
+						{
+							if (op == ">>>") // specal merlin way of calling a macro
+							{
+								Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
+								                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+								std::string s = "";
+								if (tok.count() > 0)
+								{
+									s = tok[0];
+								}
+								mac = findMacro(s);
+								inoperand = true;
+							}
+						}
+					}
+					if (mac == NULL)
+					{
+						x = callOpCode(op, line);
+					}
+					if (mac != NULL)
+					{
+						expand_macrostack.push(expand_macro);
+						expand_macro = *mac;
+
+						expand_macro.lines.clear();
+						//printf("mac start=%u end=%u\n", expand_macro.start, expand_macro.end);
+						for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
+						{
+							//printf("pushing %s\n", lines[lc].wholetext.c_str());
+							MerlinLine nl(lines[lc].wholetext);  // create a new clean line (without errors,data)
+							expand_macro.lines.push_back(nl);
+						}
+						expand_macro.running = true;
+						expand_macro.sourceline = lineno;
+						expand_macro.variables.vars.clear();
+						// set the variables for the macro here SGQ
+
+						std::string parms = line.operand;
+						if (inoperand)
+						{
+							Poco::StringTokenizer tok(parms, ", ", Poco::StringTokenizer::TOK_TRIM |
+							                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+							parms = "";
+							if (tok.count() > 1)
+							{
+								parms = tok[1];
+							}
+						}
+						Poco::StringTokenizer tok(parms, ",;", Poco::StringTokenizer::TOK_TRIM |
+						                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+
+						uint32_t ct = 0;
+						for (auto itr = tok.begin(); itr != tok.end(); ++itr)
+						{
+							//evaluate each of these strings, check for errors on pass 2
+							std::string expr = *itr;
+							std::string v = "]" + Poco::NumberFormatter::format(ct + 1);
+							//printf("var: %s %s\n", v.c_str(), expr.c_str());
+							addVariable(v, expr, expand_macro.variables, true);
+							ct++;
+						}
+						x = 0;
+						expand_macro.currentline = 0;
+					}
+				}
 			}
 
 			if ((x > 0) && (codeSkipped())) // has a psuedo-op turned off code generation? (LUP, IF, etc)
@@ -1986,7 +2370,10 @@ void CLASS::process(void)
 			{
 				if ((line.pass0bytect != line.bytect) && (line.errorcode == 0))
 				{
-					line.setError(errBadByteCount);
+					if (expand_macrostack.size() == 0)  // if macro expanding, you can't make this check
+					{
+						line.setError(errBadByteCount);
+					}
 				}
 
 				if (line.errorcode != 0)
@@ -2001,7 +2388,7 @@ void CLASS::process(void)
 			}
 			lineno++;
 		}
-
+passout:
 		// end of file reached here, do some final checks
 
 #if 0
@@ -2015,7 +2402,7 @@ void CLASS::process(void)
 #endif
 		pass++;
 	}
-
+#endif
 }
 
 int CLASS::doline(int lineno, std::string line)
@@ -2044,6 +2431,7 @@ int CLASS::doline(int lineno, std::string line)
 	{
 		std::string fn;
 		x = processfile(l.operand, fn);
+		//printf("processfile : %d\n",x);
 		if (x < 0)
 		{
 			switch (x)

@@ -1,11 +1,12 @@
   (0)	2019-11-17 - BRK does not detect a lable that can't be evaluated
   (0)	2019-11-17 - ASCII parsing in both eval and for ASC type commands
   (0)	2019-11-17 - IF processing for character compare mode
-  (0)	2019-11-17 - 
-  (0)	2019-11-17 -
-  (0)	2019-11-17 -
-  (0)	2019-11-17 -
-  (0)	2019-11-17 -
+  (0) 2019-11-17 - Note (syntax): Merlin doesn't allow local labels without a previous global
+  (0) 2019-11-17 - Note (syntax): Merlin doesn't allow local colons after label which is ignored
+  (0) 2019-11-17 - Note (syntax): Merlin doesn't allow for 'rep/sep/xce' tracking
+  (0)	2019-11-17 - Bug (evaluation routine puts ascii bytes in reverse order (#"AB")
+  (0)	2019-11-17 - want to wrap comments based on current terminal width, and don't if printing to non-terminal
+  (0)	2019-11-17 - syntax options - check OPTION bits, not syntax type (OPTION_ALLOW_LOCAL)
   (0)	2019-11-17 -
   (0)	2019-11-17 -
   (0)	2019-11-17 -

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTDIR=./testout
+OUTDIR=./qasmout
 TMPFILE=/tmp/qasm_out.txt
 
 rm -f $TMPFILE
@@ -27,7 +27,9 @@ for S in $SRC ; do
 
 	BASE=${S/.S/}
 	BASE=${BASE/.s/}
-	./qasm -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
+	#./qasm -o 0/$OUTDIR/$S1 ./testdata/$S 
+
+	./qasm --syntax merlin32 -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
 
 	R=?$
 	#echo $S " " $S1
@@ -38,14 +40,15 @@ for S in $SRC ; do
 	MSHA="Q"
 	QSHA="M"
 
-	if [ -f ./testdata/M32_expected/$BASE ] ; then
-	  MSHA=`sha256sum ./testdata/M32_expected/$BASE | awk '{ print $1;}'` 2>/dev/null >/dev/null
+
+	if [ -f ./m32out/$BASE.bin ] ; then
+	  MSHA=`sha256sum ./m32out/$BASE.bin | awk '{ print $1;}'` 2>/dev/null >/dev/null
     fi
 
     if [ -f $OUTDIR/$BASE.bin ] ; then
 	   QSHA=`sha256sum $OUTDIR/$BASE.bin |awk '{print $1;}'` 2>/dev/null >/dev/null
     fi
-	#echo "$MSHA    $QSHA"
+    #echo "MSHA=$MSHA    QSHA=$QSHA"
 
 	shapass=0;
 	CX=" "

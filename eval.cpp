@@ -15,6 +15,7 @@ std::ostream& operator<<(std::ostream& os, const Token& token)
 
 CLASS::CLASS(T65816Asm &_asm) : assembler(_asm)
 {
+    allowMX = false;
 }
 
 CLASS::~CLASS()
@@ -232,20 +233,30 @@ std::deque<Token> CLASS::shuntingYard(const std::deque<Token>& tokens)
                 }
                 else
                 {
-                    sym = assembler.findSymbol(token.str);
-                    //printf("symbol find |%s| %p\n",token.str.c_str(),sym);
-
-                    if (sym != NULL)
+                    std::string tok = Poco::toUpper(token.str);
+                    if ((tok == "MX") && (allowMX))
                     {
-                        sym->used = true;
-                        sprintf(buff, "$%X", sym->value);
-                        token.str = buff;
+                        //printf("MX EVAL\n");
+                        sprintf(buff,"$%02X",assembler.mx&0x03);
+                        token.str=buff;;
                     }
                     else
                     {
-                        setError(Token::unknownSymbolErr);
-                        badsymbol = token.str;
-                        token.str = "0";
+                        sym = assembler.findSymbol(token.str);
+                        //printf("symbol find |%s| %p\n",token.str.c_str(),sym);
+
+                        if (sym != NULL)
+                        {
+                            sym->used = true;
+                            sprintf(buff, "$%X", sym->value);
+                            token.str = buff;
+                        }
+                        else
+                        {
+                            setError(Token::unknownSymbolErr);
+                            badsymbol = token.str;
+                            token.str = "0";
+                        }
                     }
                 }
                 queue.push_back(token);
@@ -380,7 +391,7 @@ int CLASS::parseAscii(std::string n, int64_t &val)
     bool high = false;
     uint8_t c;
 
-    uint32_t l = n.length();
+    uint32_t l = (uint32_t)n.length();
     for (uint32_t i = 0; i < l - 1; i++)
     {
         c = n[i];
@@ -431,7 +442,7 @@ int CLASS::parseNumber(std::string n, int64_t &val)
 
     //printf("parseNumber |%s|\n",n.c_str());
     i = 0;
-    l = n.length();
+    l = (uint32_t)n.length();
     s = "";
     for (i = 0; i < l; i++)
     {
@@ -665,7 +676,7 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
                     }
                     else if (token.str == "<")
                     {
-                        //rhs = (rhs << 8 ) & 0xFFFF;
+                        //rhs = (rhs) & 0xFFFF;
                     }
                     else if (token.str == ">")
                     {

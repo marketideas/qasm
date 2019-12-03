@@ -114,7 +114,7 @@ START
             adc     _num1+dum1 
             sbc     _num1+dum1 
             bit     _num1+dum0 
-            sta     _num1+dum0 ;(FIXED): can't use sta _num1+dum0
+            sta     _num1+dum0 ;(FIXED): can't use sta _num1+dum0 '
             stz     _num1+dum0 
 
             lda     _num1+dum0,x 
@@ -180,7 +180,7 @@ myQuit
 
 
             ldaz    $FFFF   ; forced DP
-            lda:    $FFFF   ; forced ABS (any char but 'L', 'D', and 'Z"
+            lda:    $FFFF   ; forced ABS (any char but 'L', 'D', and 'Z'
             ldal    $FFFF   ; forced long abs (3 byte address)
 
             ldaz    $05     
@@ -307,7 +307,7 @@ myQuit
             sbc     ^$012345 
             sbc     |$012345 
 
-            asll    $1234   
+            ;asll    $1234   
 
             lda     <$fff0+24 ;zp
             lda     >$fff0+24 ;ABS (lo word)
@@ -338,8 +338,6 @@ myQuit
             lda     #^$A51234 ;bank
 
 
-            mx      MX      
-
             lda     $0008   ;ZP
             lda     $08     ;ZP
             lda     $ffff-$fff7 ;ZP
@@ -362,8 +360,8 @@ L00BC       bit     L00BC
 
             hex		;no error
             hex     11,22,33,44,55,66,77,88,99 
-            hex     112233445566778899F 
-            hex     112233445I566778899FF 
+            ;hex     112233445566778899F 
+            ;hex     112233445I566778899FF 
 
             hex     aabb,CC,0123456789abcdefABCDEF,ff 
 
@@ -411,8 +409,8 @@ L00BC       bit     L00BC
 			asc		02,15,?123456?
 			asc		02,15,>123456>
 			asc		02,15,<123456<
-			asc		02,15,5,"123456"
-			asc		02,15,"123456
+			asc		02,15,05,"123456"
+			asc		02,15,"123456"
 			asc		0215"1234"1502
 
 			dci		8D,'Hello',8D,'there',8D
@@ -425,7 +423,7 @@ lup_start:
             --^             
 
 
-            lst off
+            ;lst off
 //]XCODEEND       ; Keep this at the end and put your code above this
                             ;lst off
 
