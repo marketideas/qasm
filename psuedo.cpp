@@ -36,7 +36,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	UNUSED(opinfo);
 
 	TEvaluator eval(a);
-	eval.allowMX=true; // allow the built in MX symbol
+	eval.allowMX = true; // allow the built in MX symbol
 
 	int64_t eval_value = 0;
 	uint8_t shift;
@@ -141,8 +141,9 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string op = Poco::toUpper(line.opcode);
 	if (op == "MAC")
 	{
-		if (a.expand_macrostack.size()>0)
+		if (a.expand_macrostack.size() > 0)
 		{
+			line.flags |= FLAG_NOLINEPRINT;
 			goto out;
 		}
 		if (line.lable.length() == 0)
@@ -157,6 +158,12 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		a.currentmacro.lcname = Poco::toLower(line.lable);
 		a.currentmacro.start = line.lineno;
 		a.currentmacro.running = true;
+
+		if (!a.casesen)
+		{
+			a.currentmacro.name = Poco::toUpper(a.currentmacro.name);
+		}
+
 		if (a.pass == 0)
 		{
 		}
@@ -399,7 +406,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					line.setError(errBadEvaluation);
 				}
 			}
-			eval_value = doShift(eval_value, shift);
+			eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
 		}
 
 		outct += wordsize;
@@ -477,7 +484,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					line.setError(errBadOperand);
 					goto out;
 				}
-				eval_value = doShift(eval_value, shift);
+				eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
 				datact = eval_value & 0xFFFF;
 				if (datact < 0)
 				{
@@ -497,7 +504,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				line.setError(errBadOperand);
 				goto out;
 			}
-			eval_value = doShift(eval_value, shift);
+			eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
 			fill = eval_value & 0xFF;
 		}
 		else if (ct > 1)
@@ -696,20 +703,21 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	std::string os = line.operand;
 	std::string op = Poco::toUpper(line.opcode);
 
-	uint8_t lastdelimbyte = 0x00;
-	uint8_t firstdelim = 0xFF;
+	uint8_t firstdelim = 0;
 	uint32_t bytect = 0;
 	uint8_t b = 0;
 	uint8_t b1;
 	uint8_t ct = 0;
-	char delimiter = 0;
+	uint8_t delimiter = 0;
 	uint32_t ss = 0;
+    uint32_t lastdelimidx = 0;
+
 	std::vector<uint8_t> bytes;
 
 	line.eval_result = 0; // since this is an ASCII p-op, clear the global 'bad operand' flag
 	for ( uint32_t i = 0; i < os.length(); ++i )
 	{
-		char c = os[i];
+		uint8_t c = os[i];
 
 		// are we inside a delimited string?
 		if ( delimiter )
@@ -731,9 +739,9 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 						{
 							c |= 0x80;
 						}
-						lastdelimbyte = c;
+
 						bytes.push_back(c);
-						//line.outbytes.push_back(c);
+                        lastdelimidx = (uint32_t)(bytes.size() - 1);
 					}
 				}
 
@@ -756,7 +764,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			{
 				// if not a hex value, then consider the character to be the string delimiter
 				delimiter = c;
-				if (firstdelim == 0xFF)
+				if( ! firstdelim )
 				{
 					firstdelim = c;
 				}
@@ -784,7 +792,6 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				if (a.pass > 0)
 				{
 					bytes.push_back(b);
-					//line.outbytes.push_back(b);
 				}
 				b = 0;
 				bytect++;
@@ -805,8 +812,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		uint8_t andval = 0xFF;
 		uint8_t orval = 0x00;
 		uint8_t addlen = 0;
-		uint8_t firstbyte = 0x00;
-		uint32_t truebytect = bytes.size();
+		uint32_t truebytect = (uint32_t)bytes.size();
 		const char *ptr = (const char *)op.c_str();
 		//printf("bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
 		switch (strhash(ptr) )
@@ -855,26 +861,31 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				{
 					b = bytes[i];
 				}
-				if (!i)
-				{
-					firstbyte = b;
-				}
-				b1 = b & 0x7F;
+
+                b1 = b & 0x7F;
 				if ((andval != 0xFF) || (orval != 0x00))
 				{
 					b = b1;
 				}
+
 				if ((b1 < 0x60))
 				{
 					b &= andval; // strip whatever bits needed to flash or invert
 					b |= orval;
 				}
-				if ((dci) && (i == (truebytect - 1)))
+
+				if (dci && (i == lastdelimidx))
 				{
-					// this one might be a bug. I am going to compare the first byte in the string for
-					// bit seven, and invert it on this byte. The confusion arises because this text string
-					// could have high ASCII, but low HEX values.
-					if (firstbyte < 0x80)
+                    //lr - Merlin only toggles the high bit of string chars, not hex values
+                    // 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
+                    //
+                    // The DCI instruction is documented to work like this on page 108
+                    // (regardless of how this effects the desired lda, (bpl/bmi) functionality)
+                    //
+                    // I am now checking the delimiter character to determine hi/lo toggle (reversed)
+                    // and am tracking the index to the last delimited character put into 'bytes'.
+                    // This produces the same results as Merlin 16+ in my testing.
+                    if ( firstdelim >= '\'' )
 					{
 						b |= 0x80;
 					}
@@ -899,6 +910,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	int res = 0;
+	std::string s;
 
 	switch (opinfo.opcode)
 	{
@@ -948,6 +960,18 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			break;
 		case P_SAV:
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
+			break;
+		case P_CAS:
+			s = Poco::toUpper(line.operand);
+			if (s == "SE")
+			{
+				a.casesen = true;
+			}
+			if (s=="IN")
+			{
+				a.casesen=false;
+			}
+			res = 0;
 			break;
 		case P_MAC:
 			res = doMAC(a, line, opinfo);

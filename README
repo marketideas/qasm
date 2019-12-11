@@ -46,3 +46,9 @@ make
 
 To test:
 ./qasm src/testfile.s
+
+
+Some notes on compatibility:
+
+ERR does not support the ($300)-$4C style of checking, because we are not running on Apple // hardware, so there is no need to check for a USR vector having been setup in this manner.
+

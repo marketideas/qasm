@@ -343,7 +343,7 @@ std::string commentEx = "^(\\s*)((;|\\/{2}))+(.*)";
 void CLASS::set(std::string line)
 {
 	int state = 0;
-	int l = line.length();
+	int l = (int)line.length();
 	int i = 0;
 	int x;
 	char c, delim;
@@ -491,7 +491,7 @@ void CLASS::set(std::string line)
 						//printf("%d regex %d match |%s|\n", ct, x, restofline.c_str());
 						operand = strs[0];
 						//printf("which=%d operand=|%s|\n",ct,operand.c_str());
-						i = operand.length();
+						i = (int)operand.length();
 						restofline = restofline.substr(i, restofline.length());
 						comment = Poco::trim(restofline);
 						match = true;
@@ -510,7 +510,7 @@ void CLASS::set(std::string line)
 		}
 	}
 	printlable = lable;
-	x = lable.length();
+	x = (int)lable.length();
 	if (x > 1)
 	{
 		// M32 syntax allows a colon after lable, and it is not part of the lable
@@ -941,7 +941,7 @@ int CLASS::doline(int lineno, std::string line)
 void CLASS::process(void)
 {
 
-	uint32_t ct = lines.size();
+	uint32_t ct = (uint32_t)lines.size();
 
 	uint32_t len, t, pos;
 
@@ -1238,6 +1238,11 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, TVariable &va
 TSymbol * CLASS::findVariable(std::string symname, TVariable &vars)
 {
 	TSymbol *res = NULL;
+
+	if (!casesen)
+	{
+		symname = Poco::toUpper(symname);
+	}
 
 	if ((expand_macrostack.size() > 0) && (vars.id != expand_macro.variables.id))
 	{
@@ -1693,7 +1698,7 @@ void CLASS::complete(void)
 			std::ofstream f(savepath);
 
 			uint32_t lineno = 0;
-			uint32_t l = lines.size();
+			uint32_t l = (uint32_t)lines.size();
 			while (lineno < l)
 			{
 				MerlinLine &line = lines.at(lineno++);
@@ -1971,14 +1976,14 @@ restart:
 					offset = slen;
 				}
 
-				x = mVec.size();
+				x = (int)mVec.size();
 				if (x > 0)
 				{
 					res = 0;
-					off = mVec[0].offset;
-					len = mVec[0].length;
+					off = (uint32_t)mVec[0].offset;
+					len = (uint32_t)mVec[0].length;
 					s = oper.substr(off, len);
-
+					slen = s.length();
 					sym = NULL;
 					if (expand_macrostack.size() > 0)
 					{
@@ -1995,6 +2000,7 @@ restart:
 						if (sym->var_text != "")
 						{
 							oper = oper.replace(off, len, sym->var_text);
+							slen = oper.length();
 							ct++;
 							if (pass > 0)
 							{
@@ -2037,7 +2043,7 @@ bool CLASS::doOFF(void)
 	std::stack<TDOstruct> tmpstack;
 	TDOstruct doitem;
 
-	uint32_t ct = DOstack.size();
+	uint32_t ct = (uint32_t)DOstack.size();
 	if (ct > 0)
 	{
 		tmpstack = DOstack;
@@ -2095,7 +2101,7 @@ void CLASS::process(void)
 	{
 		initpass();
 
-		l = lines.size();
+		l = (uint32_t)lines.size();
 		bool passdone = false;
 		while ((!passdone) && (!passcomplete))
 		{
@@ -2201,7 +2207,11 @@ void CLASS::process(void)
 			std::string outop;
 			line.printoperand = line.operand;
 
-			x = substituteVariables(line, outop);
+			x = 0;
+			if (macrostack.size() == 0)
+			{
+				x = substituteVariables(line, outop);
+			}
 			if (x > 0)
 			{
 				line.printoperand = outop;
@@ -2243,20 +2253,23 @@ void CLASS::process(void)
 				{
 					TMacro *mac = NULL;
 					bool inoperand = false;
-					mac = findMacro(realop);
-					if (mac == NULL)
+					if (macrostack.size() == 0)
 					{
-						if (op == ">>>") // specal merlin way of calling a macro
+						mac = findMacro(realop);
+						if (mac == NULL)
 						{
-							Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
-							                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
-							std::string s = "";
-							if (tok.count() > 0)
+							if (op == ">>>") // specal merlin way of calling a macro
 							{
-								s = tok[0];
+								Poco::StringTokenizer tok(operand, ", ", Poco::StringTokenizer::TOK_TRIM |
+								                          Poco::StringTokenizer::TOK_IGNORE_EMPTY);
+								std::string s = "";
+								if (tok.count() > 0)
+								{
+									s = tok[0];
+								}
+								mac = findMacro(s);
+								inoperand = true;
 							}
-							mac = findMacro(s);
-							inoperand = true;
 						}
 					}
 					if (mac == NULL)

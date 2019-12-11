@@ -21,6 +21,7 @@ enum
     P_ASC,
     P_ERR,
     P_MAC,
+    P_CAS,
 
 	P_MAX
 };

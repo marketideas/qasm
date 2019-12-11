@@ -413,6 +413,8 @@ L00BC       bit     L00BC
 			asc		02,15,"123456"
 			asc		0215"1234"1502
 
+			dci		8D,'Hello',8D,'there',8D
+			dci		8D,"Hello",8D,"there",8D
 
             lst
 lup_start:
