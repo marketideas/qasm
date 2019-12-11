@@ -829,7 +829,11 @@ void CLASS::insertOpcodes(void)
 {
 	pushopcode("=",   0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
 	pushopcode("EQU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
-	pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+    pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
+    pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
+    pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
+
+    pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ENT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ORG", P_ORG, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DSK", P_SAV, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -840,9 +844,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("PUT", P_PUT, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("USE", P_USE, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("VAR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("SAV", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TYP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
 	pushopcode("DUM", P_DUM, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DEND", P_DEND, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("AST", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -871,7 +873,6 @@ void CLASS::insertOpcodes(void)
 	pushopcode("ADR", P_DATA, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ADRL", P_DATA, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("HEX", P_HEX, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("DS",  0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DO",  P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ELSE", P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("IF",  P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -881,11 +882,9 @@ void CLASS::insertOpcodes(void)
 	pushopcode("KBD", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("LUP", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("--^", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
 	pushopcode("PAU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SW", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("USR", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
 	pushopcode("MAC", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("EOM", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("<<<", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -899,7 +898,6 @@ void CLASS::insertOpcodes(void)
 	pushopcode("BLT", 0x02, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BCS", 0x82, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BGE", 0x82, 0, OPHANDLER(&CLASS::doBRANCH));
-
 	pushopcode("BEQ", 0x83, 0, OPHANDLER(&CLASS::doBRANCH));
 	pushopcode("BIT", 0x01, OP_C0, OPHANDLER(&CLASS::doBase6502));
 	pushopcode("BMI", 0x80, 0, OPHANDLER(&CLASS::doBRANCH));
