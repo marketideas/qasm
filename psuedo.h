@@ -22,6 +22,7 @@ enum
     P_ERR,
     P_MAC,
     P_CAS,
+    P_USR,
 
 	P_MAX
 };
@@ -44,6 +45,7 @@ public:
 	int doTR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
     int doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 	int doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
+	int doUSR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo);
 
 };
 
