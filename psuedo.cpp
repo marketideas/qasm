@@ -695,6 +695,74 @@ out:
 	return bytect;
 }
 
+static int usr_hash(std::string os) {
+	int hash = 0;
+
+	os.resize(4, ' ');
+	os = Poco::toUpper(os);
+
+	hash = (os[0] & 0x1f) << 11;
+	hash |= (os[1] & 0x1f) << 6;
+	hash |= (os[2] & 0x1f) << 1;
+	if (os[3] == 'L') hash |= 0x01;
+
+	return hash;
+}
+
+/*
+  handler for USR.  generates a 2-byte opcode hash
+  USR $00 - equivalent to DW $0 (qasm)
+  USR 'ADC ' - hashes the 4-byte string (qasm)
+  USR ADC - hashes the 1-4 byte symbol (merlin)
+ */
+int CLASS::doUSR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
+
+	std::string os = Poco::trim(line.operand);
+	uint32_t bytect = 2;
+	uint32_t hash = 0;
+
+	char c = os.empty() ? 0 : os.front();
+
+	if (c == '$' && os.length() > 1) {
+
+		for (uint32_t i = 1; i < os.length(); ++i)
+		{
+			char hv = hexVal(os[i]);
+			if (hv < 0) {
+				line.setError(errIllegalCharOperand);
+				bytect = 0;
+				goto out;		
+			}
+			hash <<= 4;
+			hash |= hv;
+		}
+
+	} else if ((c == '\'' || c == '\"') && os.front() == os.back() && os.length() == 6) {
+		hash = usr_hash(os.substr(1, 4));
+	} else if (os.length() > 0 && os.length() <= 4) {
+		hash = usr_hash(os);
+	} else {
+		printf("line.setError(errBadOperand);\n");
+		line.setError(errBadOperand);
+		bytect = 0;
+		goto out;		
+	}
+
+	if (a.pass > 0) {
+		line.outbytes.push_back(hash & 0xff);		
+		line.outbytes.push_back(hash >> 8);		
+	}
+
+out:
+	line.outbytect = bytect;
+	return bytect;
+
+}
+
 // the handler for STR,STRL,REV,FLS,INV,DCI,ASC
 int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
@@ -1008,6 +1076,11 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		case P_ASC:
 			res = doASC(a, line, opinfo);
 			break;
+
+		case P_USR:
+			res = doUSR(a, line, opinfo);
+			break;
+
 	}
 	return (res);
 }
