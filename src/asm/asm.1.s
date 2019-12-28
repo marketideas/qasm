@@ -601,7 +601,6 @@ calctime     php
              beq   :mins
              pea   0
              pha
-             pha
              pea   0
              pea   0
              _QADrawDec
