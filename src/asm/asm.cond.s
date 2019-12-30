@@ -1933,7 +1933,7 @@ expandint     php
               sta   printptr+2
 
               sep   $30
-* ldy #$00
+              ldy   #$00
 
               lda   [fileptr]
               tax
