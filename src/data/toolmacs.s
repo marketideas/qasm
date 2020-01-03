@@ -68,6 +68,7 @@ opc         mac
 
 a           tdf   '_AbsOff';$1009
             tdf   '_AbsOn';$0F09
+            tdf   '_AcceptRequests';$1B01
             tdf   '_ACEBootInit';$011D
             tdf   '_ACECompBegin';$0B1D
             tdf   '_ACECompress';$091D
@@ -94,6 +95,7 @@ a           tdf   '_AbsOff';$1009
             tdf   '_AddToQueue';$2E03
             tdf   '_AddToRunQ';$1F05
             tdf   '_Alert';$1715
+            tdf   '_AlertMessage';$3E03
             tdf   '_AlertWindow';$590E
             tdf   '_AllNotesOff';$0D19
             tdf   '_AllocGen';$0919
@@ -109,6 +111,7 @@ b           tdf   '_BeginUpdate';$1E0E
 c           tdf   '_CalcMask';$0E12
             tdf   '_CalcMenuSize';$1C0F
             tdf   '_CallCtlDefProc';$2C10
+            tdf   '_CallDeskAcc';$2405
             tdf   '_CautionAlert';$1A15
             tdf   '_CharBounds';$AC04
             tdf   '_CharWidth';$A804
@@ -118,6 +121,7 @@ c           tdf   '_CalcMask';$0E12
             tdf   '_ChooseCDA';$1105
             tdf   '_ChooseFont';$161B
             tdf   '_ClampMouse';$1C03
+            tdf   '_ClearIncr';$0A1A
             tdf   '_ClearMouse';$1B03
             tdf   '_ClearScreen';$1504
             tdf   '_ClearSRQTable';$1609
@@ -136,7 +140,12 @@ c           tdf   '_CalcMask';$0E12
             tdf   '_CMLoadResource';$3210
             tdf   '_CMReleaseResource';$3310
             tdf   '_CompactMem';$1F02
+            tdf   '_CompactResourceFile';$2F1E
+            tdf   '_CompareStrings';$181C
             tdf   '_CompileText';$600E
+            tdf   '_ConvertToMeasure';$2123
+            tdf   '_ConvertToTime';$2023
+            tdf   '_ConvSeconds';$3703
             tdf   '_CopyPixels';$0912
             tdf   '_CopyRgn';$6904
             tdf   '_CountFamilies';$091B
@@ -159,6 +168,13 @@ c           tdf   '_CalcMask';$0E12
             dw    $00,$00
 
 d           tdf   '_DeallocGen';$0A19
+            tdf   '_DebugControl';$0DFF
+            tdf   '_DebugGetInfo';$0CFF
+            tdf   '_DebugQuery';$0EFF
+            tdf   '_DebugSetHook';$0BFF
+            tdf   '_DebugStatus';$06FF
+            tdf   '_DebugStr';$09FF
+            tdf   '_DebugVersion';$04FF
             tdf   '_Dec2Int';$280B
             tdf   '_Dec2Long';$290B
             tdf   '_DecStrNum';$0A0A
@@ -167,6 +183,7 @@ d           tdf   '_DeallocGen';$0A19
             tdf   '_DeleteID';$2103
             tdf   '_DeleteMenu';$0E0F
             tdf   '_DeleteMItem';$100F
+            tdf   '_DeleteTrack';$1D23
             tdf   '_DelHeartBeat';$1303
             tdf   '_DeskBootInit';$0105
             tdf   '_DeskReset';$0505
@@ -199,6 +216,8 @@ d           tdf   '_DeallocGen';$0A19
             tdf   '_DlgCut';$1215
             tdf   '_DlgDelete';$1515
             tdf   '_DlgPaste';$1415
+            tdf   '_DoModalWindow';$640E
+            tdf   '_DoSysPrefs';$3F03
             tdf   '_DoWindows';$0906
             tdf   '_DragControl';$1710
             tdf   '_DragRect';$1D10
@@ -216,13 +235,8 @@ d           tdf   '_DeallocGen';$0A19
             tdf   '_DrawPicture';$BA04
             tdf   '_DrawPopUp';$3D0F
             tdf   '_DrawString';$A504
+            tdf   '_DrawStringWidth';$1512
             tdf   '_DrawText';$A704
-            tdf   '_DUBootInit';$0118
-            tdf   '_DUReset';$0518
-            tdf   '_DUShutDown';$0318
-            tdf   '_DUStartUp';$0218
-            tdf   '_DUStatus';$0618
-            tdf   '_DUVersion';$0418
             dw    $00,$00
 
 e           tdf   '_ElemNum';$0B0A
@@ -281,10 +295,12 @@ f           tdf   '_FakeMouse';$1906
             tdf   '_FillRgn';$7D04
             tdf   '_FillRRect';$6104
             tdf   '_FindControl';$1310
+            tdf   '_FindCursorCtl';$690E
             tdf   '_FindDItem';$2415
             tdf   '_FindFamily';$0A1B
             tdf   '_FindFontStats';$111B
             tdf   '_FindHandle';$1A02
+            tdf   '_FindRadioButton';$3910
             tdf   '_FindTargetCtl';$2610
             tdf   '_FindWindow';$170E
             tdf   '_Fix2Frac';$1C0B
@@ -329,12 +345,15 @@ f           tdf   '_FakeMouse';$1906
             tdf   '_FWEntry';$2403
             dw    $00,$00
 
-g           tdf   '_GetAbsClamp';$2B03
+g           tdf   '_Get640Colors';$DA04
+            tdf   '_GetAbsClamp';$2B03
             tdf   '_GetAbsScale';$1309
+            tdf   '_GetACEExpState';$0D1D
             tdf   '_GetAddr';$1603
             tdf   '_GetAddress';$0904
             tdf   '_GetAlertStage';$3415
             tdf   '_GetArcRot';$B104
+            tdf   '_GetAuxWindInfo';$630E
             tdf   '_GetBackColor';$A304
             tdf   '_GetBackPat';$3504
             tdf   '_GetBarColors';$180F
@@ -359,6 +378,7 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetCtlRefCon';$2310
             tdf   '_GetCtlTitle';$0D10
             tdf   '_GetCtlValue';$1A10
+            tdf   '_GetCtlValueByID';$3D10
             tdf   '_GetCurResourceApp';$141E
             tdf   '_GetCurResourceFile';$121E
             tdf   '_GetCursorAdr';$8F04
@@ -367,9 +387,12 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetDblTime';$1106
             tdf   '_GetDefButton';$3715
             tdf   '_GetDefProc';$310E
+            tdf   '_GetDeskAccInfo';$2305
+            tdf   '_GetDeskGlobal';$2505
             tdf   '_GetDItemBox';$2815
             tdf   '_GetDItemType';$2615
             tdf   '_GetDItemValue';$2E15
+            tdf   '_GetDragRectPtr';$540E
             tdf   '_GetErrGlobals';$0E0C
             tdf   '_GetErrorDevice';$140C
             tdf   '_GetFamInfo';$0B1B
@@ -389,6 +412,7 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetGrafProcs';$4504
             tdf   '_GetHandleSize';$1802
             tdf   '_GetIndResource';$231E
+            tdf   '_GetIndScrap';$1416
             tdf   '_GetIndType';$211E
             tdf   '_GetInfoDraw';$4A0E
             tdf   '_GetInfoRefCon';$350E
@@ -400,8 +424,10 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetIText';$1F15
             tdf   '_GetKeyTranslation';$1B06
             tdf   '_GetLEDefProc';$2414
+            tdf   '_GetLETextByID';$3B10
             tdf   '_GetListDefProc';$0E1C
             tdf   '_GetLoadSegInfo';$0F11
+            tdf   '_GetLoc';$0C1A
             tdf   '_GetMapHandle';$261E
             tdf   '_GetMasterSCB';$1704
             tdf   '_GetMaxGrow';$420E
@@ -411,12 +437,20 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetMenuTitle';$220F
             tdf   '_GetMHandle';$160F
             tdf   '_GetMItem';$250F
+            tdf   '_GetMItemBlink';$4F0F
             tdf   '_GetMItemFlag';$270F
+            tdf   '_GetMItemFlag2';$4C0F
+            tdf   '_GetMItemIcon';$480F
             tdf   '_GetMItemMark';$340F
+            tdf   '_GetMItemStruct';$4A0F
             tdf   '_GetMItemStyle';$360F
             tdf   '_GetMouse';$0C06
             tdf   '_GetMouseClamp';$1D03
+            tdf   '_GetMSData';$1F23
+            tdf   '_GetMsgHandle';$1A01
             tdf   '_GetMTitleStart';$1A0F
+            tdf   '_GetMTitleWidth';$1E0F
+            tdf   '_GetMyZone';$3213
             tdf   '_GetNewDItem';$3315
             tdf   '_GetNewID';$2003
             tdf   '_GetNewModalDialog';$3215
@@ -442,6 +476,7 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetPort';$1C04
             tdf   '_GetPortLoc';$1E04
             tdf   '_GetPortRect';$2004
+            tdf   '_GetPrinterList';$3313
             tdf   '_GetRectInfo';$4F0E
             tdf   '_GetResourceAttr';$1B1E
             tdf   '_GetResourceSize';$1D1E
@@ -463,14 +498,16 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetSysBar';$110F
             tdf   '_GetSysField';$4904
             tdf   '_GetSysFont';$B304
+            tdf   '_GetSysIcon';$0F12
             tdf   '_GetSysWFlag';$4C0E
             tdf   '_GetTableAddress';$0B08
             tdf   '_GetTextFace';$9B04
             tdf   '_GetTextMode';$9D04
             tdf   '_GetTextSize';$D304
             tdf   '_GetTick';$2503
-            tdf   '_GetTitleWidth';$1E0F
+            tdf   '_GetTimer';$0B1A
             tdf   '_GetTSPtr';$0901
+            tdf   '_GetTuningTable';$2523
             tdf   '_GetUpdateRgn';$300E
             tdf   '_GetUserField';$4704
             tdf   '_GetUserID';$1011
@@ -486,6 +523,7 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GetWMgrPort';$200E
             tdf   '_GetWRefCon';$290E
             tdf   '_GetWTitle';$0E0E
+            tdf   '_GetZoneList';$3113
             tdf   '_GetZoomRect';$370E
             tdf   '_GlobalToLocal';$8504
             tdf   '_GrafOff';$0B04
@@ -494,7 +532,8 @@ g           tdf   '_GetAbsClamp';$2B03
             tdf   '_GrowWindow';$1B0E
             dw    $00,$00
 
-h           tdf   '_HandToHand';$2A02
+h           tdf   '_HandleDiskInsert';$6B0E
+            tdf   '_HandToHand';$2A02
             tdf   '_HandToPtr';$2902
             tdf   '_Hex2Int';$240B
             tdf   '_Hex2Long';$250B
@@ -506,6 +545,7 @@ h           tdf   '_HandToHand';$2A02
             tdf   '_HidePen';$2704
             tdf   '_HideWindow';$120E
             tdf   '_HiliteControl';$1110
+            tdf   '_HiliteCtlByID';$3F10
             tdf   '_HiliteMenu';$2C0F
             tdf   '_HiliteWindow';$220E
             tdf   '_HiWord';$180B
@@ -517,7 +557,8 @@ h           tdf   '_HandToHand';$2A02
             tdf   '_HUnlockAll';$2302
             dw    $00,$00
 
-i           tdf   '_IMBootInit';$010B
+i           tdf   '_IBeamCursor';$1312
+            tdf   '_IMBootInit';$010B
             tdf   '_IMReset';$050B
             tdf   '_IMShutDown';$030B
             tdf   '_IMStartUp';$020B
@@ -528,6 +569,7 @@ i           tdf   '_IMBootInit';$010B
             tdf   '_InitCursor';$CA04
             tdf   '_InitialLoad';$0911
             tdf   '_InitialLoad2';$2011
+            tdf   '_InitMIDIDriver';$2723
             tdf   '_InitMouse';$1803
             tdf   '_InitPalette';$2F0F
             tdf   '_InitPort';$1904
@@ -535,6 +577,7 @@ i           tdf   '_IMBootInit';$010B
             tdf   '_InsertMenu';$0D0F
             tdf   '_InsertMItem';$0F0F
             tdf   '_InsertMItem2';$3F0F
+            tdf   '_InsertPathMItems';$500F
             tdf   '_InsetRect';$4C04
             tdf   '_InsetRgn';$7004
             tdf   '_InstallCDA';$0F05
@@ -545,6 +588,7 @@ i           tdf   '_IMBootInit';$010B
             tdf   '_Int2Hex';$220B
             tdf   '_IntSource';$2303
             tdf   '_InvalCtls';$3710
+            tdf   '_InvalOneCtlByID';$3E10
             tdf   '_InvalRect';$3A0E
             tdf   '_InvalRgn';$3B0E
             tdf   '_InvertArc';$6504
@@ -559,13 +603,15 @@ i           tdf   '_IMBootInit';$010B
 
 j           dw    $00,$00
 
-k           tdf   '_KillControls';$0B10
+k           tdf   '_KillAllNotes';$0D23
+            tdf   '_KillControls';$0B10
             tdf   '_KillPicture';$BB04
             tdf   '_KillPoly';$C304
             dw    $00,$00
 
 l           tdf   '_LEActivate';$0F14
             tdf   '_LEBootInit';$0114
+            tdf   '_LEClassifyKey';$2514
             tdf   '_LEClick';$0D14
             tdf   '_LECopy';$1314
             tdf   '_LECut';$1214
@@ -602,6 +648,7 @@ l           tdf   '_LEActivate';$0F14
             tdf   '_Line';$3D04
             tdf   '_LineTo';$3C04
             tdf   '_ListBootInit';$011C
+            tdf   '_ListKey';$171C
             tdf   '_ListReset';$051C
             tdf   '_ListShutDown';$031C
             tdf   '_ListStartUp';$021C
@@ -617,12 +664,15 @@ l           tdf   '_LEActivate';$0F14
             tdf   '_LoadFont';$121B
             tdf   '_LoadOneTool';$0F01
             tdf   '_LoadResource';$0E1E
+            tdf   '_LoadResource2';$291E
             tdf   '_LoadScrap';$0A16
             tdf   '_LoadSegName';$0D11
             tdf   '_LoadSegNum';$0B11
             tdf   '_LoadSysFont';$131B
             tdf   '_LoadTools';$0E01
             tdf   '_LocalToGlobal';$8404
+            tdf   '_Locate';$1123
+            tdf   '_LocateEnd';$1B23
             tdf   '_Long2Dec';$270B
             tdf   '_Long2Fix';$1A0B
             tdf   '_Long2Hex';$230B
@@ -647,6 +697,50 @@ m           tdf   '_MakeNextCtlTarget';$2710
             tdf   '_MarkResourceChange';$101E
             tdf   '_MatchResourceHandle';$1E1E
             tdf   '_MaxBlock';$1C02
+            tdf   '_MCBinToTime';$0D26
+            tdf   '_MCBootInit';$0126
+            tdf   '_MCControl';$1B26
+            tdf   '_MCDShutDown';$1526
+            tdf   '_MCDStartUp';$1426
+            tdf   '_MCGetDiscID';$2826
+            tdf   '_MCGetDiscTitle';$1226
+            tdf   '_MCGetDiscTOC';$2726
+            tdf   '_MCGetErrorMsg';$0926
+            tdf   '_MCGetFeatures';$1626
+            tdf   '_MCGetName';$2D26
+            tdf   '_MCGetNoTracks';$2926
+            tdf   '_MCGetPosition';$2426
+            tdf   '_MCGetProgram';$1026
+            tdf   '_MCGetSpeeds';$1D26
+            tdf   '_MCGetStatus';$1A26
+            tdf   '_MCGetTimes';$2626
+            tdf   '_MCGetTrackTitle';$0E26
+            tdf   '_MCJog';$2026
+            tdf   '_MCLoadDriver';$0A26
+            tdf   '_MCPause';$1826
+            tdf   '_MCPlay';$1726
+            tdf   '_MCRecord';$2A26
+            tdf   '_MCReset';$0526
+            tdf   '_MCScan';$1C26
+            tdf   '_MCSearchDone';$2226
+            tdf   '_MCSearchTo';$2126
+            tdf   '_MCSearchWait';$2326
+            tdf   '_MCSendRawData';$1926
+            tdf   '_MCSetAudio';$2526
+            tdf   '_MCSetDiscTitle';$1326
+            tdf   '_MCSetProgram';$1126
+            tdf   '_MCSetTrackTitle';$0F26
+            tdf   '_MCSetVolume';$2E26
+            tdf   '_MCShutDown';$0326
+            tdf   '_MCSpeed';$1E26
+            tdf   '_MCStartUp';$0226
+            tdf   '_MCStatus';$0626
+            tdf   '_MCStop';$2B26
+            tdf   '_MCStopAt';$1F26
+            tdf   '_MCTimeToBin';$0C26
+            tdf   '_MCUnLoadDriver';$0B26
+            tdf   '_MCVersion';$0426
+            tdf   '_MCWaitRawData';$2C26
             tdf   '_MenuBootInit';$010F
             tdf   '_MenuGlobal';$230F
             tdf   '_MenuKey';$090F
@@ -658,23 +752,20 @@ m           tdf   '_MakeNextCtlTarget';$2710
             tdf   '_MenuStartUp';$020F
             tdf   '_MenuStatus';$060F
             tdf   '_MenuVersion';$040F
+            tdf   '_Merge';$1C23
             tdf   '_MessageByName';$1701
             tdf   '_MessageCenter';$1501
             tdf   '_MidiBootInit';$0120
             tdf   '_MidiClock';$0B20
             tdf   '_MidiControl';$0920
-            tdf   '_MidiConvert';$1320
             tdf   '_MidiDevice';$0A20
             tdf   '_MidiInfo';$0C20
-            tdf   '_MidiPlaySeq';$1120
+            tdf   '_MIDIMessage';$1A23
             tdf   '_MidiReadPacket';$0D20
-            tdf   '_MidiRecordSeq';$0F20
             tdf   '_MidiReset';$0520
             tdf   '_MidiShutDown';$0320
             tdf   '_MidiStartUp';$0220
             tdf   '_MidiStatus';$0620
-            tdf   '_MidiStopPlay';$1220
-            tdf   '_MidiStopRecord';$1020
             tdf   '_MidiVersion';$0420
             tdf   '_MidiWritePacket';$0E20
             tdf   '_MMBootInit';$0102
@@ -690,6 +781,14 @@ m           tdf   '_MakeNextCtlTarget';$2710
             tdf   '_MovePortTo';$2204
             tdf   '_MoveTo';$3A04
             tdf   '_MoveWindow';$190E
+            tdf   '_MSBootInit';$0123
+            tdf   '_MSReset';$0523
+            tdf   '_MSResume';$2323
+            tdf   '_MSShutDown';$0323
+            tdf   '_MSStartUp';$0223
+            tdf   '_MSStatus';$0623
+            tdf   '_MSSuspend';$2223
+            tdf   '_MSVersion';$0423
             tdf   '_MTBootInit';$0103
             tdf   '_MTReset';$0503
             tdf   '_MTShutDown';$0303
@@ -698,6 +797,10 @@ m           tdf   '_MakeNextCtlTarget';$2710
             tdf   '_MTVersion';$0403
             tdf   '_Multiply';$090B
             tdf   '_Munger';$2803
+            tdf   '_MWGetCtlPart';$650E
+            tdf   '_MWSetMenuProc';$660E
+            tdf   '_MWSetUpEditMenu';$680E
+            tdf   '_MWStdDrawProc';$670E
             dw    $00,$00
 
 n           tdf   '_NewControl';$0910
@@ -741,6 +844,7 @@ o           tdf   '_ObscureCursor';$9204
             tdf   '_OpenPoly';$C104
             tdf   '_OpenPort';$1804
             tdf   '_OpenResourceFile';$0A1E
+            tdf   '_OpenResourceFileByID';$2E1E
             tdf   '_OpenRgn';$6D04
             tdf   '_OSEventAvail';$1706
             dw    $00,$00
@@ -758,12 +862,14 @@ p           tdf   '_PackBytes';$2603
             tdf   '_PenNormal';$3604
             tdf   '_PicComment';$B804
             tdf   '_PinRect';$210E
-            tdf   '_PMActive';$0613
+            tdf   '_PixelMap2Rgn';$1012
+            tdf   '_PlayNote';$0B23
             tdf   '_PMBootInit';$0113
             tdf   '_PMLoadDriver';$3513
             tdf   '_PMReset';$0513
             tdf   '_PMShutDown';$0313
             tdf   '_PMStartUp';$0213
+            tdf   '_PMStatus';$0613
             tdf   '_PMUnloadDriver';$3413
             tdf   '_PMVersion';$0413
             tdf   '_PopUpMenuSelect';$3C0F
@@ -777,6 +883,7 @@ p           tdf   '_PackBytes';$2603
             tdf   '_PrDefault';$0913
             tdf   '_PrDevAsyncRead';$2113
             tdf   '_PrDevClose';$1F13
+            tdf   '_PrDevIsItSafe';$3013
             tdf   '_PrDevOpen';$1C13
             tdf   '_PrDevPrChanged';$1913
             tdf   '_PrDevRead';$1D13
@@ -784,7 +891,7 @@ p           tdf   '_PackBytes';$2603
             tdf   '_PrDevStartup';$1A13
             tdf   '_PrDevStatus';$2013
             tdf   '_PrDevWrite';$1E13
-            tdf   '_PrDevWriteBack';$2213
+            tdf   '_PrDevWriteBackground';$2213
             tdf   '_PrDriverVer';$2313
             tdf   '_PrError';$1413
             tdf   '_PrGetDocName';$3613
@@ -853,12 +960,15 @@ r           tdf   '_Random';$8604
             tdf   '_RemoveDItem';$0E15
             tdf   '_RemoveFromOOMQueue';$0D02
             tdf   '_RemoveFromRunQ';$2005
+            tdf   '_RemoveMIDIDriver';$2823
+            tdf   '_RemoveMItemStruct';$4B0F
             tdf   '_RemoveNDA';$2205
             tdf   '_RemoveResource';$0F1E
             tdf   '_RenamePathname';$1311
             tdf   '_ResetAlertStage';$3515
             tdf   '_ResetMember';$0F1C
             tdf   '_ResetMember2';$131C
+            tdf   '_ResizeInfoBar';$6A0E
             tdf   '_ResizeWindow';$5C0E
             tdf   '_ResourceBootInit';$011E
             tdf   '_ResourceConverter';$281E
@@ -870,9 +980,14 @@ r           tdf   '_Random';$8604
             tdf   '_RestAll';$0C05
             tdf   '_Restart';$0A11
             tdf   '_RestoreBufDims';$CE04
+            tdf   '_RestoreColorTable';$1712
             tdf   '_RestoreHandle';$0B02
             tdf   '_RestoreTextState';$1401
             tdf   '_RestScrn';$0A05
+            tdf   '_RMFindNamedResource';$2A1E
+            tdf   '_RMGetResourceName';$2B1E
+            tdf   '_RMLoadNamedResource';$2C1E
+            tdf   '_RMSetResourceName';$2D1E
             dw    $00,$00
 
 s           tdf   '_SANEBootInit';$010A
@@ -887,6 +1002,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SaveTextState';$1301
             tdf   '_Say';$0F34
             tdf   '_ScalePt';$8904
+            tdf   '_ScanDevices';$3D03
             tdf   '_SchAddTask';$0907
             tdf   '_SchBootInit';$0107
             tdf   '_SchFlush';$0A07
@@ -906,40 +1022,37 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SectRect';$4D04
             tdf   '_SectRgn';$7104
             tdf   '_SeedFill';$0D12
-            tdf   '_SelCtlIcons';$1810
+            tdf   '_SelectIText';$2115
             tdf   '_SelectMember';$0D1C
             tdf   '_SelectMember2';$141C
             tdf   '_SelectWindow';$110E
-            tdf   '_SelIText';$2115
             tdf   '_SendBehind';$140E
             tdf   '_SendEventToCtl';$2910
             tdf   '_SendInfo';$0909
+            tdf   '_SendRequest';$1C01
             tdf   '_SeqAllNotesOff';$0D1A
             tdf   '_SeqBootInit';$011A
-            tdf   '_SeqClearIncr';$0A1A
-            tdf   '_SeqGetLoc';$0C1A
-            tdf   '_SeqGetTimer';$0B1A
+            tdf   '_SeqPlayer';$1523
             tdf   '_SeqReset';$051A
-            tdf   '_SeqSetIncr';$091A
-            tdf   '_SeqSetInstTable';$121A
-            tdf   '_SeqSetTrkInfo';$0E1A
             tdf   '_SeqShutDown';$031A
-            tdf   '_SeqStartInts';$131A
             tdf   '_SeqStartUp';$021A
             tdf   '_SeqStatus';$061A
-            tdf   '_SeqStepSeq';$101A
-            tdf   '_SeqStopInts';$141A
             tdf   '_SeqVersion';$041A
             tdf   '_ServeMouse';$1F03
+            tdf   '_Set640Color';$DB04
             tdf   '_SetAbsClamp';$2A03
             tdf   '_SetAbsScale';$1209
+            tdf   '_SetACEExpState';$0E1D
             tdf   '_SetAllSCBs';$1404
             tdf   '_SetArcRot';$B004
             tdf   '_SetAutoKeyLimit';$1A06
             tdf   '_SetBackColor';$A204
             tdf   '_SetBackPat';$3404
             tdf   '_SetBarColors';$170F
+            tdf   '_SetBasicChannel';$0923
+            tdf   '_SetBeat';$1923
             tdf   '_SetBufDims';$CB04
+            tdf   '_SetCallBack';$1723
             tdf   '_SetCharExtra';$D404
             tdf   '_SetClip';$2404
             tdf   '_SetClipHandle';$C604
@@ -949,6 +1062,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetContentOrigin';$3F0E
             tdf   '_SetContentOrigin2';$570E
             tdf   '_SetCtlAction';$2010
+            tdf   '_SetCtlIcons';$1810
             tdf   '_SetCtlID';$2B10
             tdf   '_SetCtlMoreFlags';$2F10
             tdf   '_SetCtlParamPtr';$3410
@@ -956,6 +1070,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetCtlRefCon';$2210
             tdf   '_SetCtlTitle';$0C10
             tdf   '_SetCtlValue';$1910
+            tdf   '_SetCtlValueByID';$3C10
             tdf   '_SetCurResourceApp';$131E
             tdf   '_SetCurResourceFile';$111E
             tdf   '_SetCursor';$8E04
@@ -979,38 +1094,49 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetForeColor';$A004
             tdf   '_SetFrameColor';$0F0E
             tdf   '_SetGrafProcs';$4404
+            tdf   '_SetHandleID';$3002
             tdf   '_SetHandleSize';$1902
             tdf   '_SetHeartBeat';$1203
+            tdf   '_SetIncr';$091A
             tdf   '_SetInfoDraw';$160E
             tdf   '_SetInfoRefCon';$360E
             tdf   '_SetInGlobals';$090C
             tdf   '_SetInputDevice';$0F0C
+            tdf   '_SetInstrument';$1423
+            tdf   '_SetInstTable';$121A
             tdf   '_SetInterruptState';$3003
             tdf   '_SetIntUse';$B604
             tdf   '_SetIText';$2015
             tdf   '_SetKeyTranslation';$1C06
+            tdf   '_SetLETextByID';$3A10
             tdf   '_SetMasterSCB';$1604
             tdf   '_SetMaxGrow';$430E
             tdf   '_SetMenuBar';$390F
             tdf   '_SetMenuFlag';$1F0F
             tdf   '_SetMenuID';$370F
+            tdf   '_SetMenuTitle';$210F
             tdf   '_SetMenuTitle2';$400F
+            tdf   '_SetMetro';$1E23
+            tdf   '_SetMIDIMode';$0A23
+            tdf   '_SetMIDIPort';$1323
+            tdf   '_SetMileStone';$0AFF
             tdf   '_SetMItem';$240F
             tdf   '_SetMItem2';$410F
             tdf   '_SetMItemBlink';$280F
             tdf   '_SetMItemFlag';$260F
+            tdf   '_SetMItemFlag2';$4D0F
+            tdf   '_SetMItemIcon';$470F
             tdf   '_SetMItemID';$380F
             tdf   '_SetMItemMark';$330F
             tdf   '_SetMItemName';$3A0F
             tdf   '_SetMItemName2';$420F
+            tdf   '_SetMItemStruct';$490F
             tdf   '_SetMItemStyle';$350F
-            tdf   '_SetMnuTitle';$210F
             tdf   '_SetMouse';$1903
-            tdf   '_SetMouseLoc';$9304
             tdf   '_SetMTitleStart';$190F
             tdf   '_SetMTitleWidth';$1D0F
-            tdf   '_SetOrgnMask';$340E
             tdf   '_SetOrigin';$2304
+            tdf   '_SetOriginMask';$340E
             tdf   '_SetOutGlobals';$0A0C
             tdf   '_SetOutputDevice';$100C
             tdf   '_SetPage';$470E
@@ -1020,6 +1146,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetPenSize';$2C04
             tdf   '_SetPenState';$2A04
             tdf   '_SetPicSave';$3E04
+            tdf   '_SetPlayTrack';$0F23
             tdf   '_SetPolySave';$4204
             tdf   '_SetPort';$1B04
             tdf   '_SetPortLoc';$1D04
@@ -1031,6 +1158,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetPurgeStat';$0F1B
             tdf   '_SetRandSeed';$8704
             tdf   '_SetRect';$4A04
+            tdf   '_SetRecTrack';$0E23
             tdf   '_SetRectRgn';$6B04
             tdf   '_SetResourceAttr';$1C1E
             tdf   '_SetResourceFileDepth';$251E
@@ -1052,15 +1180,21 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SetSysField';$4804
             tdf   '_SetSysFont';$B204
             tdf   '_SetSysWindow';$4B0E
+            tdf   '_SetTempo';$1623
             tdf   '_SetTextFace';$9A04
             tdf   '_SetTextMode';$9C04
             tdf   '_SetTextSize';$D204
+            tdf   '_SetTrackOut';$2623
+            tdf   '_SetTrkInfo';$0E1A
             tdf   '_SetTSPtr';$0A01
+            tdf   '_SetTuningTable';$2423
             tdf   '_SetUserField';$4604
             tdf   '_SetUserSoundIRQV';$1308
             tdf   '_SetVector';$1003
+            tdf   '_SetVelComp';$1223
             tdf   '_SetVisHandle';$C804
             tdf   '_SetVisRgn';$B404
+            tdf   '_SetWAP';$0D01
             tdf   '_SetWFrame';$2D0E
             tdf   '_SetWindowIcons';$4E0E
             tdf   '_SetWRefCon';$280E
@@ -1085,6 +1219,8 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SFStartUp';$0217
             tdf   '_SFStatus';$0617
             tdf   '_SFVersion';$0417
+            tdf   '_ShowBootInfo';$3C03
+            tdf   '_ShowClipboard';$1516
             tdf   '_ShowControl';$0F10
             tdf   '_ShowCursor';$9104
             tdf   '_ShowDItem';$2315
@@ -1101,7 +1237,7 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_SoundReset';$0508
             tdf   '_SoundShutDown';$0308
             tdf   '_SoundStartUp';$0208
-            tdf   '_SoundStatus';$0608
+            tdf   '_SoundToolStatus';$0608
             tdf   '_SoundVersion';$0408
             tdf   '_SpecialRect';$0C12
             tdf   '_SpeechBootInit';$0134
@@ -1115,19 +1251,26 @@ s           tdf   '_SANEBootInit';$010A
             tdf   '_StartDrawing';$4D0E
             tdf   '_StartFrameDrawing';$5A0E
             tdf   '_StartInfoDrawing';$500E
+            tdf   '_StartInts';$131A
             tdf   '_StartSeq';$0F1A
             tdf   '_StartSeqRel';$151A
             tdf   '_StartUpTools';$1801
             tdf   '_StatusID';$2203
             tdf   '_StatusTextDev';$170C
+            tdf   '_StepSeq';$101A
             tdf   '_StillDown';$0E06
             tdf   '_StopAlert';$1815
+            tdf   '_StopInts';$141A
+            tdf   '_StopNote';$0C23
             tdf   '_StopSeq';$111A
             tdf   '_StringBounds';$AD04
+            tdf   '_StringToText';$3B03
             tdf   '_StringWidth';$A904
             tdf   '_SubPt';$8104
             tdf   '_SyncADBReceive';$0E09
             tdf   '_SysBeep';$2C03
+            tdf   '_SysBeep2';$3803
+            tdf   '_SysExOut';$1823
             tdf   '_SysFailMgr';$1503
             tdf   '_SystemClick';$1705
             tdf   '_SystemEdit';$1805
@@ -1139,10 +1282,114 @@ t           tdf   '_TaskMaster';$1D0E
             tdf   '_TaskMasterContent';$5D0E
             tdf   '_TaskMasterDA';$5F0E
             tdf   '_TaskMasterKey';$5E0E
+            tdf   '_TCPIPAbortTCP';$3036
+            tdf   '_TCPIPAcceptTCP';$4F36
+            tdf   '_TCPIPBootInit';$0136
+            tdf   '_TCPIPCancelDNR';$2036
+            tdf   '_TCPIPCloseTCP';$2F36
+            tdf   '_TCPIPConnect';$1236
+            tdf   '_TCPIPConvertIPCToHex';$3F36
+            tdf   '_TCPIPConvertIPToASCII';$0E36
+            tdf   '_TCPIPConvertIPToCASCII';$5836
+            tdf   '_TCPIPConvertIPToClass';$4136
+            tdf   '_TCPIPConvertIPToHex';$0D36
+            tdf   '_TCPIPDebugHex';$3B36
+            tdf   '_TCPIPDebugTCP';$3D36
+            tdf   '_TCPIPDisconnect';$1336
+            tdf   '_TCPIPDNRNameToIP';$2136
+            tdf   '_TCPIPEditLinkConfig';$4B36
+            tdf   '_TCPIPGetAliveFlag';$5A36
+            tdf   '_TCPIPGetAliveMinutes';$5C36
+            tdf   '_TCPIPGetAuthMessage';$5736
+            tdf   '_TCPIPGetBootConnectFlag';$5F36
+            tdf   '_TCPIPGetConnectData';$1636
+            tdf   '_TCPIPGetConnectMethod';$1036
+            tdf   '_TCPIPGetConnectMsgFlag';$4236
+            tdf   '_TCPIPGetConnectStatus';$0936
+            tdf   '_TCPIPGetDatagramCount';$2736
+            tdf   '_TCPIPGetDebugHex';$3A36
+            tdf   '_TCPIPGetDebugTCP';$3C36
+            tdf   '_TCPIPGetDestination';$6236
+            tdf   '_TCPIPGetDisconnectData';$1836
+            tdf   '_TCPIPGetDNRTimeouts';$6736
+            tdf   '_TCPIPGetDNS';$1C36
+            tdf   '_TCPIPGetDP';$3936
+            tdf   '_TCPIPGetErrorTable';$0A36
+            tdf   '_TCPIPGetHostName';$5136
+            tdf   '_TCPIPGetLinkLayer';$5436
+            tdf   '_TCPIPGetLinkVariables';$4A36
+            tdf   '_TCPIPGetLoginCount';$2936
+            tdf   '_TCPIPGetModuleNames';$4C36
+            tdf   '_TCPIPGetMTU';$1436
+            tdf   '_TCPIPGetMyIPAddress';$0F36
+            tdf   '_TCPIPGetNextDatagram';$2836
+            tdf   '_TCPIPGetPassword';$4636
+            tdf   '_TCPIPGetReconnectStatus';$0B36
+            tdf   '_TCPIPGetSourcePort';$3236
+            tdf   '_TCPIPGetSysEventTrigger';$6536
+            tdf   '_TCPIPGetTOS';$3336
+            tdf   '_TCPIPGetTTL';$3536
+            tdf   '_TCPIPGetTuningTable';$1E36
+            tdf   '_TCPIPGetUserEventTrigger';$6336
+            tdf   '_TCPIPGetUsername';$4436
+            tdf   '_TCPIPGetUserRecord';$3E36
+            tdf   '_TCPIPGetUserStatistic';$4936
+            tdf   '_TCPIPListenTCP';$4E36
+            tdf   '_TCPIPLoadPreferences';$1A36
+            tdf   '_TCPIPLogin';$2336
+            tdf   '_TCPIPLogout';$2436
+            tdf   '_TCPIPLongVersion';$0836
+            tdf   '_TCPIPMangleDomainName';$5936
+            tdf   '_TCPIPOpenTCP';$2C36
+            tdf   '_TCPIPPoll';$2236
+            tdf   '_TCPIPPtrToPtr';$5536
+            tdf   '_TCPIPPtrToPtrNeg';$5636
+            tdf   '_TCPIPReadLineTCP';$5E36
+            tdf   '_TCPIPReadTCP';$2E36
+            tdf   '_TCPIPRebuildModuleList';$4D36
+            tdf   '_TCPIPReceiveICMPEcho';$2B36
+            tdf   '_TCPIPReconnect';$0C36
+            tdf   '_TCPIPReset';$0536
+            tdf   '_TCPIPSavePreferences';$1B36
+            tdf   '_TCPIPSendICMP';$2536
+            tdf   '_TCPIPSendICMPEcho';$2A36
+            tdf   '_TCPIPSendIPDatagram';$4036
+            tdf   '_TCPIPSendUDP';$2636
+            tdf   '_TCPIPSetAliveFlag';$5B36
+            tdf   '_TCPIPSetAliveMinutes';$5D36
+            tdf   '_TCPIPSetBootConnectFlag';$6036
+            tdf   '_TCPIPSetConnectData';$1736
+            tdf   '_TCPIPSetConnectMethod';$1136
+            tdf   '_TCPIPSetConnectMsgFlag';$4336
+            tdf   '_TCPIPSetDisconnectData';$1936
+            tdf   '_TCPIPSetDNRTimeouts';$6836
+            tdf   '_TCPIPSetDNS';$1D36
+            tdf   '_TCPIPSetHostName';$5236
+            tdf   '_TCPIPSetMyIPAddress';$3836
+            tdf   '_TCPIPSetNewDestination';$5036
+            tdf   '_TCPIPSetPassword';$4736
+            tdf   '_TCPIPSetSourcePort';$3736
+            tdf   '_TCPIPSetSysEventTrigger';$6636
+            tdf   '_TCPIPSetTOS';$3436
+            tdf   '_TCPIPSetTTL';$3636
+            tdf   '_TCPIPSetTuningTable';$1F36
+            tdf   '_TCPIPSetUDPDispatch';$6136
+            tdf   '_TCPIPSetUserEventTrigger';$6436
+            tdf   '_TCPIPSetUsername';$4536
+            tdf   '_TCPIPShutDown';$0336
+            tdf   '_TCPIPStartUp';$0236
+            tdf   '_TCPIPStatus';$0636
+            tdf   '_TCPIPStatusTCP';$3136
+            tdf   '_TCPIPStatusUDP';$5336
+            tdf   '_TCPIPValidateIPCString';$1536
+            tdf   '_TCPIPValidateIPString';$4836
+            tdf   '_TCPIPVersion';$0436
+            tdf   '_TCPIPWriteTCP';$2D36
             tdf   '_TEActivate';$0F22
             tdf   '_TEBootInit';$0122
             tdf   '_TEClear';$1922
             tdf   '_TEClick';$1122
+            tdf   '_TECompactRecord';$2822
             tdf   '_TECopy';$1722
             tdf   '_TECut';$1622
             tdf   '_TEDeactivate';$1022
@@ -1198,6 +1445,7 @@ t           tdf   '_TaskMaster';$1D0E
             tdf   '_TotalMem';$1D02
             tdf   '_TrackControl';$1510
             tdf   '_TrackGoAway';$180E
+            tdf   '_TrackToChannel';$1023
             tdf   '_TrackZoom';$260E
             dw    $00,$00
 
@@ -1212,6 +1460,8 @@ u           tdf   '_UDivide';$0B0B
             tdf   '_UnPackBytes';$2703
             tdf   '_UpdateDialog';$2515
             tdf   '_UpdateResourcefile';$0D1E
+            tdf   '_UpdateWindow';$6C0E
+            tdf   '_UseColorTable';$1612
             tdf   '_UserShutDown';$1211
             dw    $00,$00
 
@@ -1245,10 +1495,13 @@ v           tdf   '_ValidRect';$3C0E
             tdf   '_VDStartUp';$0221
             tdf   '_VDStatus';$0621
             tdf   '_VDVersion';$0421
+            tdf   '_VersionString';$3903
             dw    $00,$00
 
 w           tdf   '_WaitCursor';$0A12
             tdf   '_WaitMouseUp';$0F06
+            tdf   '_WaitUntil';$3A03
+            tdf   '_WhooshRect';$1412
             tdf   '_WindBootInit';$010E
             tdf   '_WindDragRect';$530E
             tdf   '_WindNewRes';$250E
