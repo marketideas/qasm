@@ -9,8 +9,12 @@
             mx    %00               ; make sure we're in 16-bit mode!
 
             ;use   util.macs
-            use   qatools.macs
+            use   ../macros/builtin.macs
+            use   ../macros/qatools.macs
             use   ../data/qa.equates
+
+            use   asm.macs
+
 
             brl   start
 
@@ -398,7 +402,9 @@ indexj      da    5*2               ; these indexes is crucial
 array       da    1,1,2,3,5,8,13,21,54,75,129,204
             da    323,527,850,1377,2227
 
+            do    0
             err   *-array-34
+            fin
 
 *=================================================
 * SEED seeds generator from 16 bit contents of AXY
@@ -477,5 +483,5 @@ randomize   php
             lst   off
 
             ;typ   exe
-            ;sav   utility/qasmgs.l
+            sav   qasmgs.l
 

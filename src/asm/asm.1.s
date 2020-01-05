@@ -29,7 +29,7 @@ asm          php
              dey
 :dec1        dex
 
-:nodec       stx   filelendd
+:nodec       stx   filelen
              sty   filelen+2
 
              ldy   #$04
