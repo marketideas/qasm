@@ -5,7 +5,7 @@ _DisposeAll     MAC
         tll     $1102
         <<<
 _NewHandle      MAC
-        tll     $902
+        tll     $0902
         <<<
 _GetHandleSize  MAC
         tll     $1802
@@ -18,6 +18,26 @@ _HLock  MAC
         <<<
 _HUnlock        MAC
         tll     $2202
+        <<<
+_LongDivide     MAC
+        tll     $0d0b
+        <<<
+_Int2Hex        MAC
+        tll     $220b
+        <<<
+_PtrToHand      MAC
+        tll     $2802
+        <<<
+_BlockMove      MAC
+        tll     $2b02
+        <<<
+
+_CreateResourceFile MAC
+        tll     $091e
+        <<<
+
+_ReadAsciiTime  MAC
+        tll     $0f03
         <<<
 
 _setmark        MAC

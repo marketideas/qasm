@@ -90,7 +90,7 @@ writerez1       php
                 lda         :outacc
                 pha
                 psl         #asmpath
-                tll         $091e                     ;_CreateResourceFile
+                _CreateResourceFile
                 jcs         :err
 :copy           psl         #$00
                 psl         #rezbuffsize
@@ -99,7 +99,7 @@ writerez1       php
                 pha
                 pea         $8000
                 psl         #$00
-                _newhandle
+                _NewHandle
                 plx
                 ply
                 jcs         :err
@@ -179,7 +179,7 @@ writerez1       php
                 ora         :handle+2
                 beq         :pla1
                 psl         :handle
-                _disposehandle
+                _DisposeHandle
                 stz         :handle
                 stz         :handle+2
 :pla1           pla
@@ -344,7 +344,7 @@ jumpentry       php
 :enter          jsr         newjmpentry
                 bcs         :sec
                 psl         jmphdl
-                _hlock
+                _HLock
                 lda         interseg
                 and         #$7fff
                 sta         jseg
@@ -378,7 +378,7 @@ jumpentry       php
                 sec
                 ror         dynamic
 :clc            psl         jmphdl
-                _hunlock
+                _HUnlock
                 plx
                 ply
                 plp
@@ -389,7 +389,7 @@ jumpentry       php
                 ora         jmphdl+2
                 beq         :sec1
                 psl         jmphdl
-                _hunlock
+                _HUnlock
 :sec1           pla
                 plx
                 ply
@@ -417,7 +417,7 @@ newjmpentry     php
                 pha
                 pea         $8000
                 psl         #$00
-                _newhandle
+                _NewHandle
                 plx
                 ply
                 jcs         :err
@@ -436,7 +436,7 @@ newjmpentry     php
                 _HUnlock
                 psl         #$00
                 psl         jmphdl
-                _gethandlesize
+                _GetHandleSize
                 pll         :size
                 lda         :size
                 clc
@@ -449,10 +449,10 @@ newjmpentry     php
                 bne         :toobig
                 psl         :size
                 psl         jmphdl
-                _sethandlesize
+                _SetHandleSize
                 bcs         :err
                 psl         jmphdl
-                _Hlock
+                _HLock
                 ldy         #$02
                 lda         [jmphdl]
                 sta         jmpptr
@@ -640,7 +640,7 @@ writejmpseg     php
 
 :omf3
                 psl         jmphdl
-                _hlock
+                _HLock
                 lda         jmphdl
                 sta         jmpptr
                 lda         jmphdl+2
@@ -652,7 +652,7 @@ writejmpseg     php
                 sta         :buffer+2
                 psl         #$00
                 psl         jmphdl
-                _gethandlesize
+                _GetHandleSize
                 pll         :request
 
                 lda         :request
@@ -1518,7 +1518,7 @@ newsegment      php
                 pha
                 pea         $00
                 psl         #$00
-                tll         $0902
+                _NewHandle
                 plx
                 ply
                 jcs         :sec1
@@ -1537,10 +1537,10 @@ newsegment      php
                 asl
                 pha
                 psl         segmenthdl
-                tll         $1902                     ;set handle size
+                _SetHandleSize
                 jcs         :sec1
                 psl         segmenthdl
-                _Hlock
+                _HLock
                 lda         segmenthdl
                 sta         segmentptr
                 lda         segmenthdl+2
@@ -1602,7 +1602,7 @@ inclablect      php
                 pha
                 pea         $8004                     ;page aligned/locked
                 psl         #$00
-                tll         $0902
+                _NewHandle
                 plx
                 ply
                 jcs         :sec
@@ -1650,7 +1650,7 @@ incasmlablect   php
                 pha
                 pea         $8004                     ;page aligned/locked
                 psl         #$00
-                tll         $0902
+                _NewHandle
                 plx
                 ply
                 jcs         :sec
