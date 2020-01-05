@@ -11,9 +11,12 @@
 
 doexpress    =     $01
 
-             use   4/util.macs
-             use   qatools.macs
-             use   2/qa.equates
+             use   ../macros/builtin.macs
+             use   ../macros/qatools.macs
+             use   ../data/qa.equates
+
+             use   link.macs
+
 
              brl   start
 
@@ -497,5 +500,5 @@ tempbuff     ds    130
              lst   off
 
              typ   exe
-             sav   utility/qlinkgs.l
+             sav   qlinkgs.l
 
