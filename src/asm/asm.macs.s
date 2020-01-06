@@ -17,6 +17,12 @@ _SetHandleSize MAC
 _NewHandle MAC
         tll $902
         <<<
+_PurgeAll MAC
+        tll $1302
+        <<<
+_CompactMem MAC
+        tll $1F02
+        <<<
 _ReadTimeHex MAC
         tll $D03
         <<<
@@ -26,12 +32,14 @@ _ReadAsciiTime MAC
 _SysBeep MAC
         tll $2C03
         <<<
-
 _Long2Dec MAC
         tll $270B
         <<<
 _LongDivide MAC
         tll $D0B
+        <<<
+_WriteString MAC
+        tll $1C0C
         <<<
 
 _SANEFP816      MAC
