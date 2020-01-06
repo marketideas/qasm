@@ -76,7 +76,7 @@ start       php
             lda   userid
             ora   #asmmemid
             pha
-            _disposeall
+            _DisposeAll
             pla
             pld
             plb
@@ -328,7 +328,7 @@ printdec    php
             psl   #:str
             pea   #11
             pea   $00
-            tll   $270b
+            _Long2Dec
             sep   $30
             ldy   #$00
             ldx   #$00
@@ -347,7 +347,7 @@ printdec    php
             rep   $30
             jsr   drawchar
 * pha
-* tll $180c
+* _WriteChar
             sep   $30
             plx
             ply

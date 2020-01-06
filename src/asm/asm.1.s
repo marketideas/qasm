@@ -20,7 +20,7 @@ asm          php
 :getlen      pha
              pha
              psl   filehandle
-             tll   $1802
+             _GetHandleSize
              plx
              ply
              jcs   :incerr
@@ -876,7 +876,7 @@ printline    php
              pha
              _QATabToCol
              psl   #opcode
-             tll   $1c0c
+             _WriteString
              lda   tabs+2
              and   #$ff
              pha
@@ -887,7 +887,7 @@ printline    php
              dec   linebuff
              rep   $20
              psl   #linebuff
-             tll   $1c0c
+             _WriteString
 :comment     rep   $30
              lda   tabs+3
              and   #$ff
@@ -895,7 +895,7 @@ printline    php
              _QATabToCol
 :comment1    rep   $30
              psl   #comment
-             tll   $1c0c
+             _WriteString
 :xit         rep   $30
              jsr   printcycles
              lda   #$0d
@@ -1260,7 +1260,7 @@ getmemory
              pha
              pea   $8000                               ;locked page aligned
              psl   #$00
-             tll   $0902
+             _NewHandle
              plx
              ply
              bcc   :m1out
@@ -1294,7 +1294,7 @@ getmemory
              pha
              pea   $8000                               ;locked page aligned no bank cross
              psl   #$00
-             tll   $0902
+             _NewHandle
              plx
              ply
              bcc   :m2out
@@ -1328,7 +1328,7 @@ getmemory
              pha
              pea   $8000
              psl   #$00
-             tll   $0902
+             _NewHandle
              plx
              ply
              bcc   :m3out
@@ -1362,8 +1362,8 @@ getmemory
              sec
              ror   :purgeflag
              pea   $00
-             tll   $1302                               ;purgeall
-             tll   $1f02                               ;compactmem
+             _PurgeAll
+             _CompactMem
              clc
              rts
 :psec        sec
@@ -1374,15 +1374,15 @@ disposemem   php
              ldal  userid
              ora   #memid
              pha
-             _disposeall
+             _DisposeAll
              ldal  userid
              ora   #putid
              pha
-             _disposeall
+             _DisposeAll
              ldal  userid
              ora   #useid
              pha
-             _disposeall
+             _DisposeAll
              plp
              rts
 
@@ -1605,7 +1605,7 @@ inclablect   php
              pha
              pea   $8004                               ;page aligned/locked
              psl   #$00
-             tll   $0902
+             _NewHandle
              plx
              ply
              jcs   :sec

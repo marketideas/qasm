@@ -162,13 +162,13 @@ dskop        php
              pha
              lda           objhdl
              pha
-             _hunlock
+             _HUnlock
              psl           #dskobjsize+1
              lda           objhdl+2
              pha
              lda           objhdl
              pha
-             tll           $1902                                     ;set handlesize
+             _SetHandleSize
              lda           #dskobjsize
              sta           objsize
              lda           objhdl+2
@@ -177,7 +177,7 @@ dskop        php
              lda           objhdl
              sta           workspace
              pha
-             _hlock
+             _HLock
              ldy           #$02
              lda           [workspace]
              sta           objzpptr
@@ -841,7 +841,7 @@ putop        php
              lda           userid
              ora           #putid
              pha
-             _disposeall
+             _DisposeAll
              sec
              ror           :purgeflag
              lda           #$0000
@@ -877,7 +877,7 @@ putop        php
              lda           putbuffer+2,x
              sta           workspace+2
              pha
-             _hlock
+             _HLock
              plx
              lda           fileptr
              sta           putbuffer+4,x
@@ -898,7 +898,7 @@ putop        php
              psl           #$00
              pei           workspace+2
              pei           workspace
-             tll           $1802                                     ;gethandlesize
+             _GetHandleSize
              plx
              ply
              cpx           #$00
@@ -1009,7 +1009,7 @@ useop        php
              lda           usebuffer+2,x
              sta           workspace+2
              pha
-             _hlock
+             _HLock
              plx
              lda           fileptr
              sta           usebuffer+4,x
@@ -1030,7 +1030,7 @@ useop        php
              psl           #$00
              pei           workspace+2
              pei           workspace
-             tll           $1802                                     ;gethandlesize
+             _GetHandleSize
              plx
              ply
              cpx           #$00
@@ -1110,7 +1110,7 @@ putend       php
              phx
              pei           workspace+2
              pei           workspace
-             _hunlock
+             _HUnlock
              plx
              lda           putbuffer+4,x
              sta           fileptr
