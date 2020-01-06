@@ -9,7 +9,7 @@ link            php
                 pha
                 phy
                 phx
-                tll       $1802
+                _GetHandleSize
                 plx
                 ply
                 jcs       :err
@@ -57,15 +57,15 @@ link            php
                 lda       userid
                 ora       #linkmemid
                 pha
-                _disposeall
+                _DisposeAll
                 lda       userid
                 ora       #linkmemid+$100
                 pha
-                _disposeall
+                _DisposeAll
                 lda       userid
                 ora       #linkmemid+$200
                 pha
-                _disposeall
+                _DisposeAll
 
 :dxit           plp
                 rts
@@ -90,7 +90,7 @@ linker          php
                 pha
                 pea       $8000
                 psl       #$00
-                tll       $0902
+                _NewHandle
                 plx
                 ply
                 jcs       :memerr
@@ -106,7 +106,7 @@ linker          php
                 pha
                 pea       $8000
                 psl       #$00
-                tll       $0902
+                _NewHandle
                 plx
                 ply
                 jcs       :memerr
@@ -977,7 +977,7 @@ datop           lda       passnum
                 clc
                 rts
 :ok             psl       #:date+1
-                tll       $0F03                     ;_ReadAsciiTime
+                _ReadAsciiTime
                 psl       #:date
                 _QADrawString
                 lda       #$0d
@@ -1415,7 +1415,7 @@ impop           sec
                 sta       :handle+2
                 psl       #$00
                 psl       :handle
-                _gethandlesize
+                _GetHandlSize
                 pll       :aux
                 lda       :aux+2
                 jne       :toolarge
@@ -1425,13 +1425,13 @@ impop           sec
                 inc       :aux
                 inc       :aux
                 psl       :handle
-                _Hunlock
+                _HUnlock
                 psl       :aux
                 psl       :handle
-                _sethandlesize
+                _SetHandleSize
                 jcs       :doserr
                 psl       :handle
-                _Hlock
+                _HLock
                 dec       :aux
                 dec       :aux
                 lda       :handle
@@ -1459,7 +1459,7 @@ impop           sec
                 lda       segnum
                 sta       files+10,x
                 psl       :handle
-                _Hlock
+                _HLock
                 lda       :aux
                 clc
                 adc       reloffset
@@ -1650,7 +1650,7 @@ lnkop           sec
                 lda       segnum
                 sta       files+10,x
                 psl       :handle
-                _Hlock
+                _HLock
                 lda       :aux
                 clc
                 adc       reloffset
@@ -1812,10 +1812,10 @@ lnkop           sec
                 and       #$ff
                 sta       :byte
                 psl       :handle
-                _Hunlock
+                _HUnlock
                 psl       #$00
                 psl       :handle
-                _gethandlesize
+                _GetHandlSsize
                 pll       :size
                 lda       :more
                 clc
@@ -1825,11 +1825,11 @@ lnkop           sec
                 inc       :size+2
 :l1             psl       :size
                 psl       :handle
-                _sethandlesize
+                _SetHandleSize
                 php
                 pha
                 psl       :handle
-                _Hlock
+                _HLock
                 pla
                 plp
                 bcc       :deref
@@ -1867,7 +1867,7 @@ lnkop           sec
                 pea       $00
                 lda       :more
                 pha
-                tll       $2b02                     ;_Blockmove
+                _BlockMove
                 ldy       :aux
                 ldx       #$00
                 sep       $20
@@ -2137,7 +2137,7 @@ buildfinal
                 pha
                 lda       tempptr
                 pha
-                _Hlock
+                _HLock
                 ldy       #$02
                 lda       [tempptr]
                 tax
@@ -3623,7 +3623,7 @@ savop           lda       #$00
                 ora       compresshdl+2
                 beq       :plp
                 psl       compresshdl
-                _disposehandle
+                _DisposeHandle
                 stz       compresshdl
                 stz       compresshdl+2
 :plp            plp
@@ -3682,7 +3682,7 @@ compress        php
                 pha
                 pea       $8000
                 psl       #$00
-                tll       $0902
+                _NewHandle
                 plx
                 ply
                 jcs       :badcompress
@@ -4898,7 +4898,7 @@ saveseg         php
                 psl       :handle
                 _HUnlock
                 psl       :handle
-                _disposehandle
+                _DisposeHandle
                 plx
                 pla
                 plp
@@ -5460,15 +5460,15 @@ disposemem      php
                 lda       userid
                 ora       #linkmemid
                 pha
-                _disposeall
+                _DisposeAll
                 lda       userid
                 ora       #linkmemid+$100
                 pha
-                _disposeall
+                _DisposeAll
                 lda       userid
                 ora       #linkmemid+$200
                 pha
-                _disposeall
+                _DisposeAll
                 stz       linksymhdl
                 stz       linksymhdl+2
                 stz       globalhdl

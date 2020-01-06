@@ -2350,7 +2350,7 @@ relop         rep       $30
               pha
               pea       $8000                                                 ;locked page aligned
               psl       #$00
-              tll       $0902
+              _NewHandle
               plx
               ply
               bcs       :merr01
@@ -3813,7 +3813,7 @@ datop         rep       $30
 :dat2         lda       passnum
               beq       :d29
               psl       #:buffer
-              tll       $0F03
+              _ReadAsciiTime
 :d29          ldy       #$00
 ]lup          lda       :buffer,y
               and       #$7f
@@ -3844,7 +3844,7 @@ datop         rep       $30
 :dat4         lda       passnum
               beq       :d49
               psl       #:buffer
-              tll       $0F03
+              _ReadAsciiTime
 :d49          ldy       #$00
 ]lup          lda       :buffer,y
               and       #$7f
@@ -3864,7 +3864,7 @@ datop         rep       $30
               pha
               pha
               pha
-              tll       $0d03
+              _ReadTimeHex
               lda       1,s
               jsr       putbyte
               pla
@@ -3906,7 +3906,7 @@ datop         rep       $30
               pha
               pha
               pha
-              tll       $0d03
+              _ReadTimeHex
               lda       1,s
               and       #$ff
               jsr       :num
@@ -4297,7 +4297,7 @@ pauop         sep       $30
               rts
 
               mx        %00
-belop         tll       $2c03
+belop         _SysBeep
               lda       #$80
               trb       listflag+1
               clc

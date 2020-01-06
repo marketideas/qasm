@@ -128,11 +128,11 @@ maxsymbols         =     $2000
 *  GSOS equates * call ID numbers
 
 * Set 'Class1' to $2000 to use Class 1 calls, $0000 for Class 0 calls
-
 prodos             =     $E100A8
 prodosIL           =     $E100B0
 inline             =     1                       ;stack or inline?
 
+                   do    0
 _Create            =     $0001.Class1
 _Destroy           =     $0002.Class1
 _OSShutdown        =     $2003                   ;class '1' only
@@ -190,4 +190,4 @@ _DRename           =     $2036                   ;class '1' only
 _GetStdRefNum      =     $2037                   ;class '1' only
 _GetRefNum         =     $2038                   ;class '1' only
 _GetRefInfo        =     $2039                   ;class '1' only
-
+                   fin

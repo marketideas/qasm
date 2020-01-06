@@ -11,9 +11,12 @@
 
 doexpress    =     $01
 
-             use   4/util.macs
-             use   qatools.macs
-             use   2/qa.equates
+             use   ../macros/builtin.macs
+             use   ../macros/qatools.macs
+             use   ../data/qa.equates
+
+             use   link.macs
+
 
              brl   start
 
@@ -84,7 +87,7 @@ start        php
              lda   userid
              ora   #linkmemid
              pha
-             _disposeall
+             _DisposeAll
              pla
              pld
              plb
@@ -237,7 +240,7 @@ doquicklink  php
              phy
              phx
              psl   #qtextend-qtext
-             tll   $2802              ;_PtrToHand
+             _PtrToHand
              psl   #quickname
              _QAGetPath
              lda   #^quickname
@@ -497,5 +500,5 @@ tempbuff     ds    130
              lst   off
 
              typ   exe
-             sav   utility/qlinkgs.l
+             sav   qlinkgs.l
 

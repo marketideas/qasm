@@ -729,7 +729,7 @@ dodiv         php
               pha
               lda   xreg
               pha
-              tll   $0d0b
+              _LongDivide
               pla
               sta   xreg
               pla
@@ -765,7 +765,7 @@ domod         php
               pha
               lda   xreg
               pha
-              tll   $0d0b
+              _LongDivide
               pla
               pla
               pla

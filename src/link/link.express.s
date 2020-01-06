@@ -6,7 +6,7 @@ writeexp       php
                pha
                psl           #tempname+12
                pea           4
-               tll           $220b                   ;int2hex
+               _Int2Hex
 
                jsr           einitvars
                jcs           :errxit
@@ -178,7 +178,7 @@ buildexp       php
                pha
                pea           $8000
                psl           #$00
-               _newhandle
+               _NewHandle
                plx
                ply
                jcs           :errxit
@@ -801,7 +801,7 @@ writeseg       php
                rep           $30
                psl           #$00
                psl           seghdrhdl
-               _gethandlesize
+               _GetHandleSize
                pll           outrequest
                lda           seghdrptr
                sta           outbuffer
@@ -811,7 +811,7 @@ writeseg       php
                jcs           :err
                psl           #$00
                psl           segdatahdl
-               _gethandlesize
+               _GetHandleSize
                pll           outrequest
                lda           segdataptr
                sta           outbuffer
@@ -857,24 +857,24 @@ readseg        php
                pha
                pea           $0000
                psl           #$00
-               _newhandle
+               _NewHandle
                plx
                ply
                jcs           :errxit
                stx           seghdrhdl
                sty           seghdrhdl+2
 :resize        psl           seghdrhdl
-               _Hunlock
+               _HUnlock
                ldx           :offset
                pea           $00
                lda           segdata+headerlen,x
                pha
                psl           seghdrhdl
-               _sethandlesize
+               _SetHandleSize
                php
                pha
                psl           seghdrhdl
-               _Hlock
+               _HLock
                pla
                plp
                jcs           :errxit
@@ -906,14 +906,14 @@ readseg        php
                pha
                pea           $0000
                psl           #$00
-               _newhandle
+               _NewHandle
                plx
                ply
                jcs           :errxit
                stx           segdatahdl
                sty           segdatahdl+2
 :resize1       psl           segdatahdl
-               _Hunlock
+               _HUnlock
                ldx           :offset
                ldy           #$02
                lda           [seghdrptr]             ;get bytecnt
@@ -927,11 +927,11 @@ readseg        php
                lda           inrequest
                pha
                psl           segdatahdl
-               _sethandlesize
+               _SetHandleSize
                php
                pha
                psl           segdatahdl
-               _Hlock
+               _HLock
                pla
                plp
                jcs           :errxit
@@ -1140,7 +1140,10 @@ indexj         da            5*2                     ; these indexes is crucial
 array          da            1,1,2,3,5,8,13,21,54,75,129,204
                da            323,527,850,1377,2227
 
+               do            0
+* Illegal relative address in line:
                err           *-array-34
+               fin
 
 seed           php
                rep           %00110000

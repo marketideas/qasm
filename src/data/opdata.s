@@ -29,7 +29,7 @@ opxcode        opco   'XC- ';psuedo.p6502;xcop1
                opco   'XC  ';psuedo.p6502;xcop
                opcl   'XBA ';onebyte.m65816;$EB
 opwcode        opco   'WDM ';m65816;wdmop
-               opcl   'WAI ';onebyte.m65c02;$CB
+               opcl   'WAI ';onebyte.m65C02;$CB
 opvcode        opcl   'VAR ';psuedo.p6502;varop
 opucode        opco   'USR ';psuedo.p6502;opcop                ;*** change this
                opcl   'USE ';psuedo.p6502;useop
@@ -42,9 +42,9 @@ optcode        opco   'TYX ';onebyte.m65816;$BB
                opco   'TTL ';psuedo.p6502;ttlop
                opco   'TSX ';onebyte.m6502;$BA
                opco   'TSC ';onebyte.m65816;$3B
-               opco   'TSB ';m65c02.general;tsbtbl
+               opco   'TSB ';m65C02.general;tsbtbl
                opco   'TSA ';onebyte.m65816;$3B
-               opco   'TRB ';m65c02.general;trbtbl
+               opco   'TRB ';m65C02.general;trbtbl
                opco   'TR  ';psuedo.p6502;trop
                opco   'TDC ';onebyte.m65816;$7B
                opco   'TDA ';onebyte.m65816;$7B
@@ -62,7 +62,7 @@ opscode        opco   'SYM ';psuedo.p6502;symop
                opco   'STX ';general.m6502.mX;stxtbl
                opco   'STRL';psuedo.p6502;strlop
                opco   'STR ';psuedo.p6502;strop
-               opco   'STP ';onebyte.m65c02;$db
+               opco   'STP ';onebyte.m65C02;$db
                opco   'STAL';general.long.m65816.mA;statbl
                opco   'STA ';general.m6502.mA;statbl
                opco   'SKP ';psuedo.p6502;skpop
