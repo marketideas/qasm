@@ -125,6 +125,7 @@ txtfile     php
             dey
             bpl   ]lup
             rep   $30
+            jsr   append_dots
 
             psl   #$00
             psl   #filename
@@ -215,24 +216,8 @@ cmdline     php
 :set        txa
             sta   filename
             rep   $30
-            lda   filename
-            and   #$ff
-            cmp   #62
-            bge   :nosuff
-            tax
-            lda   filename,x
-            and   #$7f
-            cmp   #'/'
-            beq   :nosuff
-            inx
-            lda   #'.S'
-            sta   filename,x
-            inx
-            txa
-            sep   $20
-            sta   filename
+            jsr   append_dots
 
-:nosuff     rep   $30
             psl   #$00
             psl   #filename
             psl   #$00              ;filepos
@@ -274,6 +259,35 @@ cmdline     php
             cmpl  :one
             rts
 :one        dw    $01
+
+
+append_dots
+            lda   filename
+            and   #$ff
+            beq   :rts
+            cmp   #62
+            bcs   :rts
+            tax
+            lda   #'.S'
+            sta   filename+1,x
+            sep   $30
+            lda   filename,x
+            cmp   #'/'
+            beq   :rts
+            cmp   #':'
+            beq   :rts
+            and   #$df
+            cmp   #'S'
+            bne   :append
+            lda   filename-1,x
+            cmp   #'.'
+            beq   :rts
+:append     inx
+            inx
+            stx filename
+
+:rts        rep   $30
+            rts
 
 asmstr      str   0d,'Assembling'
 
