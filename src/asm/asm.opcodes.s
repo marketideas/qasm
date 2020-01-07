@@ -3941,7 +3941,11 @@ datop         rep       $30
               pla
               xba
               and       #$ff
-              jsr       :num
+]y2k          cmp       #100
+              bcc       :yy
+              sbc       #100
+              bne       ]y2k
+:yy           jsr       :num
               sta       :buffer1+7
               lda       1,s
               and       #$ff
