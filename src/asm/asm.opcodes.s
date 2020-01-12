@@ -642,8 +642,7 @@ dendop        lda       #dumflag
               rts
 :ok           bit       macflag-1
               bmi       :bad
-              lda       #$8000
-              sta       dumor
+              stz       dumor
               lda       dumorg
               sta       objptr
               lda       dumorg+$2
