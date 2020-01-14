@@ -402,9 +402,7 @@ indexj      da    5*2               ; these indexes is crucial
 array       da    1,1,2,3,5,8,13,21,54,75,129,204
             da    323,527,850,1377,2227
 
-            do    0
             err   *-array-34
-            fin
 
 *=================================================
 * SEED seeds generator from 16 bit contents of AXY

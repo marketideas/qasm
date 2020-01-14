@@ -1140,10 +1140,7 @@ indexj         da            5*2                     ; these indexes is crucial
 array          da            1,1,2,3,5,8,13,21,54,75,129,204
                da            323,527,850,1377,2227
 
-               do            0
-* Illegal relative address in line:
                err           *-array-34
-               fin
 
 seed           php
                rep           %00110000
