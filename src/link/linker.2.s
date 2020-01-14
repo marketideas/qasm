@@ -1738,23 +1738,8 @@ getpath         php
 :len            stx         asmpath
                 lda         :sflag
                 beq         :plp
-                lda         asmpath
-                cmp         #63
-                bge         :plp
-                tax
-                lda         asmpath,x
-                and         #$7f
-                cmp         #'/'
-                beq         :plp
-                lda         asmpath
-                inc
-                inc
-                sta         asmpath
-                lda         #'.'
-                sta         asmpath+1,x
-                inx
-                lda         #'S'
-                sta         asmpath+1,x
+                jsr         asmpath_s
+
 :plp            sep         $30
                 lda         asmpath
                 beq         :syn
@@ -1839,7 +1824,32 @@ getpath         php
 :pfxparm        dw          $00
                 adrl        asmpath
 
+asmpath_s       mx         %11
+                ldx         asmpath
+                beq         :rts
+                cpx         #63
+                bcs         :rts
 
+                lda         asmpath,x
+                cmp         #'/'
+                beq         :rts
+                cmp         #':'
+                beq         :rts
+                and         #$df
+                cmp         #'S'
+                bne         :append
+                lda         asmpath-1,x
+                cmp         #'.'
+                beq         :rts
+
+:append         inx
+                lda         #'.'
+                sta         asmpath,x
+                inx
+                lda         #'S'
+                sta         asmpath,x
+                stx         asmpath
+:rts            rts
 
 
 converttable

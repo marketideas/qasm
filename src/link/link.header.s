@@ -156,26 +156,10 @@ txtfile      php
              sta   filename,x
              dey
              bpl   ]lup
-             lda   filename
-             cmp   #62
-             bge   :nosufx
-             tax
-             lda   filename,x
-             cmp   #'/'
-             beq   :nosufx
-             cmp   #':'
-             beq   :nosufx
 
-             inc   filename
-             inc   filename
-             inx
-             lda   #'.'
-             sta   filename,x
-             inx
-             lda   #'S'
-             sta   filename,x
+             rep   $30
+             jsr   append_dots
 
-:nosufx      rep   $30
              psl   #$00
              psl   #filename
              psl   #$00               ;filepos
@@ -378,26 +362,8 @@ cmdline      php
 :set         txa
              sta   filename
              rep   $30
-             lda   filename
-             and   #$ff
-             cmp   #62
-             bge   :nosuff
-             tax
-             lda   filename,x
-             and   #$7f
-             cmp   #'/'
-             beq   :nosuff
-             cmp   #':'
-             beq   :nosuff
-             inx
-             lda   #'.S'
-             sta   filename,x
-             inx
-             txa
-             sep   $20
-             sta   filename
+             jsr   append_dots
 
-:nosuff      rep   $30
              psl   #$00
              psl   #filename
              psl   #$00               ;filepos
@@ -439,6 +405,35 @@ cmdline      php
 :one         dw    $01
 
 linkstr      str   0d,'Linking'
+
+
+append_dots
+            lda   filename
+            and   #$ff
+            beq   :rts
+            cmp   #62
+            bcs   :rts
+            tax
+            lda   #'.S'
+            sta   filename+1,x
+            sep   $30
+            lda   filename,x
+            cmp   #'/'
+            beq   :rts
+            cmp   #':'
+            beq   :rts
+            and   #$df
+            cmp   #'S'
+            bne   :append
+            lda   filename-1,x
+            cmp   #'.'
+            beq   :rts
+:append     inx
+            inx
+            stx filename
+
+:rts        rep   $30
+            rts
 
 
 prbytel
