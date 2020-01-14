@@ -1415,7 +1415,7 @@ impop           sec
                 sta       :handle+2
                 psl       #$00
                 psl       :handle
-                _GetHandlSize
+                _GetHandleSize
                 pll       :aux
                 lda       :aux+2
                 jne       :toolarge
@@ -1815,7 +1815,7 @@ lnkop           sec
                 _HUnlock
                 psl       #$00
                 psl       :handle
-                _GetHandlSsize
+                _GetHandleSize
                 pll       :size
                 lda       :more
                 clc
