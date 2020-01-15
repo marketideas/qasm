@@ -91,9 +91,7 @@
 		2F5E55F3237CBECB0091163D /* httpclient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = httpclient.cpp; sourceTree = "<group>"; };
 		2F5E55F4237CBECB0091163D /* pallogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pallogger.cpp; sourceTree = "<group>"; };
 		2F5E55F5237CBECB0091163D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		2F5E5665237CC26F0091163D /* main.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = main.s; sourceTree = "<group>"; };
 		2F5E5667237CC26F0091163D /* qatools */ = {isa = PBXFileReference; lastKnownFileType = file; path = qatools; sourceTree = "<group>"; };
-		2F5E5668237CC26F0091163D /* testfile.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = testfile.s; sourceTree = "<group>"; };
 		2F5E566A237CC26F0091163D /* tool.macs.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = tool.macs.s; sourceTree = "<group>"; };
 		2F5E566B237CC26F0091163D /* qatools.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = qatools.s; sourceTree = "<group>"; };
 		2F5E566C237CC26F0091163D /* qatools.1.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = qatools.1.s; sourceTree = "<group>"; };
@@ -323,9 +321,7 @@
 		2F5E5664237CC26F0091163D /* src */ = {
 			isa = PBXGroup;
 			children = (
-				2F5E5665237CC26F0091163D /* main.s */,
 				2F5E5666237CC26F0091163D /* obj */,
-				2F5E5668237CC26F0091163D /* testfile.s */,
 				2F5E5669237CC26F0091163D /* tools */,
 				2F5E566F237CC26F0091163D /* asm */,
 				2F5E5679237CC26F0091163D /* merlin_convert.s */,
