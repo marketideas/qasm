@@ -68,25 +68,9 @@ _LFT        ds      1       ;Window edge   0..39
 *==========================================================
 * Program Entry
 
-                            ;Issue #26 - This should start at the ORG in the linkscript, not at the last ORG in the DUM sections.
-START                       
-
-                            ; PUT current issue here, so it's the first thing assembled.
-                            ; The rest below are unit tests to make sure future changes don't break existing code!
-
-
-                            ; START OF TESTS KNOWN TO HAVE PASSED IN PREVIOUS BUILDS
-
-                            ; --- Test all instructions in all their modes, with as many variants as possible ---
-
-
-
-
-                            ;adc (ZP,x)
-            adc     (0,x)   
-
-
-            adc     ($80,x) 
+START
+            adc     (0,x)
+            adc     ($80,x)
             adc     (_tmp,x) 
             adc     (_tmp+0,x) 
             adc     (_tmp+$10,x) 
@@ -103,10 +87,7 @@ START
             adc     #$1111  
             adc     $1111   
 
-                            ; --- Other tests that have proven helpful ---
-
-                            ; Tests regarding issues with math and zp,x
-            sta     TSTADDR+dum0 
+			sta     TSTADDR+dum0
             sta     TSTADDR+_num1+dum0 
             sta     TSTADDR+_num1+dum0,x 
 
@@ -153,11 +134,7 @@ GetKey      ldx     $C000
 myQuit                      
             jmp     DOSWARM 
 
-                            ; --- Tests used when addressing issues opened against Merlin32 ---
-
-                            ;Issue #26 (lroathe) - ORG in DUM section is ignored, but can't mess up code ORG
-
-            org     $2000   
+			org     $2000
 
             lda     _LFT    
             ldx     #_LFT   

@@ -36,6 +36,12 @@
             ReferencedContainer = "container:qasm.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = ""
+            isEnabled = "NO">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <Testables>
       </Testables>
    </TestAction>
@@ -61,7 +67,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "&quot;${PROJECT_DIR}/src/main.s&quot;"
+            argument = "&quot;${PROJECT_DIR}/testdata/3001-runfile.s&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
