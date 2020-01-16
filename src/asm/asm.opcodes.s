@@ -1673,8 +1673,6 @@ exdop
 entop
 ]len          equ       workspace
 
-              lda       passnum
-              bne       :xit
               lda       macflag
               bit       #%01100000
               beq       :nomac
@@ -1684,6 +1682,9 @@ entop
 :nomac
               lda       linelable
               bmi       :group
+* label ent - first pass only.
+              ldx       passnum
+              bne       :xit
               asl
               asl
               tay
@@ -1762,7 +1763,10 @@ entop
               trb       orgor
               jmp       :xit
 
+* ent label[,label] - second pass only.
 :group1       rep       $30
+              ldx       passnum
+              beq       :xit
               sep       $20
               ldy       #$FFFF
 ]lup          iny
@@ -1806,12 +1810,9 @@ entop
               lda       #$ffff
               sta       fllast
               jsr       findlable
-              bcs       :or
-              jsr       insertlable
-              stz       fllast
-              dec       fllast
-              jcs       :gerr1
-:or           stz       :offset
+              bcc       :gerr3
+
+              stz       :offset
               ldy       #26                                                   ;point to type
               lda       [lableptr],y
               and       #macvarbit.externalbit.macrobit.variablebit.localbit
@@ -1836,6 +1837,9 @@ entop
               rts
 :gerr         rep       $30
               lda       #badlable
+              jmp       :gerr1
+:gerr3        rep       $30
+              lda       #undeflable
               jmp       :gerr1
 :gerr2        rep       $30
               lda       #duplable
