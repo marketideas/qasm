@@ -1600,7 +1600,7 @@ inclablect      php
                 ldal        userid
                 ora         #linkmemid
                 pha
-                pea         $8004                     ;page aligned/locked
+                pea         $8014                     ;page aligned/locked/nocross
                 psl         #$00
                 _NewHandle
                 plx
@@ -1648,7 +1648,7 @@ incasmlablect   php
                 lda         userid
                 ora         #linkmemid+$100
                 pha
-                pea         $8004                     ;page aligned/locked
+                pea         $8014                     ;page aligned/locked/nocross
                 psl         #$00
                 _NewHandle
                 plx
