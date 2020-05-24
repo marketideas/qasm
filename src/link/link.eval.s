@@ -367,7 +367,7 @@ doflags       php
               iny
               lda   [lableptr1],y
               sta   lableptr+2
-              ldy   #26
+              ldy   #o_labtype
               lda   [lableptr],y
               bit   #externalbit
               beq   :y
@@ -385,7 +385,7 @@ doflags       php
               iny
               lda   [lableptr1],y
               sta   lableptr+2
-              ldy   #26
+              ldy   #o_labtype
               lda   [lableptr],y
               bit   #externalbit
               beq   :test
@@ -1244,16 +1244,16 @@ getnum        php
 * lda evallevel           ;don't need to do this here
 * bne :lxit               ;unless level>256
               lda   #'}'
-:iny          cpx   #$0f
+:iny          cpx   #lab_size
               bge   :iny1
               sta   labstr+1,x
 :iny1         iny
               inx
               jmp   ]lup
 :lxit         txa
-              cmp   #$0f+1
+              cmp   #lab_size+1
               blt   :lx
-              lda   #$0f
+              lda   #lab_size
 :lx           sta   labstr
               sty   :next
               jsr   findlable
@@ -1269,12 +1269,12 @@ getnum        php
 :errlab       lda   #undeflable
               jmp   :errxit
 :lfound       rep   $30
-              ldy   #26
+              ldy   #o_labtype
               lda   [lableptr],y
               pha
-              ldy   #16
+              ldy   #o_labnum
               lda   [lableptr],y
-              ldy   #26
+              ldy   #o_labtype
               lda   [lableptr],y
               ora   #linkusedbit           ;indicate used!
               sta   [lableptr],y
@@ -1294,16 +1294,16 @@ getnum        php
               beq   :labcont
               bit   #dumflag
               bne   :labcont
-              ldy   #16
+              ldy   #o_labnum
               lda   [lableptr],y
               sta   zrel
               fin
 
 :labcont      rep   $30
-:lsta1        ldy   #28
+:lsta1        ldy   #o_labval
               lda   [lableptr],y
               sta   val
-              ldy   #30
+              ldy   #o_labval+2
               lda   [lableptr],y
               sta   val+2
 :lbxit        ldy   :next

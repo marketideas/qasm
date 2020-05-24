@@ -12,6 +12,7 @@
             use   ../macros/builtin.macs
             use   ../macros/qatools.macs
             use   ../data/qa.equates
+            use   ../data/sym.equates
 
             use   asm.macs
 

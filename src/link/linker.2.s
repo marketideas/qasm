@@ -322,7 +322,7 @@ jumpentry       php
                 lda         [segmentptr],y
                 sta         segmentptr+2
                 stx         segmentptr
-                lda         foundlable+24
+                lda         foundlable+o_lablocal
                 asl
                 asl
                 asl
@@ -821,13 +821,13 @@ findlable
                 stz         ]offset
                 ldy         #$00
                 lda         [lableptr],y
-                and         #$0F
+                and         #label_mask
                 sta         ]len2
                 sep         $20
                 iny
                 iny
                 ldx         #$02                      ;start at byte 2
-]lup1           cpx         #$10
+]lup1           cpx         #lab_size+1
                 bge         :movefound
                 cpx         ]len1
                 blt         :1
@@ -852,13 +852,13 @@ findlable
                 cmp         ]len2
                 beq         :movefound
 :goleft         rep         $30
-                ldy         #18                       ;leftptr
+                ldy         #o_lableft                ;leftptr
                 lda         [lableptr],y
                 bmi         :notfound
                 sta         ]pos
                 jmp         ]lup
 :goright        rep         $30
-                ldy         #20                       ;leftptr
+                ldy         #o_labright               ;rightptr
                 lda         [lableptr],y
                 bmi         :notfound
                 sta         ]pos
@@ -875,7 +875,7 @@ findlable
                 iny
                 lda         [lableptr1],y
                 sta         lableptr+2
-                ldy         #26
+                ldy         #o_labtype
                 lda         [lableptr],y
                 bit         #linkequbit
                 beq         :ldy
@@ -890,7 +890,7 @@ findlable
                 inx
                 iny
                 iny
-                cpx         #32
+                cpx         #sym_size
                 blt         ]lup
 :mfplp          plp
                 sec
@@ -955,7 +955,7 @@ insertlable
                 iny
                 iny
                 ldx         #$02                      ;start at byte 2
-]lup1           cpx         #$10
+]lup1           cpx         #lab_size+1
                 jeq         :error
                 cpx         ]len1
                 blt         :1
@@ -978,7 +978,7 @@ insertlable
                 lda         ]len1
                 cmp         ]len2
                 bne         :goleft
-:replace        ldy         #26                       #26
+:replace        ldy         #o_labtype
                 lda         [lableptr],y
                 bit         #linkequbit
                 beq         :duperr
@@ -990,7 +990,7 @@ insertlable
 ]mov            lda         labstr,x
                 sta         errlable,x
                 inx
-                cpx         #16
+                cpx         #lab_size+1
                 blt         ]mov
                 rep         $30
                 lda         labtype
@@ -1020,11 +1020,11 @@ insertlable
                 sta         foundlable,x
                 iny
                 iny
-                cpy         #32
+                cpy         #sym_size
                 blt         ]test
                 jmp         :nosave
 :goleft         rep         $30
-                ldy         #18                       ;leftptr
+                ldy         #o_lableft                ;leftptr
                 lda         [lableptr],y
                 bpl         :p1
                 lda         lablect
@@ -1033,7 +1033,7 @@ insertlable
 :p1             sta         ]pos
                 jmp         ]lup
 :goright        rep         $30
-                ldy         #20                       ;leftptr
+                ldy         #o_labright               ;rightptr
                 lda         [lableptr],y
                 bpl         :p2
                 lda         lablect
@@ -1075,7 +1075,7 @@ insertlable
                 sta         foundlable,x
                 inx
                 inx
-                cpx         #32
+                cpx         #sym_size
                 blt         ]test
                 jsr         inclablect
                 rts
@@ -1083,7 +1083,7 @@ insertlable
 drawlabstr      php
                 rep         $30
                 lda         labstr
-                and         #$0f
+                and         #label_mask
                 beq         :cr
                 tay
                 ldx         #$01
@@ -1175,7 +1175,7 @@ insertlableasm
                 iny
                 iny
                 ldx         #$02                      ;start at byte 2
-]lup1           cpx         #$10
+]lup1           cpx         #lab_size+1
                 jeq         :error
                 cpx         ]len1
                 blt         :1
@@ -1198,7 +1198,7 @@ insertlableasm
                 lda         ]len1
                 cmp         ]len2
                 bne         :goleft
-:replace        ldy         #26                       ;offset to equ type
+:replace        ldy         #o_labtype                       ;offset to equ type
                 lda         labtype
                 ora         #$8008
                 sta         [lasmptr],y
@@ -1218,11 +1218,11 @@ insertlableasm
                 inx
                 iny
                 iny
-                cpx         #32
+                cpx         #sym_size
                 blt         ]test
                 jmp         :nosave
 :goleft         rep         $30
-                ldy         #18                       ;leftptr
+                ldy         #o_lableft                ;leftptr
                 lda         [lasmptr],y
                 bpl         :p1
                 lda         asmlablect
@@ -1231,7 +1231,7 @@ insertlableasm
 :p1             sta         ]pos
                 jmp         ]lup
 :goright        rep         $30
-                ldy         #20                       ;leftptr
+                ldy         #o_labright               ;rightptr
                 lda         [lasmptr],y
                 bpl         :p2
                 lda         asmlablect
@@ -1275,7 +1275,7 @@ insertlableasm
                 inx
                 iny
                 iny
-                cpx         #32
+                cpx         #sym_size
                 blt         ]test
                 jsr         incasmlablect
                 rts
@@ -1336,7 +1336,7 @@ traverse        php
                 iny
                 lda         [lableptr1],y
                 sta         lableptr+2
-                ldy         #18
+                ldy         #o_lableft
                 lda         #'R'
                 sta         :char
                 lda         [lableptr],y
@@ -1348,7 +1348,7 @@ traverse        php
 :next2          jsr         :print
                 lda         #'R'
                 sta         :char
-                ldy         #20
+                ldy         #o_labright
                 lda         [lableptr],y
                 bmi         :done
                 pha
@@ -1369,7 +1369,7 @@ traverse        php
                 sta         labstr,x
                 inx
                 inx
-                cpx         #32
+                cpx         #sym_size
                 blt         ]lup
 :jsr            jsr         $ffff
                 sep         $20
@@ -1481,7 +1481,7 @@ move2asm        lda         linksymhdl
                 sta         labtype
                 jsr         insertlableasm
 clrlocals
-                ldy         #26
+                ldy         #o_labtype
                 lda         [lableptr],y
                 and         #linkequvalid!$FFFF
                 sta         [lableptr],y
@@ -1596,7 +1596,7 @@ inclablect      php
                 and         #%11111111
                 bne         :normal
                 psl         #$00
-                psl         #$2000
+                psl         #sym_size*256             ; $2000
                 ldal        userid
                 ora         #linkmemid
                 pha
@@ -1625,7 +1625,7 @@ inclablect      php
                 rts
 :normal         lda         nextlableptr
                 clc
-                adc         #32
+                adc         #sym_size
                 sta         nextlableptr
                 bcc         :rts
                 inc         nextlableptr+2
@@ -1644,7 +1644,7 @@ incasmlablect   php
                 and         #%11111111
                 bne         :normal
                 psl         #$00
-                psl         #$2000
+                psl         #sym_size*256             ; #$2000
                 lda         userid
                 ora         #linkmemid+$100
                 pha
@@ -1673,7 +1673,7 @@ incasmlablect   php
                 rts
 :normal         lda         asmnextlable
                 clc
-                adc         #32
+                adc         #sym_size
                 sta         asmnextlable
                 bcc         :rts
                 inc         asmnextlable+2
