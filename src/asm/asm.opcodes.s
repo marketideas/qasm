@@ -1043,14 +1043,14 @@ equate        php
               bpl       :normal
               jsr       findlable
               bcc       :bl
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               bit       #equatebit
               beq       :normal
-              ldy       #28
+              ldy       #o_labval
               lda       [lableptr],y
               sta       :oldval
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               sta       :oldval+2
               ldx       #$00
@@ -1071,13 +1071,13 @@ equate        php
               bpl       :ok
               jsr       findlable
               bcc       :bl
-              ldy       #28
+              ldy       #o_labval
               lda       [lableptr],y
               sta       :oldval
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               sta       :oldval+2
-              ldy       #16
+              ldy       #o_labnum
               sty       :foundflag
               lda       [lableptr],y
               jmp       :ok
@@ -1104,7 +1104,7 @@ equate        php
               and       #%01100000
               beq       :nomac
 
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               bit       #variablebit
               bne       :nomac
@@ -1129,7 +1129,7 @@ equate        php
               tyx
               sta       labstr,x
               iny
-              cpy       #16
+              cpy       #lab_size+1
               blt       ]lup
               plp
               jmp       insertlable
@@ -1146,17 +1146,17 @@ equate        php
               tyx
               sta       labstr,x
               iny
-              cpy       #16
+              cpy       #lab_size+1
               blt       ]lup
               jsr       findlable
               bcs       :macp21
               pea       #undeflable
               jmp       :err
 :macp21       rep       $30
-              ldy       #28
+              ldy       #o_labval
               lda       [lableptr],y
               sta       equateval
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               sta       equateval+2
               jmp       :noerr
@@ -1168,14 +1168,14 @@ equate        php
               sta       lableptr
               lda       :ptr+2
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               bit       #variablebit
               beq       :eval
-              ldy       #28
+              ldy       #o_labval
               lda       varval
               sta       [lableptr],y
-              ldy       #30
+              ldy       #o_labval+2
               lda       varval+2
               sta       [lableptr],y
 :eval         ldx       #$00
@@ -1187,14 +1187,14 @@ equate        php
               sta       lableptr
               lda       :ptr+2
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               and       #variablebit
               beq       :equval
-              ldy       #28
+              ldy       #o_labval
               lda       varval
               sta       [lableptr],y
-              ldy       #30
+              ldy       #o_labval+2
               lda       varval+2
               sta       [lableptr],y
               ldx       #$00
@@ -1204,7 +1204,7 @@ equate        php
               sta       lableptr
               lda       :ptr+2
               sta       lableptr+2
-:entry        ldy       #26
+:entry        ldy       #o_labtype
               lda       [lableptr],y
               and       #$7FFF
               ora       #equatebit
@@ -1220,10 +1220,10 @@ equate        php
               iny
               lda       lvalue+2
               sta       [lableptr],y
-:equval       ldy       #28
+:equval       ldy       #o_labval
               lda       [lableptr],y
               sta       equateval
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               sta       equateval+2
 :noerr        pea       $00
@@ -1235,11 +1235,11 @@ equate        php
               lda       merrcode
               cmp       #duplable
               bne       :epla
-              ldy       #28
+              ldy       #o_labval
               lda       [lableptr],y
               cmp       :oldval
               bne       :epla
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               cmp       :oldval+2
               bne       :epla
@@ -1333,14 +1333,14 @@ equeval       php
 
               jsr       findlable
               bcc       :readkey
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               bit       #linkerbit
               beq       :duplicate
-              ldy       #28
+              ldy       #o_labval
               lda       [lableptr],y
               sta       lvalue
-              ldy       #30
+              ldy       #o_labval+2
               lda       [lableptr],y
               sta       lvalue+2
               lda       #$00                                                  ;0 here if linker passed value
@@ -1397,7 +1397,7 @@ extop
               iny
               lda       [lableptr1],y
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               and       #%11111
               bne       :bad
@@ -1409,7 +1409,7 @@ extop
               sec
               rts
 :equ          stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               bit       #%1100_0000_0011_1111
               bne       :bad
@@ -1417,7 +1417,7 @@ extop
               ora       #externalbit
               sta       [lableptr],y
               phy
-              ldy       #22
+              ldy       #o_labprev
               lda       extcount
               sta       [lableptr],y
               inc       extcount
@@ -1458,16 +1458,16 @@ extop
               beq       :insert
               cmp       #';'
               beq       :insert
-              cpx       #15
+              cpx       #lab_size
               bge       :iny
               sta       labstr+1,x
 :iny          iny
               inx
               jmp       ]lup
 :insert       txa
-              cmp       #$10
+              cmp       #lab_size+1
               blt       :ls
-              lda       #$0f
+              lda       #lab_size
 :ls           sta       labstr
               rep       $30
               sty       :ypos
@@ -1480,7 +1480,7 @@ extop
               dec       fllast
               jcs       :gerr1
               stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               bit       #%1100_0000_0011_1111
               bne       :gerr
@@ -1488,7 +1488,7 @@ extop
               ora       #externalbit
               sta       [lableptr],y
               phy
-              ldy       #22
+              ldy       #o_labprev
               lda       extcount
               sta       [lableptr],y
               inc       extcount
@@ -1546,7 +1546,7 @@ exdop
               iny
               lda       [lableptr1],y
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               and       #%11111
               bne       :bad
@@ -1558,7 +1558,7 @@ exdop
               sec
               rts
 :equ          stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               bit       #%1100_0000_0011_1111
               bne       :bad
@@ -1566,7 +1566,7 @@ exdop
               ora       #externalbit
               sta       [lableptr],y
               phy
-              ldy       #22
+              ldy       #o_labprev
               lda       extcount
               sta       [lableptr],y
               inc       extcount
@@ -1607,16 +1607,16 @@ exdop
               beq       :insert
               cmp       #';'
               beq       :insert
-              cpx       #15
+              cpx       #lab_size
               bge       :iny
               sta       labstr+1,x
 :iny          iny
               inx
               jmp       ]lup
 :insert       txa
-              cmp       #$10
+              cmp       #lab_size+1
               blt       :ls
-              lda       #$0f
+              lda       #lab_size
 :ls           sta       labstr
               rep       $30
               sty       :ypos
@@ -1629,7 +1629,7 @@ exdop
               dec       fllast
               jcs       :gerr1
               stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               bit       #%1100_0000_0011_1111
               bne       :gerr
@@ -1637,7 +1637,7 @@ exdop
               ora       #externalbit
               sta       [lableptr],y
               phy
-              ldy       #22
+              ldy       #o_labprev
               lda       extcount
               sta       [lableptr],y
               inc       extcount
@@ -1694,7 +1694,7 @@ entop
               iny
               lda       [lableptr1],y
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               and       #macvarbit.externalbit.macrobit.variablebit.localbit
               bne       :bad
@@ -1706,13 +1706,13 @@ entop
               sec
               rts
 :equ          stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               and       #usedbit.absolutebit.equatebit
               ora       #entrybit
               sta       [lableptr],y
               phy
-              ldy       #22
+              ldy       #o_labprev
               lda       entcount
               sta       [lableptr],y
               inc       entcount
@@ -1794,16 +1794,16 @@ entop
               beq       :insert
               cmp       #';'
               beq       :insert
-              cpx       #15
+              cpx       #lab_size
               bge       :iny
               sta       labstr+1,x
 :iny          iny
               inx
               jmp       ]lup
 :insert       txa
-              cmp       #$10
+              cmp       #lab_size+1
               blt       :ls
-              lda       #$0f
+              lda       #lab_size
 :ls           sta       labstr
               rep       $30
               sty       :ypos
@@ -1813,7 +1813,7 @@ entop
               bcc       :gerr3
 
               stz       :offset
-              ldy       #26                                                   ;point to type
+              ldy       #o_labtype                                                   ;point to type
               lda       [lableptr],y
               and       #macvarbit.externalbit.macrobit.variablebit.localbit
               bne       :gerr
@@ -1821,7 +1821,7 @@ entop
               and       #usedbit.absolutebit.equatebit
               ora       #entrybit                                             ;entry lable
               sta       [lableptr],y
-              ldy       #22
+              ldy       #o_labprev
               lda       entcount
               sta       [lableptr],y
               inc       entcount
@@ -2535,11 +2535,11 @@ ddbop         ldx       #$00
               lda       [lableptr1],y
               sta       lableptr+2
               stz       :offset
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               bit       #externalbit
               beq       :internal
-              ldy       #22
+              ldy       #o_labprev
               lda       [lableptr],y
               and       #$00ff
               sta       noshift+1
@@ -4529,7 +4529,7 @@ varop         lda       macflag
               dec       fllast
               bcc       :eval
               rts
-:eval         ldy       #16
+:eval         ldy       #o_labnum
               lda       [lableptr],y
               sta       :label
               lda       #$ffff
@@ -4549,7 +4549,7 @@ varop         lda       macflag
               iny
               lda       [lableptr1],y
               sta       lableptr+2
-              ldy       #26
+              ldy       #o_labtype
               lda       [lableptr],y
               and       #$7FFF
               bit       lableused

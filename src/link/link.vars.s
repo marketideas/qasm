@@ -106,7 +106,7 @@ srelocsize        ds    4
 **** DP storage ****
                   dum   $00
 zpage             ds    4
-labstr            ds    16                    ;Lable STR that we are working on
+labstr            ds    lab_size+1            ;Lable STR that we are working on
 labnum            ds    2                     ;REC num of current lable
 lableft           ds    2                     ;B-Tree Structures
 labright          ds    2
@@ -114,7 +114,7 @@ labprev           ds    2
 lablocal          ds    2                     ;REC of Local Lable Tree
 labtype           ds    2                     ;Type of Label
 labval            ds    4                     ;EQU value of Lable
-foundlable        ds    32                    ;lable REC returned from FINDLABLE
+*foundlable        ds    sym_size              ;lable REC returned from FINDLABLE
 globlab           ds    2                     ;REC of Current Global Lable
 myvalue           ds    4
 lvalue            ds    4
@@ -178,6 +178,7 @@ here              =     *
                   err   */$100
                   dend
 
+foundlable        ds    sym_size              ;lable REC returned from FINDLABLE
 
 asmpath           ds    130,0
 rezpath           ds    130,0
