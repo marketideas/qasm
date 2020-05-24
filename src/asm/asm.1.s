@@ -1603,7 +1603,7 @@ inclablect   php
              lda   userid
              ora   #asmmemid
              pha
-             pea   $8004                               ;page aligned/locked
+             pea   $8014                               ;page aligned/locked/nocross
              psl   #$00
              _NewHandle
              plx
