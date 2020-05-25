@@ -667,66 +667,55 @@ getvars
 
 :flush        lda   (lineptr),y
               cmp   #' '
-              jlt   :move
-              beq   :finy
-              cmp   #';'
-              bne   :first
-              jmp   :move
-:finy         iny
-              jmp   :flush
-:first        cmp   #$22
-              beq   :literal
-              cmp   #$27
-              bne   :giny
-:literal      sta   ]lit
-:giny         sta   macvars,x
-* jsr :print
-              dec   ]ct
-              inx
+              bne   :f0
               iny
-:loop         lda   (lineptr),y
-              cmp   #' '
+              bra   :flush
+:f0
+              jlt   :move
+              cmp   #';'
+              jeq   :move
+
+:first        cmp   #$22
+              beq   :q
+              cmp   #$27
+              beq   :q
+
+:loop
+              sta   macvars,x
+              dec   ]ct
+              beq   :badvar
+              iny
+              inx
+
+              lda   (lineptr),y
+              cmp   #' '+1
               blt   :done
-              beq   :checklit
               cmp   #';'
               beq   :semi
-              cmp   ]lit
-              beq   :littog
-              cmp   #$27
-              beq   :lit1
               cmp   #$22
-              bne   :x1
-:lit1         sta   ]lit
-:x1           xba
-:sta1         lda   ]ct
-              beq   :badvar
-              xba
+              beq   :q
+              cmp   #$27
+              beq   :q
+              bra   :loop
+
+:q            sta   ]lit
+:qloop
               sta   macvars,x
-* jsr :print
+              dec   ]ct
+              beq   :badvar
               iny
               inx
-              dec   ]ct
-              jmp   :loop
-:checklit     xba
-              lda   ]lit
-              bne   :sta1
-              jmp   :done
-:littog       xba
-              lda   ]lit
-              bne   :loff
-              xba
-              sta   ]lit
-              xba
-              jmp   :sta1
-:loff         stz   ]lit
-              jmp   :sta1
+
+              lda   (lineptr),y
+              cmp   #' '
+              blt   :done
+              cmp   ]lit
+              beq   :loop
+              bra   :qloop
+
 :done         sec
               ror   ]done
-:semi         xba
-              lda   ]lit
-              bne   :sta1
-:next         stz   macvars,x
-* jsr :printcr
+:semi         stz   macvars,x
               inx
               iny
               dec   ]ct
