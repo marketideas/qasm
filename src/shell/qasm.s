@@ -154,6 +154,7 @@ QuickASM ENT
  _InitCursor ;no longer waiting to startup
 
  ~CheckClick #TextName ;do we have a doc to open?
+ bcs :9
  txa
  beq :9 ; no- don't open anything
 
