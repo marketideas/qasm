@@ -1828,7 +1828,7 @@ macfind
               sta   lableptr+2
               stz   ]offset
               lda   [lableptr]
-              and   #$0f
+              and   #label_mask
               sta   ]len2
               sep   $20
               ldx   #$02                   ;start at byte 2
