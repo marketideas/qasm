@@ -796,7 +796,7 @@ findlable
                 lda         lablect
                 beq         :notfound
                 lda         labstr
-                and         #$000F
+                and         #label_mask
                 beq         :notfound
                 sta         ]len1
                 lda         labstr+$1

@@ -262,10 +262,10 @@ offset            ds    2
 *shiftct ds 2
 
 
-errlable          ds    16,0
+errlable          ds    lab_size+1,0
 errpos            ds    2
 
-newlable          ds    18,0
+newlable          ds    lab_size+3,0
 
 segheader
 bytecnt           ds    4

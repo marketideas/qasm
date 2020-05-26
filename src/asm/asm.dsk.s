@@ -694,7 +694,7 @@ writerel     php                                                     ;must enter
              ldy           #$00
              stz           :offset
              lda           [lableptr]
-             and           #$0F
+             and           #label_mask
              bne           :stalen
              inc           :main
              jmp           :loop
