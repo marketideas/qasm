@@ -3048,17 +3048,22 @@ relocatefinal
                 and       #$0020
                 jne       :clc
 
-                lda       #$f6
+                lda       #$f5
                 sta       omfcode
-                lda       #$08
+                lda       #$07
                 sta       omflength
                 lda       #$01
                 sta       omfbytes
                 lda       #-16
                 sta       omfshift
+                bit       interseg
+                bpl       :ok3
+                inc       omfcode
+                inc       omflength
                 jsr       isegwarning
-                jsr       insertomf
+:ok3            jsr       insertomf
                 jmp       :clc
+
 :la4            ldy       #$03
                 lda       [tempptr1],y
                 and       #$ff
@@ -3098,17 +3103,22 @@ relocatefinal
                 and       #$0020
                 jne       :clc
 
-                lda       #$f6
+                lda       #$f5
                 sta       omfcode
-                lda       #$08
+                lda       #$07
                 sta       omflength
                 lda       #$02
                 sta       omfbytes
                 lda       #-8
                 sta       omfshift
+                bit       interseg
+                bpl       :ok4
+                inc       omfcode ; $f6
+                inc       omflength
                 jsr       isegwarning
-                jsr       insertomf
+:ok4            jsr       insertomf
                 jmp       :clc
+
 :la5            jmp       :b1hi
 
 :clc            plp
