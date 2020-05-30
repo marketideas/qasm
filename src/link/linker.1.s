@@ -496,12 +496,15 @@ getopcode
                 blt       ]lup
                 beq       ]lup
                 dex
-:done           lda       #$2020
+:done           lda       #$2020                    ;truncate to 3 bytes max
                 sta       opcode+$1,Y
+                sta       opcode+4
                 tya
-                and       #$1F
                 sep       $20
-                sta       opcode
+                cmp       #4
+                bcc       :3
+                lda       #3
+:3              sta       opcode
 ]flush          lda       linebuff,x
                 cmp       #' '
                 bne       :tya
