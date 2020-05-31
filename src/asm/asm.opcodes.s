@@ -2424,6 +2424,12 @@ dwop          php
               lda       lvalue+$1
               jsr       putbyte
               jsr       relcorrect
+              rep       $30
+              lda       objptr
+              sta       pcobjptr
+              lda       objptr+2
+              sta       pcobjptr+2
+              sep       $30
               plx
               txy
               lda       (lineptr),y
@@ -2475,6 +2481,12 @@ dfbop         php
               lda       lvalue
               jsr       putbyte
               jsr       relcorrect
+              rep       $30
+              lda       objptr
+              sta       pcobjptr
+              lda       objptr+2
+              sta       pcobjptr+2
+              sep       $30
               plx
               txy
               lda       (lineptr),y
@@ -2626,6 +2638,12 @@ adrop         php
               lda       lvalue+2
               jsr       putbyte
               jsr       relcorrect
+              rep       $30
+              lda       objptr
+              sta       pcobjptr
+              lda       objptr+2
+              sta       pcobjptr+2
+              sep       $30
               plx
               txy
               lda       (lineptr),y
@@ -2684,6 +2702,12 @@ adrlop        php
               lda       lvalue+$3
               jsr       putbyte
               jsr       relcorrect
+              rep       $30
+              lda       objptr
+              sta       pcobjptr
+              lda       objptr+2
+              sta       pcobjptr+2
+              sep       $30
               plx
               txy
               lda       (lineptr),y

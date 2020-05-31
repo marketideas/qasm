@@ -1285,9 +1285,9 @@ getnum        php
 :xc1          jmp   :doxc                  ;y still on stack!
 :pc           iny
               rep   $30
-              lda   lineobjptr
+              lda   pcobjptr
               sta   val
-              lda   lineobjptr+$2
+              lda   pcobjptr+$2
               sta   val+$2
               lda   modeflag
               bit   #relflag

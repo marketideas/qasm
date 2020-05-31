@@ -187,6 +187,7 @@ lvalue          ds    4
 myvalue         ds    4
 noshift         ds    4
 lineobjptr      ds    4
+pcobjptr        ds    4
 
 xreg            ds    4                     ;variables used by EVAL
 yreg            ds    4
