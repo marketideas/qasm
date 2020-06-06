@@ -394,8 +394,8 @@ asm          php
              lda   1,s
              jsr   asmerror
 
-             lda   passnum
-             beq   :perrpla
+*             lda   passnum
+*             beq   :perrpla
 
              lda   listflag
              pha
