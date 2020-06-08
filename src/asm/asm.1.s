@@ -845,13 +845,13 @@ printline    php
              pea   0
              pea   0
              _QADrawDec
-             lda   #' '
-             jsr   drawchar
-* rep $30
-* lda tabs
-* and #$ff
-* pha
-* _QATabToCol
+*             lda   #' '
+*             jsr   drawchar
+*             rep   $30
+             lda   tabs
+             and   #$ff
+             pha
+             _QATabToCol
 :sp2         sep   $30
              lda   [printptr]
              and   #$7f
