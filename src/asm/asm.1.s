@@ -2412,6 +2412,10 @@ addmode      php
              beq   :force16
              cmp   #'>'
              beq   :force24
+             cmp   #$27  ; '
+             beq   :skipq
+             cmp   #$22 ; "
+             beq   :skipq
              jmp   :index
 :force8      lda   #amforce8
              tsb   myvalue
@@ -2427,6 +2431,17 @@ addmode      php
              jmp   :index
 :square      lda   #amsquare
              tsb   myvalue
+             jmp   :index
+
+* skip over quoted operand component.
+:skipq       sta   :q
+:skipq1      iny
+             lda   [lineptr],y
+             cmp   #' '
+             blt   :badmode
+             cmp   :q
+             bne   :skipq1
+
 :index       iny
              lda   [lineptr],y
              cmp   #' '+1
@@ -2434,7 +2449,13 @@ addmode      php
              cmp   #';'
              beq   :modexit
              cmp   #','
-             bne   :index
+             beq   :index1
+             cmp   #$27 ; '
+             beq   :skipq
+             cmp   #$22 ; "
+             beq   :skipq
+             bra   :index
+
 :index1      iny
              lda   [lineptr],y
              and   #$5f
@@ -2542,6 +2563,7 @@ addmode      php
              plp
              sec
              rts
+:q           ds    2
 
 addmodetbl   dfb   6*3
              dfb   7*3
