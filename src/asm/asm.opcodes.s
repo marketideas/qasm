@@ -2527,6 +2527,10 @@ ddbop         ldx       #$00
               jsr       putbyte
               lda       passnum
               beq       :jmp
+              lda       objptr
+              sta       pcobjptr
+              lda       objptr+2
+              sta       pcobjptr+2
               lda       modeflag
               bit       #relflag
               beq       :jmp
