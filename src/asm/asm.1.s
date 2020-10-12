@@ -1586,8 +1586,10 @@ initline     php
              sta   lableused
              lda   objptr
              sta   lineobjptr
+             sta   pcobjptr
              lda   objptr+2
              sta   lineobjptr+2
+             sta   pcobjptr+2
 
 :xit         plp
              rts
