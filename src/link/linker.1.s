@@ -2464,7 +2464,7 @@ relocatefinal
                 sta       [tempptr],y
                 sta       omfoff2
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
                 lda       #$02
                 sta       omfbytes
@@ -2549,7 +2549,7 @@ relocatefinal
                 sta       [tempptr],y
 
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
 
                 bit       interseg
@@ -2690,7 +2690,7 @@ relocatefinal
                 sta       [tempptr],y
                 rep       $20
                 lda       foundlable+o_labtype
-                and       #$0020                    ;absolute lable?
+                and       #linkabsbit                    ;absolute lable?
                 jne       :clc
 
                 bit       interseg
@@ -2791,7 +2791,7 @@ relocatefinal
                 sta       [tempptr],y
                 rep       $20
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
 
                 bit       interseg
@@ -2886,7 +2886,7 @@ relocatefinal
                 sta       [tempptr],y
                 rep       $20
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
 
                 bit       interseg
@@ -3048,7 +3048,7 @@ relocatefinal
                 sta       [tempptr],y
                 rep       $20
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
 
                 lda       #$f5
@@ -3103,7 +3103,7 @@ relocatefinal
                 sta       [tempptr],y
 
                 lda       foundlable+o_labtype
-                and       #$0020
+                and       #linkabsbit
                 jne       :clc
 
                 lda       #$f5
