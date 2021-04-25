@@ -15,6 +15,7 @@ linkerror   php
             _QASetWindow
 
             _QAIncTotalErrs
+            lda   :errcode
             cmp   #constraint
             jeq   :xit
             cmp   #notresolved
@@ -122,6 +123,7 @@ errtbl      dw    syntax,str1
             dw    badasmcmd,str2
             dw    badcmd,str3
             dw    badlable,str4
+            dw    badlable.$80,str4
             dw    outofmem,str5
             dw    undeflable,str6
             dw    badoperand,str7
