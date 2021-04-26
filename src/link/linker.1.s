@@ -3427,7 +3427,7 @@ ovrop           ldy       #$00
                 and       #$5f
                 cmp       #'A'
                 beq       :all
-                cmp       #'F'
+                cmp       #'O'
                 beq       :off
                 cmp       #';'
                 beq       :one
