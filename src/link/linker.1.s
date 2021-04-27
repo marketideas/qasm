@@ -1800,7 +1800,7 @@ lnkop           sec
                 bit       :dsvalid
                 jpl       :xit
                 ldy       :dsy
-                lda       :aux
+                lda       :rel
                 and       #$FF
                 eor       #$FF
                 inc
@@ -1820,6 +1820,15 @@ lnkop           sec
                 psl       :handle
                 _GetHandleSize
                 pll       :size
+
+                sec
+                lda       :size
+                sbc       :aux
+                sta       :rsize
+                lda       :size+2
+                sbc       #0
+                sta       :rsize+2
+
                 lda       :more
                 clc
                 adc       :size
@@ -1867,9 +1876,7 @@ lnkop           sec
                 sta       :dest+2
                 psl       :src
                 psl       :dest
-                pea       $00
-                lda       :more
-                pha
+                psl       :rsize
                 _BlockMove
                 ldy       :aux
                 ldx       #$00
@@ -1912,6 +1919,7 @@ lnkop           sec
 :dest           ds        4
 :byte           ds        2
 :temp           ds        4
+:rsize          ds        4
 
 :constrainterr  php
                 rep       $30
