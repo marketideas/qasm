@@ -1092,8 +1092,93 @@ zipop           lda       passnum
                 clc
                 rts                                 ;return error from newsegment
 
-posop                                               ;I don't know what these do
-lenop           clc                                 ;or how Merlin uses them so....?????
+
+* read label from operand into labstr.
+getlabel
+                stz       labstr
+                sep       $20
+                ldy       #0
+                ldx       #0
+]flush          lda       (lineptr),y
+                and       #$7f
+                cmp       #' '
+                blt       :done
+                bne       :first
+                iny
+                bra       ]flush
+:first          cmp       #';'
+                beq       :done
+                cmp       #'*'
+                beq       :done
+                cmp       #':'+1
+                blt       :bad
+                cmp       #']'
+                beq       :bad
+                sta       labstr+1
+                inx
+]lup            iny
+                lda       (lineptr),y
+                and       #$7f
+                cmp       #' '+1
+                blt       :done
+                cpx       #lab_size
+                bcs       ]lup
+                sta       labstr+1,x
+                inx
+                bra       ]lup
+:done           txa
+                sta       labstr
+                rep       $30
+                clc
+                rts
+:bad            rep       $30
+                sec
+                lda       #badlable.$80
+                rts
+
+* len label
+* set label = length of last lnk
+lenop           bit       passnum
+                bpl       :equ
+:rts            clc
+                rts
+:equ            jsr       getlabel
+                bcc       :ok
+                rts
+:ok             lda       labstr
+                and       #$ff
+                beq       :rts
+
+                lda       linklen
+                sta       labval
+                stz       labval+2
+                lda       #linkentrybit.linkabsbit
+                jmp       insertlable
+
+* pos label
+* set label = current linker offset.
+* resets offset to 0 if no label.
+posop           bit       passnum
+                bpl       :equ
+                clc
+                rts
+:equ            jsr       getlabel
+                bcc       :ok
+                rts
+:ok             lda       labstr
+                and       #$ff
+                beq       :zero
+
+                lda       linkpos
+                sta       labval
+                lda       linkpos+2
+                sta       labval+2
+                lda       #linkentrybit.linkabsbit
+                jmp       insertlable
+
+:zero           stz       linkpos
+                stz       linkpos+2
+                clc
                 rts
 
 extop           bit       passnum
@@ -1484,6 +1569,15 @@ impop           sec
                 lda       #$00
                 adc       reloffset+2
                 sta       reloffset+2
+                lda       :aux
+                sta       linklen
+                clc
+                adc       linkpos
+                sta       linkpos
+                lda       #$00
+                adc       linkpos+2
+                sta       linkpos+2
+
 :l              psl       :handle
                 _HUnlock
                 lda       #$00
@@ -1676,6 +1770,15 @@ lnkop           sec
                 lda       #$00
                 adc       reloffset+2
                 sta       reloffset+2
+                lda       :aux
+                sta       linklen
+                clc
+                adc       linkpos
+                sta       linkpos
+                lda       #$00
+                adc       linkpos+2
+                sta       linkpos+2
+
                 bit       :errvalid
                 bpl       :l
                 lda       :rel+2
@@ -3579,6 +3682,9 @@ savop           lda       #$00
                 stz       :ct
                 stz       rellength
                 stz       rellength+2
+                stz       linklen
+                stz       linkpos
+                stz       linkpos+2
 
                 psl       #:str
                 _QADrawString

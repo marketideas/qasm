@@ -252,6 +252,9 @@ linksymnum        ds    2
 linknextlbl       ds    4
 
 
+linkpos           ds    4                     ; pos / len
+linklen           ds    2
+
 opmask            ds    2                     ;EVAL variables
 number            ds    2
 bracevalid        ds    2
