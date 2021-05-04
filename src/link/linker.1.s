@@ -1181,29 +1181,15 @@ posop           bit       passnum
                 clc
                 rts
 
+* label ext
+* import an absolute label into the local symbol table.
 extop           bit       passnum
                 bpl       :equ
-                clc
+:rts            clc
                 rts
 :equ            lda       newlable
                 and       #$ff
-                bne       :equ1
-                clc
-                rts
-:equ1           clc
-                rts
-                do        0
-                ldx       #$00
-                jsr       eval
-                bcc       :ok
-                rts
-:ok             lda       lvalue
-                sta       labval
-                lda       lvalue+2
-                sta       labval+2
-                lda       newlable
-                and       #$ff
-                beq       :badlable
+                beq       :rts
                 cmp       #lab_size
                 blt       :tx1
                 lda       #lab_size
@@ -1222,14 +1208,29 @@ extop           bit       passnum
                 cmp       #']'
                 beq       :badlable
                 rep       $20
-                lda       #linkgeqbit
-                jsr       insertlable
-                rts
-:badlable       rep       $30
+
+                jsr       findlable
+                bcs       :found
+
+:badlable       rep       #$30
                 lda       #badlable.$80
                 sec
                 rts
-                fin
+:found
+                lda       foundlable+o_labtype
+                and       #linkentrybit.linkabsbit
+                cmp       #linkentrybit.linkabsbit
+                bne       :badlable
+
+                ldy       #o_labtype
+                lda       [lableptr],y
+                ora       #linkgeqbit
+                sta       [lableptr],y
+                clc
+                rts
+
+
+
 
 geqop           bit       passnum
                 bpl       :equ
