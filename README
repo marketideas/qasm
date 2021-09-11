@@ -34,7 +34,19 @@ libpal does not have to be built. The 'qasm' compile will build all of those sou
 'cmake' is used to build the Makefiles.  There is a generic Makefile in the base directory that does 
 all of the 'cmake' stuff for you. (in a 'build' directory)
 
-For example:
+Before making, you will need to insure cmake and poco are installed. For example, via HomeBrew:
+
+brew install cmake
+brew install poco
+
+Then, in the qasm soure folder, next to the QAsm Xcode project file, create a link to the poco libraries, for example:
+
+rm libpoco
+ln -s /usr/local/Cellar/poco/1.11.0/lib libpoco
+
+
+To make qasm, follow these steps, where 'workdir' is the path to the qasm folder (alongside the libpal folder, typically both are inside a containing qasm folder).
+ 
 mkdir workdir
 cd workdir
 git clone git://github.com/marketideas/libpal libpal
