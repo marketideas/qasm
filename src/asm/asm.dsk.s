@@ -694,7 +694,7 @@ writerel     php                                                     ;must enter
              ldy           #$00
              stz           :offset
              lda           [lableptr]
-             and           #$0F
+             and           #label_mask
              bne           :stalen
              inc           :main
              jmp           :loop
@@ -702,7 +702,7 @@ writerel     php                                                     ;must enter
              clc
              adc           #4
              sta           :request
-             ldy           #26
+             ldy           #o_labtype
              lda           [lableptr],y
              bit           #entrybit.externalbit
              jeq           :rts
@@ -720,7 +720,7 @@ writerel     php                                                     ;must enter
              blt           ]lup
 
              rep           $30
-             ldy           #26
+             ldy           #o_labtype
              lda           [lableptr],y
              bit           #entrybit
              bne           :ent1
@@ -741,7 +741,7 @@ writerel     php                                                     ;must enter
              bpl           :value
              lda           #$20
              tsb           :len
-:value       ldy           #28
+:value       ldy           #o_labval
              lda           :len
              and           #%00011111
              tax
@@ -757,7 +757,7 @@ writerel     php                                                     ;must enter
              rep           $20
              and           #$80
              beq           :writeit
-             ldy           #22
+             ldy           #o_labprev
              lda           [lableptr],y
              and           #$00ff
              ora           :buffer+1,x

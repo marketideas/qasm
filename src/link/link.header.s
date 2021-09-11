@@ -14,6 +14,7 @@ doexpress    =     $01
              use   ../macros/builtin.macs
              use   ../macros/qatools.macs
              use   ../data/qa.equates
+             use   ../data/sym.equates
 
              use   link.macs
 
@@ -281,16 +282,16 @@ doquicklink  php
              ply
              jcs   :sec
 
-:go          phx
-             phy
+:go          phy
+             phx
 :go1         psl   #:quickstr
              _QADrawString
              lda   #$FFFF
              sta   quicklink
              psl   #:zero
              _QASetObjPath
-             ply
              plx
+             ply
              jsl   link
              bcc   :clc
              jmp   :sec

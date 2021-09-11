@@ -201,7 +201,7 @@ asm          php
              plx
              cmp   #' '+1
              blt   :glabdone
-:cpx         cpx   #$0f
+:cpx         cpx   #lab_size
              bge   :gliny
              sta   labstr+1,x
              inx
@@ -210,9 +210,9 @@ asm          php
 :sjmp        jmp   :savlen
 :cjmp        jmp   :comment
 
-:glabdone    cpx   #$10
+:glabdone    cpx   #lab_size+1
              blt   :gl2
-             ldx   #$0f
+             ldx   #lab_size
 :gl2         stx   labstr
              cmp   #' '
              blt   :sjmp
@@ -394,8 +394,8 @@ asm          php
              lda   1,s
              jsr   asmerror
 
-             lda   passnum
-             beq   :perrpla
+*             lda   passnum
+*             beq   :perrpla
 
              lda   listflag
              pha
@@ -845,13 +845,13 @@ printline    php
              pea   0
              pea   0
              _QADrawDec
-             lda   #' '
-             jsr   drawchar
-* rep $30
-* lda tabs
-* and #$ff
-* pha
-* _QATabToCol
+*             lda   #' '
+*             jsr   drawchar
+*             rep   $30
+             lda   tabs
+             and   #$ff
+             pha
+             _QATabToCol
 :sp2         sep   $30
              lda   [printptr]
              and   #$7f
@@ -1586,8 +1586,10 @@ initline     php
              sta   lableused
              lda   objptr
              sta   lineobjptr
+             sta   pcobjptr
              lda   objptr+2
              sta   lineobjptr+2
+             sta   pcobjptr+2
 
 :xit         plp
              rts
@@ -1599,11 +1601,11 @@ inclablect   php
              and   #%11111111
              bne   :normal
              psl   #$00
-             psl   #$2000
+             psl   #sym_size*256
              lda   userid
              ora   #asmmemid
              pha
-             pea   $8004                               ;page aligned/locked
+             pea   $8014                               ;page aligned/locked/nocross
              psl   #$00
              _NewHandle
              plx
@@ -1626,7 +1628,7 @@ inclablect   php
              jmp   :rts
 :normal      lda   nextlableptr
              clc
-             adc   #32
+             adc   #sym_size
              sta   nextlableptr
              bcc   :rts
              inc   nextlableptr+2
@@ -1858,9 +1860,9 @@ domacros     php                                       ;enter with $00 in A to s
              cmp   #$00
              bne   :nofind
              ldx   opcode
-             cpx   #$10
+             cpx   #lab_size+1
              blt   :move
-             ldx   #$0f
+             ldx   #lab_size
 :move        lda   opcode,x
              sta   labstr,x
              dex
@@ -1874,7 +1876,7 @@ domacros     php                                       ;enter with $00 in A to s
              bcc   :builtin                            ;not found so try built in macs
              bcc   :bad
              rep   $20
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              and   #$8004
              cmp   #$8004
@@ -2319,7 +2321,7 @@ domac1       php
              sty   macflag
              bcc   :restore                            ;notfound
              rep   $20
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              and   #$8004
              cmp   #$8004
@@ -2412,7 +2414,15 @@ addmode      php
              beq   :force16
              cmp   #'>'
              beq   :force24
+             cmp   #$27  ; '
+             beq   :skipq
+             cmp   #$22 ; "
+             beq   :skipq
+             and   #$5f
+             cmp   #'A'
+             beq   :a
              jmp   :index
+
 :force8      lda   #amforce8
              tsb   myvalue
              jmp   :index
@@ -2427,6 +2437,25 @@ addmode      php
              jmp   :index
 :square      lda   #amsquare
              tsb   myvalue
+             jmp   :index
+
+*  'a' (no modifier) is ignored
+:a           iny
+             lda [lineptr],y
+             cmp #' '+1
+             jlt :zero
+             dey
+             jmp :index
+
+* skip over quoted operand component.
+:skipq       sta   :q
+:skipq1      iny
+             lda   [lineptr],y
+             cmp   #' '
+             blt   :badmode
+             cmp   :q
+             bne   :skipq1
+
 :index       iny
              lda   [lineptr],y
              cmp   #' '+1
@@ -2434,7 +2463,13 @@ addmode      php
              cmp   #';'
              beq   :modexit
              cmp   #','
-             bne   :index
+             beq   :index1
+             cmp   #$27 ; '
+             beq   :skipq
+             cmp   #$22 ; "
+             beq   :skipq
+             bra   :index
+
 :index1      iny
              lda   [lineptr],y
              and   #$5f
@@ -2542,6 +2577,7 @@ addmode      php
              plp
              sec
              rts
+:q           ds    2
 
 addmodetbl   dfb   6*3
              dfb   7*3
@@ -3019,12 +3055,12 @@ relcorrect   php
              lda   [lableptr1],y
              sta   lableptr+2
              ldx   #$00
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              and   #$10
              beq   :noext
              tsb   :flags
-             ldy   #22
+             ldy   #o_labprev
              lda   [lableptr],y
              sta   :refnum
              lda   #$8000
@@ -3215,7 +3251,7 @@ define       ldy   #$00
              sta   fllast
              jsr   findlable
              bcc   :p0insert
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              bit   #variablebit
              bne   :p0var
@@ -3224,15 +3260,15 @@ define       ldy   #$00
              bit   macflag-1
              bvs   :p0insert
              jmp   :dup
-:p0var       ldy   #16
+:p0var       ldy   #o_labnum
              lda   [lableptr],y
              sta   linelable
-             ldy   #28
+             ldy   #o_labval
              lda   [lableptr],y
              sta   varval
              lda   objptr
              sta   [lableptr],y
-             ldy   #30
+             ldy   #o_labval+2
              lda   [lableptr],y
              sta   varval+2
              lda   objptr+2
@@ -3244,7 +3280,7 @@ define       ldy   #$00
              sta   labval+2
              jsr   insertlable
              bcs   :err                                ;error returned in A
-             ldy   #16
+             ldy   #o_labnum
              lda   [lableptr],y
              sta   linelable
              stz   varval
@@ -3257,39 +3293,39 @@ define       ldy   #$00
              sta   fllast
              jsr   findlable
              bcc   :undef                              ;not found on second pass
-             ldy   #16
+             ldy   #o_labnum
              lda   [lableptr],y
              sta   linelable
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              bit   #variablebit
              bne   :p1var
              bit   #$20.$10.$08.$04.$01.linkerbit      ;ext,macvar,macro,
              beq   :checkmis                           ;                    locals, or linkerequ's
              jmp   :noerr
-:p1var       ldy   #28
+:p1var       ldy   #o_labval
              lda   [lableptr],y
              sta   varval
              lda   objptr
              sta   [lableptr],y
-             ldy   #30
+             ldy   #o_labval+2
              lda   [lableptr],y
              sta   varval+2
              lda   objptr+2
              sta   [lableptr],y
              jmp   :noerr
-:checkmis    ldy   #28
+:checkmis    ldy   #o_labval
              lda   [lableptr],y
              cmp   objptr
              bne   :misal
-             ldy   #30
+             ldy   #o_labval+2
              lda   [lableptr],y
              cmp   objptr+2
              beq   :noerr
-:misal       ldy   #28
+:misal       ldy   #o_labval
              lda   [lableptr],y                        ;reset object pointer so we don't
              sta   objptr                              ;generate more misalign errors
-             ldy   #30
+             ldy   #o_labval+2
              lda   [lableptr],y
              sta   objptr+$2
              pea   #misalignment
@@ -3302,13 +3338,13 @@ define       ldy   #$00
 :xit         rep   $30
              bit   linelable
              bmi   :geterr
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              and   #%111111.linkerbit                  ;no macvars,externals,equates,macros,variables,
              bne   :geterr                             ;locals or linkerequ's...
              lda   globlab
              sta   oldglob
-             ldy   #16
+             ldy   #o_labnum
              lda   [lableptr],y
              sta   globlab
              lda   #$0080
@@ -3382,7 +3418,7 @@ findlable
              iny
              lda   [lableptr1],y
              sta   lableptr+2
-             ldy   #24
+             ldy   #o_lablocal
              lda   [lableptr],y
              bmi   :notfound                           ;none defined
              sta   ]pos
@@ -3406,12 +3442,12 @@ findlable
              sta   lableptr+2
              stz   ]offset
              lda   [lableptr]
-             and   #$0f
+             and   #label_mask
              sta   ]len2
              sep   $20
              ldx   #$02                                ;start at byte 2
              txy
-]lup1        cpx   #$10
+]lup1        cpx   #lab_size+1
              bge   :movefound
              cpx   ]len1
              blt   :1
@@ -3438,13 +3474,13 @@ findlable
              cmp   ]len2
              beq   :movefound
 :goleft      rep   $30
-             ldy   #18
+             ldy   #o_lableft
              lda   [lableptr],y
              bmi   :nf1
              sta   ]pos
              jmp   ]lup
 :goright     rep   $30
-             ldy   #20
+             ldy   #o_labright
              lda   [lableptr],y
              bmi   :nf1
              sta   ]pos
@@ -3535,7 +3571,7 @@ insertlable
              iny
              lda   [lableptr1],y
              sta   lableptr+2
-             ldy   #24
+             ldy   #o_lablocal
              lda   [lableptr],y
              jpl   :start
              lda   globlab
@@ -3553,7 +3589,7 @@ insertlable
              iny
              lda   [lableptr1],y
              sta   lableptr+2
-             ldy   #24
+             ldy   #o_lablocal
              lda   lablect
              sta   [lableptr],y                        ;set local ptr for GLable
              jmp   :save
@@ -3599,7 +3635,7 @@ insertlable
              stz   ]len2+1
              ldx   #$02                                ;start at byte 2
              txy
-]lup1        cpx   #$10
+]lup1        cpx   #lab_size+1
              jeq   :error2
              cpx   ]len1
              blt   :1
@@ -3622,7 +3658,7 @@ insertlable
              lda   ]len1
              cmp   ]len2
              bne   :goleft
-:replace     ldy   #26                                 ;offset to equ value
+:replace     ldy   #o_labtype                                 ;offset to equ value
              lda   labtype
              sta   [lableptr],y
              iny
@@ -3636,7 +3672,7 @@ insertlable
              sta   [lableptr],y
              jmp   :nosave
 :goleft      rep   $30
-             ldy   #18                                 ;leftptr
+             ldy   #o_lableft                          ;leftptr
              lda   [lableptr],y
              bpl   :p1
              lda   lablect
@@ -3645,7 +3681,7 @@ insertlable
 :p1          sta   ]pos
              jmp   ]lup
 :goright     rep   $30
-             ldy   #20                                 ;leftptr
+             ldy   #o_labright                          ;rightptr
              lda   [lableptr],y
              bpl   :p2
              lda   lablect
@@ -3700,11 +3736,11 @@ insertlable
              clc
              adc   #labstr
              tax                                       ;source low word
-             lda   #31                                 ;MVN
+             lda   #sym_size-1                         ;MVN
              phb
 :mvn         mvn   $000000,$000000
              plb
-             ldy   #26
+             ldy   #o_labtype
              lda   [lableptr],y
              bpl   :and
              inc   rellabct
@@ -3744,7 +3780,7 @@ insertlable
              sta   ]len2
              ldy   #$02
              tyx                                       ;start at byte 2
-]lup1        cpx   #$10
+]lup1        cpx   #lab_size+1
              jeq   :error2
              cpx   ]len1
              blt   :fi1
@@ -3768,7 +3804,7 @@ insertlable
              cmp   ]len2
              bne   :figoleft
 :fireplace   rep   $30
-             ldy   #26                                 ;offset to equ value
+             ldy   #o_labtype                                 ;offset to equ value
              lda   labtype
              sta   [lableptr],y
              iny
@@ -3782,10 +3818,10 @@ insertlable
              sta   [lableptr],y
              jmp   :nosave
 :figoright   rep   $30
-             ldy   #20
+             ldy   #o_labright
              jmp   :figo
 :figoleft    rep   $30
-             ldy   #18
+             ldy   #o_lableft
 :figo        lda   lablect
              sta   [lableptr],y
              jmp   :save
@@ -3853,7 +3889,7 @@ drawlables   php
              iny
              lda   [lableptr1],y
              sta   lableptr+2
-             ldy   #18
+             ldy   #o_lableft
              lda   #'R'
              sta   :char
              lda   [lableptr],y
@@ -3865,7 +3901,7 @@ drawlables   php
 :next1       jsr   :print
              lda   #'R'
              sta   :char
-             ldy   #20
+             ldy   #o_labright
              lda   [lableptr],y
              bmi   :done
              pha
@@ -3885,7 +3921,7 @@ drawlables   php
 :print       ldy   #$00
              sty   :offset
              lda   [lableptr],y
-             and   #$0F
+             and   #label_mask
              sta   :len
              sta   :bytes
              bne   :p1
@@ -3938,7 +3974,7 @@ drawlables   php
              cpx   :len
              blt   ]lup
              beq   ]lup
-             lda   #$14
+             lda   #lab_size+5
              sec
              sbc   :bytes
              tax
@@ -3950,7 +3986,7 @@ drawlables   php
              bpl   ]lup
              lda   #'$'
              jsr   drawchar
-             ldy   #28+2
+             ldy   #o_labval+2
              ldx   #$03
 ]lup         lda   [lableptr],y
              and   #$FF
@@ -3968,7 +4004,7 @@ drawlables   php
              jsr   drawchar
              lda   :offset
              clc
-             adc   #26
+             adc   #o_labtype
              tay
              lda   [lableptr],y
              jsr   prbytel
@@ -3976,14 +4012,14 @@ drawlables   php
              jsr   drawchar
              lda   :offset
              clc
-             adc   #16
+             adc   #o_labnum
              tay
              lda   [lableptr],y
              jsr   prbytel
 
              lda   #$0D
              jsr   drawchar
-             ldy   #24                                 ;offset to local labels
+             ldy   #o_lablocal                                 ;offset to local labels
              lda   [lableptr],y
              bmi   :rts
              pha

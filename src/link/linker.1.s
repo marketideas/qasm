@@ -415,15 +415,15 @@ linkline        php
                 cmp       #' '
                 blt       :done
                 beq       :lable
-                cpx       #15
+                cpx       #lab_size
                 bge       :nosta
                 sta       newlable+1,x
 :nosta          inx
                 jmp       ]lup
 :lable          txa
-                cmp       #15
+                cmp       #lab_size
                 blt       :l1
-                lda       #15
+                lda       #lab_size
 :l1             sta       newlable
                 jmp       :op
 
@@ -496,12 +496,15 @@ getopcode
                 blt       ]lup
                 beq       ]lup
                 dex
-:done           lda       #$2020
+:done           lda       #$2020                    ;truncate to 3 bytes max
                 sta       opcode+$1,Y
+                sta       opcode+4
                 tya
-                and       #$1F
                 sep       $20
-                sta       opcode
+                cmp       #4
+                bcc       :3
+                lda       #3
+:3              sta       opcode
 ]flush          lda       linebuff,x
                 cmp       #' '
                 bne       :tya
@@ -1008,9 +1011,9 @@ equop           bit       passnum
                 lda       newlable
                 and       #$ff
                 beq       :badlable
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1            tax
                 sep       $20
                 sta       labstr
@@ -1048,9 +1051,9 @@ equ1op          bit       passnum
                 lda       newlable
                 and       #$ff
                 beq       :badlable
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 tax
                 sep       $20
@@ -1089,36 +1092,107 @@ zipop           lda       passnum
                 clc
                 rts                                 ;return error from newsegment
 
-posop                                               ;I don't know what these do
-lenop           clc                                 ;or how Merlin uses them so....?????
+
+* read label from operand into labstr.
+getlabel
+                stz       labstr
+                sep       $20
+                ldy       #0
+                ldx       #0
+]flush          lda       (lineptr),y
+                and       #$7f
+                cmp       #' '
+                blt       :done
+                bne       :first
+                iny
+                bra       ]flush
+:first          cmp       #';'
+                beq       :done
+                cmp       #'*'
+                beq       :done
+                cmp       #':'+1
+                blt       :bad
+                cmp       #']'
+                beq       :bad
+                sta       labstr+1
+                inx
+]lup            iny
+                lda       (lineptr),y
+                and       #$7f
+                cmp       #' '+1
+                blt       :done
+                cpx       #lab_size
+                bcs       ]lup
+                sta       labstr+1,x
+                inx
+                bra       ]lup
+:done           txa
+                sta       labstr
+                rep       $30
+                clc
+                rts
+:bad            rep       $30
+                sec
+                lda       #badlable.$80
                 rts
 
-extop           bit       passnum
+* len label
+* set label = length of last lnk
+lenop           bit       passnum
+                bpl       :equ
+:rts            clc
+                rts
+:equ            jsr       getlabel
+                bcc       :ok
+                rts
+:ok             lda       labstr
+                and       #$ff
+                beq       :rts
+
+                lda       linklen
+                sta       labval
+                stz       labval+2
+                lda       #linkentrybit.linkabsbit
+                jmp       insertlable
+
+* pos label
+* set label = current linker offset.
+* resets offset to 0 if no label.
+posop           bit       passnum
                 bpl       :equ
                 clc
                 rts
-:equ            lda       newlable
-                and       #$ff
-                bne       :equ1
-                clc
-                rts
-:equ1           clc
-                rts
-                do        0
-                ldx       #$00
-                jsr       eval
+:equ            jsr       getlabel
                 bcc       :ok
                 rts
-:ok             lda       lvalue
-                sta       labval
-                lda       lvalue+2
-                sta       labval+2
-                lda       newlable
+:ok             lda       labstr
                 and       #$ff
-                beq       :badlable
-                cmp       #15
+                beq       :zero
+
+                lda       linkpos
+                sta       labval
+                lda       linkpos+2
+                sta       labval+2
+                lda       #linkentrybit.linkabsbit
+                jmp       insertlable
+
+:zero           stz       linkpos
+                stz       linkpos+2
+                clc
+                rts
+
+* label ext
+* import an absolute label into the local symbol table.
+extop           bit       passnum
+                bpl       :equ
+:rts            clc
+                rts
+:equ            lda       newlable
+                and       #$ff
+                beq       :rts
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 tax
                 sep       $20
@@ -1134,14 +1208,29 @@ extop           bit       passnum
                 cmp       #']'
                 beq       :badlable
                 rep       $20
-                lda       #linkgeqbit
-                jsr       insertlable
-                rts
-:badlable       rep       $30
+
+                jsr       findlable
+                bcs       :found
+
+:badlable       rep       #$30
                 lda       #badlable.$80
                 sec
                 rts
-                fin
+:found
+                lda       foundlable+o_labtype
+                and       #linkentrybit.linkabsbit
+                cmp       #linkentrybit.linkabsbit
+                bne       :badlable
+
+                ldy       #o_labtype
+                lda       [lableptr],y
+                ora       #linkgeqbit
+                sta       [lableptr],y
+                clc
+                rts
+
+
+
 
 geqop           bit       passnum
                 bpl       :equ
@@ -1158,9 +1247,9 @@ geqop           bit       passnum
                 lda       newlable
                 and       #$ff
                 beq       :badlable
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 tax
                 sep       $20
@@ -1199,9 +1288,9 @@ kbdop           bit       passnum
                 lda       newlable
                 and       #$ff
                 beq       :badlable
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 tax
                 sep       $20
@@ -1481,6 +1570,15 @@ impop           sec
                 lda       #$00
                 adc       reloffset+2
                 sta       reloffset+2
+                lda       :aux
+                sta       linklen
+                clc
+                adc       linkpos
+                sta       linkpos
+                lda       #$00
+                adc       linkpos+2
+                sta       linkpos+2
+
 :l              psl       :handle
                 _HUnlock
                 lda       #$00
@@ -1541,7 +1639,7 @@ impop           sec
                 and       #$7f
                 cmp       #':'
                 beq       :set
-                cpx       #16
+                cpx       #lab_size+1
                 bge       :inx
                 cmp       #'.'
                 bne       :sta
@@ -1553,9 +1651,9 @@ impop           sec
                 blt       :loop2
                 beq       :loop2
 :set            txa
-                cmp       #15
+                cmp       #lab_size
                 blt       :set1
-                lda       #15
+                lda       #lab_size
 :set1           sta       labstr
                 rep       $30
                 lda       reloffset
@@ -1565,7 +1663,7 @@ impop           sec
                 lda       #linkentrybit
                 jsr       insertlable
                 bcs       :sec
-                ldy       #24
+                ldy       #o_lablocal
                 lda       segnum
                 sta       [lableptr],y
                 plp
@@ -1673,6 +1771,15 @@ lnkop           sec
                 lda       #$00
                 adc       reloffset+2
                 sta       reloffset+2
+                lda       :aux
+                sta       linklen
+                clc
+                adc       linkpos
+                sta       linkpos
+                lda       #$00
+                adc       linkpos+2
+                sta       linkpos+2
+
                 bit       :errvalid
                 bpl       :l
                 lda       :rel+2
@@ -1797,7 +1904,7 @@ lnkop           sec
                 bit       :dsvalid
                 jpl       :xit
                 ldy       :dsy
-                lda       :aux
+                lda       :rel
                 and       #$FF
                 eor       #$FF
                 inc
@@ -1817,6 +1924,15 @@ lnkop           sec
                 psl       :handle
                 _GetHandleSize
                 pll       :size
+
+                sec
+                lda       :size
+                sbc       :aux
+                sta       :rsize
+                lda       :size+2
+                sbc       #0
+                sta       :rsize+2
+
                 lda       :more
                 clc
                 adc       :size
@@ -1864,9 +1980,7 @@ lnkop           sec
                 sta       :dest+2
                 psl       :src
                 psl       :dest
-                pea       $00
-                lda       :more
-                pha
+                psl       :rsize
                 _BlockMove
                 ldy       :aux
                 ldx       #$00
@@ -1909,6 +2023,7 @@ lnkop           sec
 :dest           ds        4
 :byte           ds        2
 :temp           ds        4
+:rsize          ds        4
 
 :constrainterr  php
                 rep       $30
@@ -2062,9 +2177,9 @@ buildentries
 :abs            ply
                 lda       1,s
                 and       #%00011111
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 tay
                 tax
@@ -2089,7 +2204,7 @@ buildentries
                 plp
                 sec
                 rts
-:ok2            ldy       #24
+:ok2            ldy       #o_lablocal
                 lda       segnum
                 sta       [lableptr],y
 :next           pla
@@ -2457,11 +2572,11 @@ relocatefinal
                 sec
                 sbc       #$8000
                 clc
-                adc       foundlable+28
+                adc       foundlable+o_labval
                 sta       [tempptr],y
                 sta       omfoff2
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
                 lda       #$02
                 sta       omfbytes
@@ -2540,13 +2655,13 @@ relocatefinal
                 sec
                 sbc       #$8000
                 clc
-                adc       foundlable+28
+                adc       foundlable+o_labval
                 sta       omfoff2
                 xba
                 sta       [tempptr],y
 
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
 
                 bit       interseg
@@ -2675,19 +2790,19 @@ relocatefinal
                 dey
                 lda       :lowbyte
                 clc
-                adc       foundlable+28
+                adc       foundlable+o_labval
                 sta       omfoff2
                 sty       :omfy
                 sta       [tempptr],y
                 iny
                 iny
                 lda       :lowbyte+2
-                adc       foundlable+30
+                adc       foundlable+o_labval+2
                 sep       $20
                 sta       [tempptr],y
                 rep       $20
-                lda       foundlable+26
-                and       #$0020                    ;absolute lable?
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit                    ;absolute lable?
                 jne       :clc
 
                 bit       interseg
@@ -2782,13 +2897,13 @@ relocatefinal
                 lda       [tempptr],y
                 and       #$ff
                 clc
-                adc       foundlable+28
+                adc       foundlable+o_labval
                 sta       omfoff2
                 sep       $20
                 sta       [tempptr],y
                 rep       $20
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
 
                 bit       interseg
@@ -2876,14 +2991,14 @@ relocatefinal
                 sec
                 sbc       #$8000
                 clc
-                adc       foundlable+28
+                adc       foundlable+o_labval
                 sta       omfoff2
                 xba
                 sep       $20
                 sta       [tempptr],y
                 rep       $20
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
 
                 bit       interseg
@@ -3035,30 +3150,35 @@ relocatefinal
                 clc
                 adc       reloffset
                 sta       omfoff1
-                lda       foundlable+28
+                lda       foundlable+o_labval
                 clc
                 adc       :lowbyte
                 sta       omfoff2
-                lda       foundlable+30
+                lda       foundlable+o_labval+2
                 adc       :lowbyte+2
                 sep       $20
                 sta       [tempptr],y
                 rep       $20
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
 
-                lda       #$f6
+                lda       #$f5
                 sta       omfcode
-                lda       #$08
+                lda       #$07
                 sta       omflength
                 lda       #$01
                 sta       omfbytes
                 lda       #-16
                 sta       omfshift
+                bit       interseg
+                bpl       :ok3
+                inc       omfcode
+                inc       omflength
                 jsr       isegwarning
-                jsr       insertomf
+:ok3            jsr       insertomf
                 jmp       :clc
+
 :la4            ldy       #$03
                 lda       [tempptr1],y
                 and       #$ff
@@ -3083,32 +3203,37 @@ relocatefinal
                 clc
                 adc       reloffset
                 sta       omfoff1
-                lda       foundlable+28
+                lda       foundlable+o_labval
                 clc
                 adc       :lowbyte
                 sta       :lowbyte
                 sta       omfoff2
-                lda       foundlable+30
+                lda       foundlable+o_labval+2
                 adc       :lowbyte+2
                 sta       :lowbyte+2
                 lda       :lowbyte+1
                 sta       [tempptr],y
 
-                lda       foundlable+26
-                and       #$0020
+                lda       foundlable+o_labtype
+                and       #linkabsbit.linkgeqbit
                 jne       :clc
 
-                lda       #$f6
+                lda       #$f5
                 sta       omfcode
-                lda       #$08
+                lda       #$07
                 sta       omflength
                 lda       #$02
                 sta       omfbytes
                 lda       #-8
                 sta       omfshift
+                bit       interseg
+                bpl       :ok4
+                inc       omfcode ; $f6
+                inc       omflength
                 jsr       isegwarning
-                jsr       insertomf
+:ok4            jsr       insertomf
                 jmp       :clc
+
 :la5            jmp       :b1hi
 
 :clc            plp
@@ -3160,7 +3285,7 @@ getexternal     php
                 jmp       ]lup
 :notfound       rep       $20
                 lda       labstr
-                and       #$0f
+                and       #label_mask
                 tay
                 ldx       #$01
 ]lup            sep       $20
@@ -3207,9 +3332,9 @@ getexternal     php
                 ldy       :offset
                 lda       [tempptr2],y
                 and       #%00011111
-                cmp       #15
+                cmp       #lab_size
                 blt       :tx1
-                lda       #15
+                lda       #lab_size
 :tx1
                 sta       :offset
                 ldx       #$00
@@ -3234,14 +3359,14 @@ getexternal     php
                 sec
                 ror       :cased
                 jmp       :find
-:itsfound       ldy       #26
+:itsfound       ldy       #o_labtype
                 lda       [lableptr],y
                 ora       #linkentused
                 sta       [lableptr],y
-:itsfound2      lda       foundlable+26
-                bit       #linkentrybit
+:itsfound2      lda       foundlable+o_labtype
+                bit       #linkentrybit.linkgeqbit
                 jeq       :notfound
-                lda       foundlable+24             ;get lable's seg number
+                lda       foundlable+o_lablocal             ;get lable's seg number
                 sta       extseg
                 cmp       segnum
                 beq       :bit
@@ -3252,7 +3377,7 @@ getexternal     php
                 rep       $20
 :bit            bit       :zpage
                 bpl       :clc
-                lda       foundlable+29
+                lda       foundlable+o_labval+1
                 beq       :clc
                 lda       #extnotzp
                 plp
@@ -3414,7 +3539,7 @@ ovrop           ldy       #$00
                 and       #$5f
                 cmp       #'A'
                 beq       :all
-                cmp       #'F'
+                cmp       #'O'
                 beq       :off
                 cmp       #';'
                 beq       :one
@@ -3558,6 +3683,9 @@ savop           lda       #$00
                 stz       :ct
                 stz       rellength
                 stz       rellength+2
+                stz       linklen
+                stz       linkpos
+                stz       linkpos+2
 
                 psl       #:str
                 _QADrawString

@@ -772,22 +772,28 @@ SetCmdHdl
  rts
 
 *------------------------------------------------------
+* _QAGetWord error 
+* $0000 -> no error
+* $00xx -> no word, a = terminating character (anything less than $20, excluding \t )
+* $80xx -> qa tool error
+*  return value will always be 0,0 if there was an error. can never be 0,0 on success.
+*
 :getword
  REP #$20 ;force 16 bit
 ]loop
  ~QAGetWord Ptr;endword;temp ;get a word
  plx
  ply
- beq :0 ;don't modify if no word!
- stx endword
- sty begword
  bcc :1
- tax ;real error, or just no word?
- bmi :1
+ tax ; real error or no word?
+ bpl :0
+ rts ; carry still set
 :0
  inc endword ;no word- look for one!
  bra ]loop
 :1
+ stx endword
+ sty begword
  SEP #$20
  bra :gc ;get first char, uppercase!
 

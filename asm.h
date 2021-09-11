@@ -1,6 +1,6 @@
 #pragma once
 #include "app.h"
-
+//
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
 #define MODE_6502 0

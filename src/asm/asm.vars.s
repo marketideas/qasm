@@ -79,7 +79,7 @@ absolutebit     =     %1000_0000_0000_0000
 *** Assembly Zpage Equates ***
                 dum   $00
 
-labstr          ds    16                    ;Lable STR that we are working on
+labstr          ds    lab_size+1                    ;Lable STR that we are working on
 labnum          ds    2                     ;REC num of current lable
 lableft         ds    2                     ;B-Tree Structures
 labright        ds    2
@@ -93,7 +93,7 @@ lineptr         ds    4
 printptr        ds    4
 linelable       ds    2
 linehaslab      ds    2
-linelabtxt      ds    16,0
+*linelabtxt      ds    lab_size+1,0
 linenum         ds    2
 totallines      ds    2
 
@@ -187,6 +187,7 @@ lvalue          ds    4
 myvalue         ds    4
 noshift         ds    4
 lineobjptr      ds    4
+pcobjptr        ds    4
 
 xreg            ds    4                     ;variables used by EVAL
 yreg            ds    4
@@ -323,6 +324,8 @@ dskpath         ds    129,0
 atable          ds    128*2,0
 
 titlestr        ds    256,0
+
+linelabtxt      ds    lab_size+1,0
 
 converttable
                 hex   00000000000000000000000000000000
