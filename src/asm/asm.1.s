@@ -2418,7 +2418,11 @@ addmode      php
              beq   :skipq
              cmp   #$22 ; "
              beq   :skipq
+             and   #$5f
+             cmp   #'A'
+             beq   :a
              jmp   :index
+
 :force8      lda   #amforce8
              tsb   myvalue
              jmp   :index
@@ -2434,6 +2438,14 @@ addmode      php
 :square      lda   #amsquare
              tsb   myvalue
              jmp   :index
+
+*  'a' (no modifier) is ignored
+:a           iny
+             lda [lineptr],y
+             cmp #' '+1
+             jlt :zero
+             dey
+             jmp :index
 
 * skip over quoted operand component.
 :skipq       sta   :q
