@@ -45,6 +45,7 @@ void CLASS::displayVersion()
 
 }
 
+#ifdef SERVERAPP
 int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 {
 	int res = -1;
@@ -63,6 +64,7 @@ int CLASS::runServerApp(PAL_EVENTMANAGER *em)
 	}
 	return (res);
 }
+#endif
 
 void CLASS::showerror(int ecode, std::string fname)
 {

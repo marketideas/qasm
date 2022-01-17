@@ -23,7 +23,7 @@ set(SOURCE
 )
 
 #find_package(OpenSSL REQUIRED)
-find_package( Poco REQUIRED Foundation Util XML JSON )
+find_package( Poco REQUIRED Foundation Util XML JSON Net )
 
 if ( ${CIDER} )
 find_package( ZLIB )

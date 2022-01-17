@@ -19,7 +19,9 @@ class CLASS : public PAL_BASEAPP
 protected:
 	void showerror(int ecode,std::string fname);
 	virtual int runCommandLineApp(void);
+#ifdef SERVERAPP
 	virtual int runServerApp(PAL_EVENTMANAGER *em);
+#endif
 	virtual void displayVersion();
 
 public:
