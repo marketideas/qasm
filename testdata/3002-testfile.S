@@ -1,4 +1,4 @@
-                              ;lst off
+            lst off
             xc    off         
             xc                
             xc                
@@ -15,7 +15,6 @@ immed       =     $123456
 neg         equ   -16         
 
 *]var1 		= v1234
-
                               ;lst off
 start00                      
             brk               ;$00

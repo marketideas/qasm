@@ -78,7 +78,8 @@ void CLASS::print(uint32_t lineno)
 		nc = nc1;
 	}
 
-	if ((!isatty(STDOUT_FILENO)) || (merlinerrors))
+	//if ((!isatty(STDOUT_FILENO)) || (merlinerrors))
+	if ((!isatty(STDOUT_FILENO)) || (0))
 	{
 		nc = true;
 	}
