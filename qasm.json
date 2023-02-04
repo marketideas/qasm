@@ -1,0 +1,23 @@
+{
+    "general": {
+        "prefix": [
+            {
+                "0": "{PWD}"
+            },
+            {
+                "1": "0/source"
+            },
+            {
+                "2": "0/object"
+            }
+        ]
+    },
+    "assembler": {},
+    "linker": {},
+    "format": {
+        "tabs": "12,18,30"
+    },
+    "diskimg": {
+        "script": "./disk_commands.txt"
+    }
+}

@@ -817,6 +817,9 @@ bail:
  * Thought for the day: consider using Win32 SetFileAttributes() to make
  * temp files hidden.  We will need to un-hide it before rolling it over.
  */
+//#define HAVE_MKSTEMP
+//#define HAVE_FDOPEN
+
 static NuError Nu_OpenTempFile(UNICHAR* fileNameUNI, FILE** pFp)
 {
     NuArchive* pArchive = NULL;  /* dummy for NU_BLOB */

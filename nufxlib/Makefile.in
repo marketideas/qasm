@@ -17,24 +17,24 @@
 #
 
 # NufxLib install location.
-prefix		= /usr/local
-exec_prefix	= ${prefix}
-includedir	= ${prefix}/include
-libdir		= ${exec_prefix}/lib
-srcdir		= .
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+includedir	= @includedir@
+libdir		= @libdir@
+srcdir		= @srcdir@
 
-SHELL		= /bin/sh
-INSTALL		= /usr/bin/install -c
-INSTALL_PROGRAM	= ${INSTALL}
-INSTALL_DATA	= ${INSTALL} -m 644
-CC			= gcc
+SHELL		= @SHELL@
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
+CC			= @CC@
 AR			= ar rcv
-#OPT 		= -g -O2 -DNDEBUG
-OPT			= -g -O2
-#OPT 		= -g -O2 -DDEBUG_MSGS
-#OPT 		= -g -O2 -DDEBUG_VERBOSE
+#OPT 		= @CFLAGS@ -DNDEBUG
+OPT			= @CFLAGS@
+#OPT 		= @CFLAGS@ -DDEBUG_MSGS
+#OPT 		= @CFLAGS@ -DDEBUG_VERBOSE
 GCC_FLAGS	= -Wall -Wwrite-strings -Wstrict-prototypes -Wpointer-arith -Wshadow
-CFLAGS		= $(OPT) $(GCC_FLAGS) -I. -DHAVE_CONFIG_H -DOPTFLAGSTR="\"$(OPT)\""
+CFLAGS		= @BUILD_FLAGS@ -I. @DEFS@ -DOPTFLAGSTR="\"$(OPT)\""
 
 SRCS		= Archive.c ArchiveIO.c Bzip2.c Charset.c Compress.c Crc16.c \
 			  Debug.c Deferred.c Deflate.c Entry.c Expand.c FileIO.c Funnel.c \
@@ -49,12 +49,13 @@ STATIC_PRODUCT	= libnufx.a
 SHARED_PRODUCT	= libnufx.so
 PRODUCT	= $(STATIC_PRODUCT)
 
+.NOTPARALLEL:
 
 #
 # Build stuff
 #
 
-all: $(PRODUCT) samples
+all: $(PRODUCT)
 	@true
 
 install: $(STATIC_PRODUCT)
@@ -72,24 +73,24 @@ install-shared: $(SHARED_PRODUCT)
 samples::
 	@echo "Building samples..."
 	@(cd samples; set +e; unset CFLAGS OBJS; set -e; \
-		 LIB_PRODUCT="../$(PRODUCT)" $(MAKE))
+		@SET_MAKE@ LIB_PRODUCT="../$(PRODUCT)" $(MAKE))
 
 shared::
 	PRODUCT="$(SHARED_PRODUCT)" $(MAKE) -e
 
 $(STATIC_PRODUCT): $(OBJS)
 	-rm -f $(STATIC_PRODUCT) $(SHARED_PRODUCT)
-	$(AR) $@ $(OBJS)
-	ranlib $@
+	@$(AR) $@ $(OBJS)
+	@RANLIB@ $@
 
 # BUG: we need -fPIC, maybe -D_REENTRANT when compiling for this.
 # BUG: for Linux we may want -Wl,-soname,libnufx.so.1 on the link line.
 $(SHARED_PRODUCT): $(OBJS)
 	-rm -f $(STATIC_PRODUCT) $(SHARED_PRODUCT)
-	$(CC) -shared -o $@ $(OBJS)  -lz
+	@$(CC) @SHARE_FLAGS@ -o $@ $(OBJS) @LIBS@
 
 clean:
-	(cd samples; make clean)
+	(cd samples; $(MAKE) clean)
 	-rm -f *.o core
 	-rm -f $(SHARED_PRODUCT) $(STATIC_PRODUCT)
 
@@ -99,7 +100,7 @@ tags::
 	@#ctags *.[ch]
 
 distclean: clean
-	(cd samples; make distclean)
+	(cd samples; $(MAKE) distclean)
 	-rm -f Makefile Makefile.bak
 	-rm -f config.log config.cache config.status config.h
 	-rm -f tags
