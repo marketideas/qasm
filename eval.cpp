@@ -36,7 +36,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
     char *tokptr;
     char *tptr;
     bool numexpect;
-    bool highascii = false;
+    //bool highascii = false;
     Token::Type t;
 
     delim = 0;
@@ -80,7 +80,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                     {
                         p--;
                     }
-                    highascii = false;
+                    //highascii = false;
                     delim = 0;
                 }
                 else
@@ -157,7 +157,7 @@ std::deque<Token> CLASS::exprToTokens(const std::string& expr)
                 {
                     delim = c;
                     state = 11;
-                    highascii = true;
+                    //highascii = true;
                     numexpect = false;
                 }
                 else if (((c == '-') || (c == '+')) && (numexpect))

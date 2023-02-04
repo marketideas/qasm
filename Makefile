@@ -1,4 +1,4 @@
-export USE_CLANG=1
+export USE_CLANG=0
 
 ifeq ($(USE_CLANG),1)
 export CXX=/usr/bin/clang++
@@ -31,6 +31,14 @@ debug:
 	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
 
 
+
+hfs:
+	-mkdir -p ./libhfs/build
+	cd ./libhfs/build && cmake .. && $(MAKE)
+
+nufx:
+	cd ./nufxlib && $(MAKE) clean && ./configure && $(MAKE) 
+
 distclean:
 	-rm -rf ./build 
 	-rm -rf ./qasmout
@@ -39,6 +47,8 @@ distclean:
 clean:
 	-rm -rf ./build
 	-rm -rf ./testout
+	-rm -rf ./libhfs/build ./nufxlib/build ./diskimg/build ./libpal/build
+
 
 depend:
 	-cd ./build && $(MAKE) depend

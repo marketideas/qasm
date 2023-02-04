@@ -200,8 +200,19 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 
 			setOpcode(line, op);
 			// these bytes are the two bank registers
-			line.outbytes.push_back((v>>16) & 0xFF);
-			line.outbytes.push_back((line.expr_value>>16) & 0xFF);
+
+			if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
+			{
+				// merlin32 uses the low byte of the two operands
+				line.outbytes.push_back((v) & 0xFF);
+				line.outbytes.push_back((line.expr_value) & 0xFF);
+			}
+			else
+			{
+				// merlin16 uses the high byte (bank) as the opcode
+				line.outbytes.push_back((v>>16) & 0xFF);
+				line.outbytes.push_back((line.expr_value>>16) & 0xFF);
+			}
 
 			line.outbytect = res;
 		}
@@ -651,8 +662,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 
 		if (line.flags & FLAG_FORCELONG)
 		{
-			err = errBadAddressMode;
-			//line.setError(errBadAddressMode);
+			//err = errBadAddressMode;
+			err=true;
+			line.setError(errBadAddressMode);
 		}
 		goto outop;
 	}

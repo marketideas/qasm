@@ -19,7 +19,7 @@ programOption PAL::appOptions[] =
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
 #endif
 	//{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
-	{ "exec", "x", "execute a command [asm, link, reformat] default=asm", "<command>", false, false},
+	{ "exec", "x", "execute a command [asm, link, reformat,disk] default=asm", "<command>", false, false},
 	{ "objfile", "o", "write output to file", "<file>", false, false},
 	{ "syntax", "s", "enforce syntax of other assembler [merlin16, merlin32]", "<syntax>", false, false},
 
@@ -118,6 +118,7 @@ int CLASS::runCommandLineApp(void)
 
 		std::string cmd = Poco::toUpper(getConfig("option.exec", "asm"));
 
+		//printf("DEBUG=%d\n",isDebug());
 		if (cmd.length() > 0)
 		{
 			if (cmd == "REFORMAT")

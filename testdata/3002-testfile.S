@@ -1,4 +1,4 @@
-            lst off
+            ;lst off
             xc    off         
             xc                
             xc                
