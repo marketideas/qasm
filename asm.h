@@ -1,4 +1,6 @@
+
 #pragma once
+
 #include "app.h"
 //
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
@@ -7,11 +9,13 @@
 #define MODE_65C02 1
 #define MODE_65816 2
 
-#define SYNTAX_MERLIN 0
-#define SYNTAX_MERLIN32 0x01
-#define SYNTAX_APW	    0x02
-#define SYNTAX_ORCA	    0x04
-#define SYNTAX_QASM	    (0x08 | SYNTAX_MERLIN32)
+#define SYNTAX_MERLIN 	0x01
+#define SYNTAX_MERLIN32 0x02
+#define SYNTAX_APW	    0x04
+#define SYNTAX_MPW		0x08
+#define SYNTAX_ORCA	    0x10
+#define SYNTAX_CC65		0x20
+#define SYNTAX_QASM	    (0x80 | SYNTAX_MERLIN)
 #define OPTION_ALLOW_A_OPERAND 0x0100
 #define OPTION_ALLOW_LOCAL     0x0200
 #define OPTION_ALLOW_COLON	   0x0400
@@ -246,6 +250,7 @@ protected:
 	uint8_t tabs[16];
 
 	uint32_t filecount; // how many files have been read in (because of included files from source
+
 public:
 	uint32_t errorct;
 	std::string filename;
@@ -259,6 +264,20 @@ public:
 	virtual void process(void);
 	virtual void complete(void);
 	virtual void errorOut(uint16_t code);
+	virtual void setSyntax(uint32_t syn);
+};
+
+class TImageProcessor : public TFileProcessor
+{
+protected:
+	std::vector<MerlinLine> lines;
+
+public:
+	TImageProcessor();
+	virtual ~TImageProcessor();
+	virtual int doline(int lineno, std::string line);
+	virtual void process(void);
+	virtual void complete(void);
 };
 
 class TMerlinConverter : public TFileProcessor
@@ -352,13 +371,13 @@ public:
 class TVariable
 {
 public:
-		uint32_t id;
-		Poco::HashMap<std::string, TSymbol> vars;
-		TVariable()
-		{
-			// SGQ - must fix this so it is guaranteed unique for each one
-			id=rand();
-		}
+	uint32_t id;
+	Poco::HashMap<std::string, TSymbol> vars;
+	TVariable()
+	{
+		// SGQ - must fix this so it is guaranteed unique for each one
+		id=rand();
+	}
 };
 
 class TMacro

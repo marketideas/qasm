@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 3.0)
-#set (CMAKE_VERBOSE_MAKEFILE "1")
+
+set(CIDER "1")
+#set (CMAKE_C_COMPILER /usr/bin/clang)
+#set (CMAKE_CXX_COMPILER /usr/bin/clang++)
+
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
-#set (CMAKE_C_COMPILER /usr/bin/clang)
-#set (CMAKE_CXX_COMPILER /usr/bin/clang)
-
+set (CMAKE_VERBOSE_MAKEFILE "1")
 
 project(QAsm)
 
-set(CIDER "1")
 
-set(APPVERSION "4.0.9")
+set(APPVERSION "4.0.10")
 set(LIBRARY_NAME pal)
 set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
@@ -22,12 +23,28 @@ set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 set ( PROJECT_NAME "qasm" )
 
+set(ALL_DEFINES )
+set(ALL_FLAGS "-Wall -Wno-unused-const-variable" )
+set(DEBUG_OPT "-D_DEBUG -DDEBUG -O0 -g3 ${ALL_FLAGS} " )
+set(RELEASE_OPT "-O3 ${ALL_FLAGS} " )
+
+set(CMAKE_C_FLAGS "${ALL_FLAGS}")
+set(CMAKE_CXX_FLAGS "${ALL_FLAGS}")
+
+set(CMAKE_CXX_FLAGS_DEBUG "${DEBUG_OPT}")
+set(CMAKE_CXX_FLAGS_RELEASE "${RELEASE_OPT}")
+set(CMAKE_C_FLAGS_DEBUG "${DEBUG_OPT}")
+set(CMAKE_C_FLAGS_RELEASE "${RELEASE_OPT}")
+
+
 set(SOURCE
   ${PROJECT_ROOT}/${PROJECT_NAME}.cpp
   ${PROJECT_ROOT}/asm.cpp
   ${PROJECT_ROOT}/opcodes.cpp
   ${PROJECT_ROOT}/eval.cpp
   ${PROJECT_ROOT}/psuedo.cpp
+  ${PROJECT_ROOT}/qoptions.cpp
+  ${PROJECT_ROOT}/cider.cpp
 )
 
 #find_package(OpenSSL REQUIRED)
@@ -50,6 +67,8 @@ include_directories(BEFORE
 set (CIDERLIBS "" )
 if ( ${CIDER} )
 add_definitions(-DCIDERPRESS)
+add_definitions(-DAPPVERSION=${APPVERSION})
+
 include_directories(AFTER ${PROJECT_ROOT}/diskimg)
 add_subdirectory(${PROJECT_ROOT}/libhfs)
 add_subdirectory(${PROJECT_ROOT}/nufxlib)

@@ -1,11 +1,13 @@
 #pragma once
 #include <inttypes.h>
 
-#include "palPoco.h"
-#include "pallogger.h"
-#include "eventtask.h"
-#include "baseapp.h"
-#include "httpserver.h"
+#include <palPoco.h>
+#include <pallogger.h>
+#include <eventtask.h>
+#include <baseapp.h>
+#include "qoptions.h"
+#include "util.h"
+//#include <httpserver.h>
 
 #ifndef UNUSED
 #define UNUSED (void)
@@ -25,6 +27,7 @@ protected:
 	virtual void displayVersion();
 
 public:
+  QOptions options;
 };
 
 #undef CLASS

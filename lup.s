@@ -1,7 +1,6 @@
+    xc
+    xc
     lst on
-    xc off
-    xc
-    xc
     org $2000
 
 macro   mac

@@ -1,0 +1,35 @@
+{
+    "version": 4,
+    "env": {
+        "def_include": [
+            "${workspaceRoot}/libpal/include",
+            "${workspaceRoot}/libpal/include/pal",
+            "${workspaceRoot}/nufxlib",
+            "${workspaceRoot}/diskimg",
+            "${workspaceRoot}/libhfs",
+            "${workspaceRoot}"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "CMake",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "includePath": [
+                "${def_include}"
+            ],
+            "browse": {
+                "path": [
+                    "${def_include}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+            },
+            //"compilerPath": "/usr/bin/clang++",
+            //"compilerArgs": [
+            //    "-Wall"
+            //],
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            //"intelliSenseMode": "linux-clang-x64",
+        }
+    ]
+}

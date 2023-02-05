@@ -172,7 +172,7 @@ Global::DebugMsgHandler Global::SetDebugMsgHandler(DebugMsgHandler handler)
         return;
     }
 
-    char buf[512];
+    char buf[1024];
     va_list args;
 
     va_start(args, fmt);
@@ -187,5 +187,6 @@ Global::DebugMsgHandler Global::SetDebugMsgHandler(DebugMsgHandler handler)
 
     buf[sizeof(buf)-1] = '\0';
 
+    
     (*gDebugMsgHandler)(file, line, buf);
 }

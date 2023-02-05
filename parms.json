@@ -1,18 +1,26 @@
 {
+    "version": "1.1",
     "general": {
         "prefix": [
             {
-                "0": "{PWD}"
+                "0": "${PWD}"
             },
             {
                 "1": "0/source"
             },
             {
                 "2": "0/object"
+            },
+            {
+                "3": "0/macros"
             }
         ]
     },
-    "assembler": {},
+    "assembler": {
+        "cpu_default": "6502",
+        "syntax": "merlin",
+        "listmode": "on"
+    },
     "linker": {},
     "format": {
         "tabs": "12,18,30"

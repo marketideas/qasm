@@ -309,6 +309,9 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 	res = 1 + sym.stype;
 	if (pass > 0)
 	{
+		//if (isMerlin816())
+		//{
+		//}
 		switch(line.expr_shift)
 		{
 			case '^':

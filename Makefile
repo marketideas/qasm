@@ -9,16 +9,16 @@ export CC=gcc
 endif
 
 V?=
-S=
+export S=
 ifneq ("$V","")
-S="VERBOSE=1"
+export S="VERBOSE=1"
 else
 .SILENT:
 endif
 
 all:
 	-mkdir -p ./build
-	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
+	-cd ./build && $(MAKE) $S
 
 release:
 	-rm -rf ./build
@@ -30,24 +30,13 @@ debug:
 	-mkdir -p ./build
 	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
 
-
-
-hfs:
-	-mkdir -p ./libhfs/build
-	cd ./libhfs/build && cmake .. && $(MAKE)
-
-nufx:
-	cd ./nufxlib && $(MAKE) clean && ./configure && $(MAKE) 
-
-distclean:
-	-rm -rf ./build 
+distclean: clean
 	-rm -rf ./qasmout
 	-rm -rf ./m32out
+	-rm -rf ./libhfs/build ./nufxlib/build ./diskimg/build ./libpal/build
 
 clean:
-	-rm -rf ./build
-	-rm -rf ./testout
-	-rm -rf ./libhfs/build ./nufxlib/build ./diskimg/build ./libpal/build
+	-rm -rf ./build *.2mg test.bin
 
 
 depend:
@@ -63,15 +52,18 @@ install:
 	-cd ./build && cmake -P cmake_install.cmake
 
 reformat:
-	qasm -x REFORMAT  src/main.s
-	
-compare:
-	-bcompare . ../lane_qasm &
+	qasm -x REFORMAT  test.s
 
 asm:
-	
+
+tests:
+	-rm -rf ./m32out/* ./qasmout/*
+	merlintests.sh
+	runtests.sh
+
+
 test1:
-	-qasm testdata/3001-lroathe.S
+	-qasm testdata/3001-runfile.S
 
 test2:
 	-qasm testdata/3002-testfile.S
@@ -79,7 +71,8 @@ test2:
 test3:
 	-qasm testdata/3003-var.S
 	
-	
+gsplus:
+	daemon -- /usr/bin/xterm -e "cd /mnt/nas/gsplus && ./gsplus"
 
 	
 

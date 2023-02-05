@@ -16,6 +16,7 @@ SRC=`ls ./testdata | grep -E '^([0-9]+)(.*)\.[Ss]'`
 
 for S in $SRC ; do
 
+	echo "merlin32 $S"
 	S1=$S
 	S1=${S1/.S/}
 	S1=${S1/.s/}

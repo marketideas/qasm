@@ -1,4 +1,5 @@
 #define ADD_ERROR_STRINGS
+
 #include "asm.h"
 #include "eval.h"
 #include "psuedo.h"
@@ -301,7 +302,6 @@ void CLASS::print(uint32_t lineno)
 
 void CLASS::clear()
 {
-    syntax = SYNTAX_MERLIN;
     wholetext = "";
     lable = "";
     printlable = "";
@@ -539,6 +539,7 @@ CLASS::CLASS()
 {
     int x;
     errorct = 0;
+    syntax=SYNTAX_QASM;
 
     win_columns = -1;
     win_rows = -1;
@@ -557,6 +558,11 @@ CLASS::~CLASS()
 {
 }
 
+void CLASS::setSyntax(uint32_t syn)
+{
+    syntax=syn;
+}
+
 void CLASS::errorOut(uint16_t code)
 {
     printf("error: %d\n", code);
@@ -570,23 +576,8 @@ void CLASS::init(void)
     filenames.clear();
     starttime = GetTickCount();
     initialdir = Poco::Path::current();
-    syntax = SYNTAX_MERLIN;
     filecount = 0;
-
-    s = getConfig("option.syntax", "merlin16");
-    s = Poco::toUpper(Poco::trim(s));
-    if ((s == "MERLIN") || (s == "MERLIN16"))
-    {
-        syntax = SYNTAX_MERLIN;
-    }
-    else if (s == "MERLIN32")
-    {
-        syntax = SYNTAX_MERLIN32;
-    }
-    else if (s == "QASM")
-    {
-        syntax = SYNTAX_QASM;
-    }
+    syntax = SYNTAX_QASM;
 
     std::string tabstr = getConfig("reformat.tabs", "8,16,32");
     tabstr = Poco::trim(tabstr);
@@ -917,6 +908,32 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 }
 
 #undef CLASS
+#define CLASS TImageProcessor
+
+CLASS::CLASS() : TFileProcessor()
+{
+
+}
+CLASS::~TImageProcessor()
+{
+
+}
+
+int CLASS::doline(int lineno, std::string line)
+{
+    printf("%05d: %s\n",lineno,line.c_str());
+    return(0);
+}
+void CLASS::process(void)
+{
+
+}
+void CLASS::complete(void)
+{
+
+}
+
+#undef CLASS
 #define CLASS TMerlinConverter
 CLASS::CLASS() : TFileProcessor()
 {
@@ -929,8 +946,6 @@ void CLASS::init(void)
     TFileProcessor::init();
     std::string s;
     lines.clear();
-
-    syntax = SYNTAX_MERLIN;
 }
 
 int CLASS::doline(int lineno, std::string line)
@@ -947,6 +962,7 @@ void CLASS::process(void)
 
     char buff[128*1024];
     uint32_t ct = (uint32_t)lines.size();
+    uint8_t orval=0x80;
 
     uint32_t len, tlen,t, pos,i;
 
@@ -1008,7 +1024,7 @@ void CLASS::process(void)
             {
                 len += sprintf(&buff[len+tlen]," ");
             }
-            if (syntax==SYNTAX_MERLIN)
+            if (syntax ==SYNTAX_MERLIN)
                 len += sprintf(&buff[len+tlen],"\r");
             else
                 len += sprintf(&buff[len+tlen],"\n");
@@ -1025,7 +1041,7 @@ void CLASS::process(void)
             if (c==0x20)
             {
                 if (tct<3)
-                    buff[i]=0xA0;
+                    buff[i]=0x20 | orval;
                 else
                 {
                     buff[i]=0x20;
@@ -1044,7 +1060,7 @@ void CLASS::process(void)
             }
             else
             {
-                buff[i]=c|0x80;
+                buff[i]=c|orval;
             }
         }
         FILE *f=NULL;
@@ -1264,7 +1280,7 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, TVariable &va
 
     if (fnd != NULL)
     {
-        printf("replacing symbol: %s %s\n",sym.c_str(),val.c_str());
+        //printf("replacing symbol: %s %s\n",sym.c_str(),val.c_str());
         fnd->var_text = val;
         return (fnd);
     }
@@ -1279,7 +1295,7 @@ TSymbol * CLASS::addVariable(std::string symname, std::string val, TVariable &va
     s.used = false;
     s.cb = NULL;
 
-    printf("addvariable: %s %s\n", s.name.c_str(), s.var_text.c_str());
+    //printf("addvariable: %s %s\n", s.name.c_str(), s.var_text.c_str());
 
     std::pair<std::string, TSymbol> p(sym, s);
     vars.vars.insert(p);

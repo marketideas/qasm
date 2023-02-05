@@ -5,7 +5,7 @@
 
 bank02	equ	$020000
 bank03	equ $030000
-dp		equ	$A5
+dp		equ	$55
 long	equ	$020304
 
 		mx	%00
@@ -17,7 +17,7 @@ start	nop
 		lda	dp
 		lda <dp
 		lda >dp
-		lda ^dp
+		lda #^dp  ; just ^dp is illegal in Merlin16
 		lda |dp
 		lda #long
 		lda #<long
