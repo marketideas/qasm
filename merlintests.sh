@@ -22,7 +22,9 @@ for S in $SRC ; do
 	S1=${S1/.s/}
 
 	cd ./testdata
-	merlin32$X . $S 2>/dev/null >/dev/null
+	#merlin32$X . $S 2>/dev/null >/dev/null
+	merlin32$X -V . $S 
+
 	#merlin32 . $S 2>/dev/null 
 
 	R=?$

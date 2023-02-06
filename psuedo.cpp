@@ -944,6 +944,10 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 				if (dci && (i == lastdelimidx))
 				{
+					// SGQ BUG - Merlin16+ does it like Merlin32 and now does the last
+					// byte not the way merlin816 and earlier do it documented below.
+					// use OPTION_M16_PLUS when implemented.
+					
                     //lr - Merlin only toggles the high bit of string chars, not hex values
                     // 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
                     //

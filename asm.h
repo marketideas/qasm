@@ -15,6 +15,8 @@
 #define SYNTAX_MPW		0x08
 #define SYNTAX_ORCA	    0x10
 #define SYNTAX_CC65		0x20
+#define SYNTAX_LISA		0x40
+
 #define SYNTAX_QASM	    (0x80 | SYNTAX_MERLIN)
 #define OPTION_ALLOW_A_OPERAND 0x0100
 #define OPTION_ALLOW_LOCAL     0x0200
@@ -23,7 +25,7 @@
 #define OPTION_NO_REPSEP       0x1000
 #define OPTION_CFG_REPSEP	   0x2000
 #define OPTION_M32_VARS		   0x4000
-
+#define OPTION_M16_PLUS	       0x8000
 
 #define FLAG_FORCELONG 0x01
 #define FLAG_FORCEABS  0x02
@@ -201,6 +203,7 @@ public:
 	std::string printoperand;
 	std::string opcode;
 	std::string opcodelower;
+	std::string orig_operand;
 	std::string operand;
 	std::string operand_expr;
 	std::string operand_expr2;
@@ -254,6 +257,7 @@ protected:
 public:
 	uint32_t errorct;
 	std::string filename;
+	uint32_t format_flags;
 
 	TFileProcessor();
 	virtual ~TFileProcessor();
@@ -267,18 +271,18 @@ public:
 	virtual void setSyntax(uint32_t syn);
 };
 
-class TImageProcessor : public TFileProcessor
-{
-protected:
-	std::vector<MerlinLine> lines;
 
-public:
-	TImageProcessor();
-	virtual ~TImageProcessor();
-	virtual int doline(int lineno, std::string line);
-	virtual void process(void);
-	virtual void complete(void);
-};
+#define CONVERT_NONE 0x00
+#define CONVERT_LF 0x01
+#define CONVERT_CRLF 0x02
+#define CONVERT_COMPRESS 0x04
+#define CONVERT_HIGH 0x08
+#define CONVERT_MERLIN (CONVERT_HIGH|CONVERT_COMPRESS)
+#define CONVERT_LINUX (CONVERT_LF)
+#define CONVERT_WINDOWS (CONVERT_CRLF)
+#define CONVERT_APW (CONVERT_NONE)
+#define CONVERT_MPW (CONVERT_NONE)
+#define CONVERT_TEST (CONVERT_COMPRESS|CONVERT_LF)
 
 class TMerlinConverter : public TFileProcessor
 {

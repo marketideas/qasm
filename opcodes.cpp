@@ -12,6 +12,7 @@ void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 			uint8_t m = opCodeCompatibility[op];
 			if ((m > 0) && (cpumode < MODE_65C02)) // if the instruction is non-zero, and we are in 6502 base mode, error
 			{
+				//printf("incompatable: %02X %02X\n",op,m);
 				if (line.errorcode == 0) // don't replace other errors
 				{
 					line.setError(errIncompatibleOpcode);
@@ -706,7 +707,8 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 
 	if (err)	// not a 6502 address mode
 	{
-		if (cpumode >= MODE_65816)
+		//if (cpumode >= MODE_65816)
+		if (cpumode >= MODE_65C02)
 		{
 			cc = 0x03;
 			err = false;
@@ -950,6 +952,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("MVP", 0x01, 0, OPHANDLER(&CLASS::doMVN));
 	pushopcode("NOP", 0xEA, 0, OPHANDLER(&CLASS::doBYTE));
 	pushopcode("ORA", 0x00, OP_STD | OP_A, OPHANDLER(&CLASS::doBase6502));
+
 	pushopcode("PEA", 0xF4, 2, OPHANDLER(&CLASS::doAddress));
 	pushopcode("PEI", 0xD4, 1, OPHANDLER(&CLASS::doAddress));
 	pushopcode("PER", 0x62, 2, OPHANDLER(&CLASS::doPER));

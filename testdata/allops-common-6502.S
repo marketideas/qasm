@@ -1,7 +1,7 @@
-; Copyright 2018 faddenSoft. All Rights Reserved.
-; See the LICENSE.txt file for distribution terms (Apache 2.0).
-;
-; Assembler: Merlin 32
+                          ;     Copyright  2018 faddenSoft. All Rights Reserved.
+                          ;     See        the LICENSE.txt file for distribution terms (Apache 2.0).
+                          ;
+                          ;     Assembler: Merlin 32
 
          ORG   $1000
 
@@ -24,7 +24,7 @@
          NOP
          NOP
          NOP
-         BRK   ZP                   ;$00
+         BRK   ZP         ;$00
 PostBRK  ORA   (ZP,X)
          DFB   $02
 PostH02  DFB   $03,ZP
@@ -40,7 +40,7 @@ PostH02  DFB   $03,ZP
          ORA:  ABS
          ASL:  ABS
          DFB   $0F,#<ABS,#>ABS
-         BPL   PostBPL              ;$10
+         BPL   PostBPL    ;$10
 PostBPL  ORA   (ZP),Y
          DFB   $12
 PostH12  DFB   $13,ZP
@@ -56,7 +56,7 @@ PostH12  DFB   $13,ZP
          ORA:  ABS,X
          ASL:  ABS,X
          DFB   $1F,#<ABS,#>ABS
-         JSR   ABS                  ;$20
+         JSR   ABS        ;$20
          AND   (ZP,X)
          DFB   $22
 PostH22  DFB   $23,ZP
@@ -72,7 +72,7 @@ PostH22  DFB   $23,ZP
          AND:  ABS
          ROL:  ABS
          DFB   $2F,#<ABS,#>ABS
-         BMI   PostBMI              ;$30
+         BMI   PostBMI    ;$30
 PostBMI  AND   (ZP),Y
          DFB   $32
 PostH32  DFB   $33,ZP
@@ -84,11 +84,11 @@ PostH32  DFB   $33,ZP
          AND:  ABS,Y
          DFB   $3A
          DFB   $3B,#<ABS,#>ABS
-         BIT:  ABS,X
+                          ;BIT: ABS,X  // not available on standard 6502 (but is on 65C02)
          AND:  ABS,X
          ROL:  ABS,X
          DFB   $3F,#<ABS,#>ABS
-         RTI                        ;$40
+         RTI              ;$40
 PostRTI  EOR   (ZP,X)
          DFB   $42
 PostH42  DFB   $43,ZP
@@ -104,7 +104,7 @@ PostH42  DFB   $43,ZP
 PostJMP  EOR:  ABS
          LSR:  ABS
          DFB   $4f,#<ABS,#>ABS
-         BVC   PostBVC             ;$50
+         BVC   PostBVC    ;$50
 PostBVC  EOR   (ZP),Y
          DFB   $52
 PostH52  DFB   $53,ZP
@@ -120,7 +120,7 @@ PostH52  DFB   $53,ZP
          EOR:  ABS,X
          LSR:  ABS,X
          DFB   $5F,#<ABS,#>ABS
-         RTS                        ;$60
+         RTS              ;$60
 PostRTS  ADC   (ZP,X)
          DFB   $62
 PostH62  DFB   $63,ZP
@@ -136,7 +136,7 @@ PostH62  DFB   $63,ZP
 PostJMPI ADC:  ABS
          ROR:  ABS
          DFB   $6F,#<ABS,#>ABS
-         BVS   PostBVS              ;$70
+         BVS   PostBVS    ;$70
 PostBVS  ADC   (ZP),Y
          DFB   $72
 PostH72  DFB   $73,ZP
@@ -152,7 +152,7 @@ PostH72  DFB   $73,ZP
          ADC:  ABS,X
          ROR:  ABS,X
          DFB   $7F,#<ABS,#>ABS
-         DFB   $80,ZP               ;$80
+         DFB   $80,ZP     ;$80
          STA   (ZP,X)
          DFB   $82,ZP
          DFB   $83,ZP
@@ -168,7 +168,7 @@ PostH72  DFB   $73,ZP
          STA:  ABS
          STX:  ABS
          DFB   $8F,#<ABS,#>ABS
-         BCC   PostBCC              ;$90
+         BCC   PostBCC    ;$90
 PostBCC  STA   (ZP),Y
          DFB   $92
 PostH92  DFB   $93,ZP
@@ -184,7 +184,7 @@ PostH92  DFB   $93,ZP
          STA:  ABS,X
          DFB   $9E,#<ABS,#>ABS
          DFB   $9F,#<ABS,#>ABS
-         LDY   #ZP                  ;$A0
+         LDY   #ZP        ;$A0
          LDA   (ZP,X)
          LDX   #ZP
          DFB   $A3,ZP
@@ -200,7 +200,7 @@ PostH92  DFB   $93,ZP
          LDA:  ABS
          LDX:  ABS
          DFB   $AF,#<ABS,#>ABS
-         BCS   PostBCS              ;$B0
+         BCS   PostBCS    ;$B0
 PostBCS  LDA   (ZP),Y
          DFB   $B2
 PostHB2  DFB   $B3,ZP
@@ -216,7 +216,7 @@ PostHB2  DFB   $B3,ZP
          LDA:  ABS,X
          LDX:  ABS,Y
          DFB   $BF,#<ABS,#>ABS
-         CPY   #ZP                  ;$C0
+         CPY   #ZP        ;$C0
          CMP   (ZP,X)
          DFB   $C2,ZP
          DFB   $C3,ZP
@@ -232,7 +232,7 @@ PostHB2  DFB   $B3,ZP
          CMP:  ABS
          DEC:  ABS
          DFB   $CF,#<ABS,#>ABS
-         BNE   PostBNE              ;$D0
+         BNE   PostBNE    ;$D0
 PostBNE  CMP   (ZP),Y
          DFB   $D2
 PostHD2  DFB   $D3,ZP
@@ -248,7 +248,7 @@ PostHD2  DFB   $D3,ZP
 L11FC    CMP:  ABS,X
          DEC:  ABS,X
          DFB   $DF,#<ABS,#>ABS
-         CPX   #ZP                  ;$E0
+         CPX   #ZP        ;$E0
          SBC   (ZP,X)
          DFB   $E2,ZP
          DFB   $E3,ZP
@@ -264,7 +264,7 @@ L11FC    CMP:  ABS,X
          SBC:  ABS
          INC:  ABS
          DFB   $EF,#<ABS,#>ABS
-         BEQ   PostBEQ              ;$F0
+         BEQ   PostBEQ    ;$F0
 PostBEQ  SBC   (ZP),Y
          DFB   $F2
 PostHF2  DFB   $F3,ZP

@@ -20,7 +20,7 @@ programOption PAL::appOptions[] =
 	{ "debug", "d", "enable debug info (repeat for more verbosity)", "", false, true},
 #endif
 	//{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
-	{ "exec", "x", "execute a command [asm, link, reformat, script] default=asm", "<command>", false, false},
+	{ "exec", "x", "execute a command [asm, link, format, script] default=asm", "<command>", false, false},
 	{ "objfile", "o", "write output to file", "<file>", false, false},
 	{ "syntax", "s", "enforce syntax of other assembler [qasm, merlin, merlin32, ORCA, APW, MPW, CC65]", "<syntax>", false, false},
 
@@ -101,7 +101,7 @@ int CLASS::runCommandLineApp(void)
 	syn=Poco::toUpper(syn);
 	syn=Poco::trim(syn);
 	syntax=SYNTAX_QASM;
-	if ((syn=="MERLIN") || (syn=="MERLIN16") || (syn=="MERLIN8") || (syn=="MERLIN16+"))
+	if ((syn=="MERLIN") || (syn=="MERLIN16") || (syn=="MERLIN8") || (syn=="MERLIN16PLUS"))
 	{
 		syntax=SYNTAX_MERLIN;
 	}
@@ -130,7 +130,7 @@ int CLASS::runCommandLineApp(void)
 		syntax=SYNTAX_CC65;
 	}
 
-	printf("SYNTAX: |%s|\n",syn.c_str());
+	//printf("SYNTAX: |%s|\n",syn.c_str());
 
 	try
 	{
@@ -148,6 +148,7 @@ int CLASS::runCommandLineApp(void)
 
 		for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
 		{
+			int32_t format_flags=CONVERT_LINUX;
 			Poco::File fn(*it);
 			int x;
 			std::string p = fn.path();
@@ -158,10 +159,50 @@ int CLASS::runCommandLineApp(void)
 
 			std::string cmd = Poco::toUpper(getConfig("option.exec", "asm"));
 
-			//printf("DEBUG=%d\n",isDebug());
+			Poco::StringTokenizer toks(cmd,"-");
+			if (toks.count()>1)
+			{
+				if (toks[0]=="FORMAT")
+				{
+					if (toks[1]=="LINUX")
+					{
+						format_flags=CONVERT_LINUX;
+					}
+					else if (toks[1]=="WINDOWS")
+					{
+						format_flags=CONVERT_WINDOWS;
+					}
+					else if (toks[1]=="MERLIN")
+					{
+						format_flags=CONVERT_MERLIN;
+					}
+					else if (toks[1]=="APW")
+					{
+						format_flags=CONVERT_APW;
+					}
+					else if (toks[1]=="MPW")
+					{
+						format_flags=CONVERT_MPW;
+					}
+					else if (toks[1]=="MAC")
+					{
+						format_flags=CONVERT_LINUX;
+					}
+					else if (toks[1]=="CC65")
+					{
+						format_flags=CONVERT_LINUX;
+					}
+					else if (toks[1]=="COMPRESS")
+					{
+						format_flags=CONVERT_TEST;
+					}
+
+					cmd=toks[0];
+				}
+			}
 			if (cmd.length() > 0)
 			{
-				if (cmd == "REFORMAT")
+				if (cmd == "FORMAT")
 				{
 					res = 0;
 					t = new TMerlinConverter();
@@ -171,6 +212,7 @@ int CLASS::runCommandLineApp(void)
 						{
 							t->init();
 							t->setSyntax(syntax);
+							t->format_flags=format_flags;
 
 							std::string f = path.toString();
 							t->filename = f;
@@ -233,7 +275,7 @@ int CLASS::runCommandLineApp(void)
 				else if (cmd == "SCRIPT")
 				{
 					res = 0;
-					t = new TImageProcessor();
+					t = new CiderPress();
 					if (t!=NULL)
 					{
 						try

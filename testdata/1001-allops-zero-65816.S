@@ -3,6 +3,10 @@
 ;
 ; Assembler: Merlin 32
 
+         xc off
+         xc
+         xc
+         mx %00
 ZP       EQU   $00
 ABS      EQU   $0000
 LONG     EQU   $000000

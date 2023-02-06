@@ -607,7 +607,7 @@ int CLASS::evaluate(std::string & e, int64_t &res, uint8_t &_shiftmode)
     std::string expr = Poco::trim(e);
     expr += " "; // add a space at end to make parsing easier
 
-    if (isDebug() >= 4)
+    if (isDebug() >= 1)
     {
         printf("eval: expression: |%s|\n", expr.c_str());
     }

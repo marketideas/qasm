@@ -5,6 +5,7 @@
 
          ORG   $1000
 
+         mx  %00
          SEC
          XCE
          JSR   L101F

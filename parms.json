@@ -1,6 +1,7 @@
 {
     "version": "1.1",
     "general": {
+        "color_output": true,
         "prefix": [
             {
                 "0": "${PWD}"
@@ -16,16 +17,27 @@
             }
         ]
     },
-    "assembler": {
-        "cpu_default": "6502",
-        "syntax": "merlin",
-        "listmode": "on"
+    "asm": {
+        "syntax": "merlin16plus",  //merlin8, merlin16, merlin16plus,merlin32
+        "cpu": "M6502",
+        "startmx": 3,
+        "listmode": "on",
+        "casesend": true,
+        "lst": false,
+        "showmx": true,
+        "allowduplicate": true,
+        "trackrep": false,
+        "merlinerrors": true,
+        "m32vars": false,
+        "allowA": true,
+        "allowLocal": true,
+        "allowColon": true,
+        "repsep": "force",  //force,no,cfg
+        "linebytes": 4,
+        "line2bytes": 8
     },
     "linker": {},
     "format": {
-        "tabs": "12,18,30"
-    },
-    "diskimg": {
-        "script": "./disk_commands.txt"
+        "tabs": "12,18,30,48"
     }
 }

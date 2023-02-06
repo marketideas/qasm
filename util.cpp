@@ -9,3 +9,4 @@ bool isMerlin816(void)
 {
 	return(true);
 }
+
