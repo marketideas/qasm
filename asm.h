@@ -249,7 +249,7 @@ public:
 	virtual void process(void);
 	virtual void complete(void);
 	virtual void errorOut(uint16_t code);
-	virtual void setProduct(string product);
+	virtual void setLanguage(string lang);
 };
 
 

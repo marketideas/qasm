@@ -18,9 +18,9 @@
         ]
     },
     "asm": {
-        "syntax": "merlin16plus", 
+        "language": "merlin16plus", 
         "cpu": "M6502",
-        "startmx": 3,
+        "start_mx": 2,
         "listmode": "on",
         "casesen": true,
         "start_lst": false,

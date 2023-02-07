@@ -1,8 +1,10 @@
+         lst   off
 * [QASM] SYNTAX MERLIN16
 * [QASM] Filetype $06
 * [QASM] AuxType $2000
 * [QASM] Volume TESTASM test.2mg 800K prodos 2mg
-* [QASM] save TESTASM :SOURCE:${FILE}.bin
+* [QASM] copyto TESTASM :SOURCE:${FILE}.bin
+
 
 
          xc    off
@@ -20,7 +22,7 @@ begin
                           ;]m   equ        *
                           ;     lda        begin
                           ;     lda        ]m
-         lst   on
+                          ;lst  on
                           ;end
 
 _mymac   mac
@@ -32,7 +34,7 @@ _mymac   mac
 _ascmac  mac
          asc   ]1,]2,8D
          eom
-         lst   off
+                          ;lst  off
                           ;var  'one';'two';'three'
 justlable                  ;line with just a lable
 start
@@ -51,9 +53,9 @@ another  lda   #$00       ;line with everything
          --^
 ]1       nop
          nop
-         lst
+                          ;lst
          bra   ]1
 
                           ;typ  $06
          sav   0/test.bin
-         lst   off
+                          ;lst  off

@@ -34,6 +34,7 @@ void CLASS::print(uint32_t lineno)
 	uint32_t l, i, savpcol, pcol;
 	bool commentprinted = false;
 	uint8_t commentcol = tabs[2];
+	bool force=false;
 
 	uint32_t b = 4; // how many bytes show on the first line
 
@@ -61,15 +62,17 @@ void CLASS::print(uint32_t lineno)
 			}
 			printf("\n");
 		}
+		force=true;
 		flags &= (~FLAG_NOLINEPRINT);
 	}
 
-	bool np=(flags & FLAG_NOLINEPRINT);
+	bool np=(flags & FLAG_NOLINEPRINT)?true:false;
 	if (options->isQuiet())
 		np=true;
 	if (options->isList())
 	  np=false;
-
+	if (force)
+		np=false;
 	if (np)
 	{
 		return;
@@ -553,9 +556,9 @@ CLASS::~CLASS()
 {
 }
 
-void CLASS::setProduct(string product)
+void CLASS::setLanguage(string lang)
 {
-	options.setProduct(product);
+	options.setLanguage(lang);
 }
 
 void CLASS::errorOut(uint16_t code)
@@ -2615,7 +2618,7 @@ void CLASS::process(void)
 				{
 					errorct++;
 				}
-				if (((!skiplist) && (listing) && (pass == 1)) || (line.errorcode != 0))
+				if (((!skiplist) && (listing) && (pass == 1)) || (line.errorcode != 0) || (options.isList()))
 				{
 					line.print(lineno);
 				}

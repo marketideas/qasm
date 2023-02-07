@@ -1,6 +1,8 @@
 #pragma once
 #include "qasm.h"
 
+using namespace Poco;
+
 #define MAX_PREFIX 32
 
 #define MODE_6502 0
@@ -26,12 +28,19 @@
 #define OPTION_M16_PLUS	       0x8000
 
 
+class myLayeredConfiguration : public Poco::Util::LayeredConfiguration
+{
+public:
+	myLayeredConfiguration() : Poco::Util::LayeredConfiguration() {};
+	~myLayeredConfiguration() {};
+};
+
 #undef CLASS
 #define CLASS ConfigOptions
 class CLASS
 {
 protected:
-	vector<shared_ptr<JSONConfiguration>> configs;
+	//vector<shared_ptr<JSONConfiguration>> configs;
 
 public:
 	Poco::JSON::Parser parser;
@@ -40,8 +49,8 @@ public:
 	uint16_t format_flags;
 
 	uint16_t cpu_mode;
-	string product;
-	uint16_t productlevel;
+	string language;
+	uint16_t langlevel;
 	string prefixes[MAX_PREFIX];
 
 	uint8_t start_mx;
@@ -61,14 +70,14 @@ public:
 	int16_t linebytes;
 	int16_t overflowbytes;
 
-	//Poco::Util::LayeredConfiguration config;
+	myLayeredConfiguration config;
 
 	bool usecolor;
 
 	CLASS()
 	{
 		setDefaults();
-		setProduct("QASM");
+		setLanguage("QASM");
 	}
 	~CLASS()
 	{
@@ -83,7 +92,7 @@ public:
 	bool useColor(void)
 	{
 		bool res=false;
-		if (getBool("option.color",false))
+		if (PAL::getBool("option.color",false))
 		{
 			res=true;
 		}
@@ -97,17 +106,57 @@ public:
 	bool isQuiet(void)
 	{
 		bool res;
-		res=getBool("option.quiet",false);
+		res=PAL::getBool("option.quiet",false);
 		if (isDebug()>0)
 		{
 			res=false;
 		}
 		return(res);
 	}
+
 	bool isList(void)
 	{
 		bool res;
-		res=getBool("option.list",false);
+		res=PAL::getBool("option.list",false);
+		//printf("list: %d\n",res);
+		return(res);
+	}
+
+	int printDefaults(string lang)
+	{
+		int res=-1;
+		string l=Poco::toUpper(lang);
+		if (l=="")
+		{
+			l=Poco::toUpper(language);
+		}
+		if (l!="")
+		{
+			setLanguage(l);
+			setCurrent();
+			printf("Defaults for language (%s)\n",language.c_str());
+			printf("\tLanguage:\t\t\t\t\t%s\n",language.c_str());
+			printf("\t\tlanguageLevel:\t\t\t\t%d\n",langlevel);
+			printf("\t\tcpu_mode:\t\t\t\t%d\n",cpu_mode);
+			printf("\t\tstart_mx:\t\t\t\t%d\n",start_mx);
+			printf("\t\tPrefixes:\n");
+
+			for (int i=0; i<MAX_PREFIX; i++)
+			{
+				if (prefixes[i].length()>0)
+				{
+					printf("\t\t\t%02d:\t\t\t%s\n",i,prefixes[i].c_str());
+				}
+			}
+
+
+			//uint16_t format_flags;
+
+
+			//bool start_listmode;
+			//bool listmode;
+
+		}
 		return(res);
 	}
 
@@ -148,6 +197,7 @@ public:
 				if (success)
 				{
 					//configs.push_back(shared_ptr<JSONConfiguration>(jc));
+					config.add(jc);
 					ret=0;
 				}
 				else
@@ -157,13 +207,6 @@ public:
 			}
 		}
 		return(ret);
-	}
-
-	void printCurrentOptions(void)
-	{
-		printf("Current Options:");
-		printf("  product: %s\n",product.c_str());
-		//printf("  start_mx: \%%02d\n",start_mx);
 	}
 
 	bool isMerlin32(void)
@@ -176,11 +219,15 @@ public:
 		return(false);
 	}
 
+	void setCurrent(void)
+	{
+		start_mx=GetInteger("asm.start_mx",3);
+	}
 	void setDefaults(void)
 	{
 		cpu_mode=MODE_6502;
-		product="QASM";
-		productlevel=0;
+		language="QASM";
+		langlevel=0;
 		for (int i=0; i<MAX_PREFIX; i++)
 		{
 			prefixes[i]="";
@@ -204,43 +251,149 @@ public:
 		usecolor=true;
 	}
 
-	void setProduct(string productName)
+	void setLanguage(string lang)
 	{
-		string old=productName;
-		string pn=Poco::toUpper(productName);
+		//printf("request language options to %s from %s\n",lang.c_str(),language.c_str());
+
+		string old=language;
+		string pn=Poco::toUpper(lang);
 		if (old!=pn)
 		{
-			printf("setting product options to %s\n",pn.c_str());
-			productName=pn;
+			//printf("setting language options to %s\n",pn.c_str());
+			language=pn;
+			setCurrent();
 			if (pn=="QASM")
 			{
 				setQASM();
 			}
 		}
 	}
+	string convertLanguage(string lang)
+	{
+		string res;
+		res=lang;
+		res=trim(res);
+		res=toUpper(res);
+		if (res=="MERLIN16+")
+		{
+			res="MERLIN16PLUS";
+		}
+		if (res=="MERLIN8")
+		{
+			res="MERLIN";
+		}
+
+		return(res);
+	}
+	bool supportedLanguage(string lang)
+	{
+		bool res=false;
+		string r=toUpper(lang);
+		r=trim(r);
+
+		r=trim(r);
+		if (r=="MERLIN")
+		{
+			res=true;
+		}
+		else if (r=="MERLIN8")
+		{
+			res=true;
+		}
+		else if (r=="MERLIN16")
+		{
+			res=true;
+		}
+		else if (r=="MERLIN16PLUS")
+		{
+			res=true;
+		}
+		else if (r=="MERLIN16+")
+		{
+			res=true;
+		}
+		else if (r=="MERLIN32")
+		{
+			res=true;
+		}
+		else if (r=="QASM")
+		{
+			res=true;
+		}
+
+		return(res);
+	}
 	void setQASM()
 	{
 
 	}
+
+	bool GetBool(string name, bool def)
+	{
+		bool res=def;
+		try
+		{
+			//Dynamic::Var jresult=GetObject(name);
+			//if (!jresult.isEmpty())
+			//{
+			//	if (jresult.isArray())
+			//	{
+
+			//	}
+			//	else if (jresult.isBoolean())
+			//	{
+			//		res=jresult;
+			//	}
+			//}
+		}
+		catch(...)
+		{
+			res=def;
+		}
+		return(res);
+	}
+
+	string GetString(string name, string def)
+	{
+		string res=def;
+		try
+		{
+			//config
+		}
+		catch(...)
+		{
+			res=def;
+		}
+		return(res);
+	}
+
+	int32_t GetInteger(string name, int32_t def)
+	{
+		int32_t res=def;
+
+#if 0
+		std::vector<std::string> keys;
+		config.keys(keys);
+		for (unsigned int i=0;i<keys.size();i++)
+		{
+			printf("key[%d]: %s\n",i,keys[i].c_str());
+		}
+#endif
+
+		try
+		{
+			res=config.getInt(name);
+		}
+		catch(...)
+		{
+			res=def;
+			//throw;
+		}
+		return(res);
+	}
+
+
 };
 
-
-#undef CLASS
-#define CLASS QOptions
-
-class CLASS
-{
-public:
-	Poco::Util::JSONConfiguration config;
-	Poco::JSON::Parser parser;
-	string jsonin;
-	Dynamic::Var jsonobj=NULL;
-	CLASS();
-	int ReadFile(string path);
-	Dynamic::Var GetObject(string name);
-
-	bool GetBool(string name, bool def=false);
-	string GetString(string name, string def="");
-};
 
 #undef CLASS

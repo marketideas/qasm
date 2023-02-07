@@ -21,16 +21,13 @@ programOption PAL::appOptions[] =
 	//{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
 	{ "exec", "x", "execute a command [asm, link, format, script] default=asm", "<command>", false, false},
 	{ "objfile", "o", "write output to <objfile>", "<objfile>", false, false},
-	{ "instruction", "i", "force the CPU instruction set ('xc' ingored) [6502, 65C02, 65816]", "<cpu>", false, false},
+	{ "instruction", "i", "force the CPU instruction set ('xc' ignored) [6502, 65C02, 65816]", "<cpu>", false, false},
 
 	{ "type", "t", "enforce syntax/features/bugs of other assembler [qasm, merlin8, merlin16, merlin16plus, merlin32, orca, apw, mpw, lisa, ca65]", "<type>", false, false},
 	{ "quiet", "q", "print as little as possible, equivalent to lst off in the assembler ('lst' opcodes will be ignored)", "", false, true},
 	{ "list", "l", "force assembly listing ('lst' opcodes will be ignored)", "", false, true},
-
 	{ "color", "c", "colorize the output", "", false, true},
-	{ "parms", "p", "show the working parameters/options", "", false, true},
-
-
+	{ "settings", "s", "show the working settings/options", "", false, true},
 
 	{ "", "", "", "", false, false}
 };
@@ -85,20 +82,34 @@ int CLASS::runCommandLineApp(void)
 	std::string appPath;
 	std::string fname;
 	//uint32_t syntax;
-	string product="";
+	string language="";
 	string syn;
+	bool settings;
 	int res = -1;
 	ConfigOptions options;
 
-//Poco::Util::Application::instance().config()
-
 	utils=new QUtils();
-
-	//LOG_NOTE << "this is it!" << endl;
 
 	startdirectory = Poco::Path::current();
 	appPath=utils->getAppPath();
-	if (commandargs.size() == 0)
+	settings=getBool("option.settings",false);
+	if (isDebug()>0)
+	{
+		printf("num args: %ld\n",commandargs.size());
+		for (unsigned long i=0; i<commandargs.size(); i++)
+		{
+			printf("commandarg[%ld] |%s|\n",i,commandargs[i].c_str());
+		}
+	}
+	//string help=getConfig("option.help","0");
+	//printf("help=|%s|\n",help.c_str());
+	//if(help!="0")
+	//{
+	//	displayHelp();
+	//	printf("help!\n");
+	//	return(-4);
+	//}
+	if ((commandargs.size() == 0) && (!settings))
 	{
 		displayHelp();
 		return (res);
@@ -110,20 +121,34 @@ int CLASS::runCommandLineApp(void)
 	options.ReadFile(Poco::Path::current()+"/parms.json");
 
 	syn="QASM";
-	//syn=options.GetString("assembler.syntax","QASM");
 
 	string cmdsyn = Poco::toUpper(getConfig("option.type", ""));
+	//printf("cmdsyn: |%s|\n",cmdsyn.c_str());
 	if (cmdsyn!="")
 	{
 		syn=cmdsyn; // if they overrode the syntax on the command line, use it
 	}
+	syn=Poco::toUpper(syn); // if they overrode the syntax on the command line, use it
+	syn=Poco::trim(syn);
 
-	syn=Poco::toUpper(syn);
-	product=Poco::trim(syn);
+	if (!options.supportedLanguage(syn))
+	{
+		printf("Unsupported Language Type\n");
+		return(-1);
+	}
+	syn=options.convertLanguage(syn);
+
+	if (settings)
+	{
+		int x=options.printDefaults(syn);
+		return(x);
+	}
+
+	language=syn;
 
 	if (isDebug()>0)
 	{
-		printf("SYNTAX: |%s|\n",syn.c_str());
+		printf("SYNTAX: |%s|\n",language.c_str());
 	}
 
 	try
@@ -143,12 +168,18 @@ int CLASS::runCommandLineApp(void)
 		for (ArgVec::const_iterator it = commandargs.begin(); it != commandargs.end(); ++it)
 		{
 			int32_t format_flags=CONVERT_LINUX;
-			Poco::File fn(*it);
+
+			string arg=*it;
+			Poco::File fn(arg);
 			int x;
 			std::string p = fn.path();
 			Poco::Path path(p);
 			//logger().information(path.toString());
 
+			if (!fn.exists())
+			{
+				break;
+			}
 			std::string e = toUpper(path.getExtension());
 
 			std::string cmd = Poco::toUpper(getConfig("option.exec", "asm"));
@@ -206,7 +237,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setProduct(product);
+							t->setLanguage(language);
 							t->format_flags=format_flags;
 
 							std::string f = path.toString();
@@ -240,7 +271,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setProduct(product);
+							t->setLanguage(language);
 
 
 							std::string f = path.toString();
@@ -277,7 +308,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setProduct(product);
+							t->setLanguage(language);
 
 							std::string f = path.toString();
 							t->filename = f;
