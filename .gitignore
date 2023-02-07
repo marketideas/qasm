@@ -5,8 +5,6 @@
 *.a
 *.so
 Finder.Data
-test.s
-disk_commands.txt
 .vscode/browse*
 .vscode/book*
 

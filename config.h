@@ -15,7 +15,7 @@
 
 #define NO_TTY_SETUP
 // help text
-#define HELP_USAGE "<options> <list of files>"
+#define HELP_USAGE "<options> file1 <file2 file3 ...>"
 #define HELP_PURPOSE "\nMerlin 8/16(+)/32 Compatible 65816 Development Tool"
 
 

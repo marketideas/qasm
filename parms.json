@@ -1,7 +1,7 @@
 {
     "version": "1.1",
     "general": {
-        "color_output": true,
+        "nocolor": false,
         "prefix": [
             {
                 "0": "${PWD}"
@@ -18,12 +18,12 @@
         ]
     },
     "asm": {
-        "syntax": "merlin16plus",  //merlin8, merlin16, merlin16plus,merlin32
+        "syntax": "merlin16plus", 
         "cpu": "M6502",
         "startmx": 3,
         "listmode": "on",
-        "casesend": true,
-        "lst": false,
+        "casesen": true,
+        "start_lst": false,
         "showmx": true,
         "allowduplicate": true,
         "trackrep": false,
@@ -32,7 +32,7 @@
         "allowA": true,
         "allowLocal": true,
         "allowColon": true,
-        "repsep": "force",  //force,no,cfg
+        "repsep": "force", 
         "linebytes": 4,
         "line2bytes": 8
     },

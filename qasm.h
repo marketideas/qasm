@@ -5,6 +5,7 @@
 #include <pallogger.h>
 #include <eventtask.h>
 #include <baseapp.h>
+#include "app.h"
 #include "qoptions.h"
 #include "util.h"
 //#include <httpserver.h>
@@ -27,7 +28,10 @@ protected:
 	virtual void displayVersion();
 
 public:
-  QOptions options;
+	QOptions options;
+
 };
+
+extern PAL_LOGGER logger;
 
 #undef CLASS

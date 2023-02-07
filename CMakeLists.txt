@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-set(CIDER "1")
+#set(CIDER "1")
 #set (CMAKE_C_COMPILER /usr/bin/clang)
 #set (CMAKE_CXX_COMPILER /usr/bin/clang++)
 
@@ -45,6 +45,8 @@ set(SOURCE
   ${PROJECT_ROOT}/psuedo.cpp
   ${PROJECT_ROOT}/qoptions.cpp
   ${PROJECT_ROOT}/cider.cpp
+  ${PROJECT_ROOT}/util.cpp
+
 )
 
 #find_package(OpenSSL REQUIRED)
@@ -67,7 +69,6 @@ include_directories(BEFORE
 set (CIDERLIBS "" )
 if ( ${CIDER} )
 add_definitions(-DCIDERPRESS)
-add_definitions(-DAPPVERSION=${APPVERSION})
 
 include_directories(AFTER ${PROJECT_ROOT}/diskimg)
 add_subdirectory(${PROJECT_ROOT}/libhfs)
@@ -80,6 +81,8 @@ find_library(HFS_LIB libnufx_static.a ${PROJECT_ROOT}/build )
 find_library(NUFX_LIB libnufx_static.a ${PROJECT_ROOT}/build )
 set (CIDERLIBS diskimg_static hfs_static nufx_static ${ZLIB_LIBRARIES})
 endif ( ${CIDER} )
+
+add_definitions(-DAPPVERSION=${APPVERSION})
 
 add_subdirectory(${PROJECT_ROOT}/libpal)
 

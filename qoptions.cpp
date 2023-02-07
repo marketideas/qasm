@@ -9,6 +9,7 @@ CLASS::CLASS()
 	jsonin="";
 	jsonobj=NULL;
 	parser.reset();
+	parser.setAllowComments(true);
 }
 
 int CLASS::ReadFile(string path)
@@ -17,6 +18,8 @@ int CLASS::ReadFile(string path)
 
 	Poco::FileInputStream fs(path);
 	Poco::StreamCopier::copyToString(fs,jsonin);
+	parser.reset();
+	parser.setAllowComments(true);
 	jsonobj=parser.parse(jsonin);
 
 	config.load(path);

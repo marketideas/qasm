@@ -202,7 +202,8 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			setOpcode(line, op);
 			// these bytes are the two bank registers
 
-			if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
+			if (options.isMerlin32() && (v<256))
+			//if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
 			{
 				// merlin32 uses the low byte of the two operands
 				line.outbytes.push_back((v) & 0xFF);

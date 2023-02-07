@@ -17,7 +17,7 @@ class CLASS : public TFileProcessor
 protected:
 	std::vector<MerlinLine> lines;
 public:
-	CLASS();
+	CLASS(ConfigOptions &opt);
 	virtual ~CLASS();
 	int CreateVolume(string OSName, string VolName, uint64_t size, CIDER_VOLFORMAT format);
 	int RunScript(string path);

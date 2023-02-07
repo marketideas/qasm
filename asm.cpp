@@ -11,12 +11,12 @@
 #define CLASS MerlinLine
 
 
-CLASS::CLASS()
+CLASS::CLASS(ConfigOptions &opt) //: options(opt)
 {
 	clear();
 }
 
-CLASS::CLASS(std::string line)
+CLASS::CLASS(std::string line, ConfigOptions &opt) //: options(opt)
 {
 	clear();
 	set(line);
@@ -28,13 +28,11 @@ void CLASS::setError(uint32_t ecode)
 	errorcode = ecode;
 }
 
+
 void CLASS::print(uint32_t lineno)
 {
 	uint32_t l, i, savpcol, pcol;
 	bool commentprinted = false;
-	static bool checked = false;
-	static bool nc1 = false;
-	bool nc = false;
 	uint8_t commentcol = tabs[2];
 
 	uint32_t b = 4; // how many bytes show on the first line
@@ -66,27 +64,17 @@ void CLASS::print(uint32_t lineno)
 		flags &= (~FLAG_NOLINEPRINT);
 	}
 
-	if (flags & FLAG_NOLINEPRINT)
+	bool np=(flags & FLAG_NOLINEPRINT);
+	if (options->isQuiet())
+		np=true;
+	if (options->isList())
+	  np=false;
+
+	if (np)
 	{
 		return;
 	}
-	if (!checked)
-	{
-		nc1 = getBool("option.nocolor", false);
-		checked = true;
-	}
-	else
-	{
-		nc = nc1;
-	}
-
-	//if ((!isatty(STDOUT_FILENO)) || (merlinerrors))
-	if ((!isatty(STDOUT_FILENO)) || (0))
-	{
-		nc = true;
-	}
-
-	if (!nc)
+	if (options->useColor())
 	{
 		if (errorcode > 0)
 		{
@@ -156,7 +144,9 @@ void CLASS::print(uint32_t lineno)
 
 	if (isDebug() > 1)
 	{
-		pcol += printf("%02X ", addressmode & 0xFF);
+		//pcol += printf("%02X ", addressmode & 0xFF);
+		pcol += printf(" %s ", addrtext.c_str());
+
 	}
 
 	savpcol = pcol; // this is how many bytes are in the side margin
@@ -250,7 +240,7 @@ void CLASS::print(uint32_t lineno)
 	}
 	//printf("\n");
 
-	if ((!nc) && (errorcode > 0))
+	if ((options->useColor()) && (errorcode > 0))
 	{
 		SetColor(CL_NORMAL | BG_NORMAL);
 	}
@@ -522,7 +512,8 @@ void CLASS::set(std::string line)
 	if (x > 1)
 	{
 		// M32 syntax allows a colon after lable, and it is not part of the lable
-		if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+		//if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+		if (options->isMerlin32())
 		{
 			while ((x > 1) && (lable[x - 1] == ':'))
 			{
@@ -539,11 +530,11 @@ void CLASS::set(std::string line)
 #undef CLASS
 #define CLASS TFileProcessor
 
-CLASS::CLASS()
+CLASS::CLASS(ConfigOptions &opt) : options(opt)
 {
 	int x;
 	errorct = 0;
-	syntax=SYNTAX_QASM;
+	//syntax=SYNTAX_QASM;
 
 	win_columns = -1;
 	win_rows = -1;
@@ -562,9 +553,9 @@ CLASS::~CLASS()
 {
 }
 
-void CLASS::setSyntax(uint32_t syn)
+void CLASS::setProduct(string product)
 {
-	syntax=syn;
+	options.setProduct(product);
 }
 
 void CLASS::errorOut(uint16_t code)
@@ -581,7 +572,7 @@ void CLASS::init(void)
 	starttime = GetTickCount();
 	initialdir = Poco::Path::current();
 	filecount = 0;
-	syntax = SYNTAX_QASM;
+	//syntax = SYNTAX_QASM;
 
 	//std::string tabstr = getConfig("reformat.tabs", "8,16,32");
 	std::string tabstr = getConfig("reformat.tabs", "12,24,40,70");
@@ -620,7 +611,10 @@ void CLASS::complete(void)
 		//cout << "Processing Time: " << n - starttime << "ms" << endl;
 		uint64_t x = n - starttime;
 		uint32_t x1 = x & 0xFFFFFFFF;
-		printf("Elapsed time: %u ms\n", x1);
+		if ((!getBool("option.quiet",false)) && (isDebug()>0))
+		{
+			printf("Elapsed time: %u ms\n", x1);
+		}
 
 	}
 }
@@ -926,11 +920,13 @@ int CLASS::processfile(std::string p, std::string &newfilename)
 	return (res);
 }
 
+#if 1
 #undef CLASS
 #define CLASS TMerlinConverter
-CLASS::CLASS() : TFileProcessor()
+CLASS::CLASS(ConfigOptions &opt) : TFileProcessor(opt)
 {
 	format_flags=CONVERT_TEST;
+	//options=new ConfigOptions();
 }
 CLASS::~CLASS()
 {
@@ -946,7 +942,7 @@ int CLASS::doline(int lineno, std::string line)
 {
 	UNUSED(lineno);
 
-	MerlinLine l(line);
+	MerlinLine l(line, options);
 	lines.push_back(l);
 	return 0;
 }
@@ -969,7 +965,8 @@ void CLASS::process(void)
 
 	for (uint32_t lineno = 0; lineno < ct; lineno++)
 	{
-		MerlinLine &line = lines.at(lineno);
+		MerlinLine line = lines.at(lineno);
+		//printf("line: |%s|\n",line.wholetext.c_str());
 		orval=0x00;
 		if (flags&CONVERT_HIGH)
 		{
@@ -1001,7 +998,14 @@ void CLASS::process(void)
 					t = tabs[2];
 					if (flags&CONVERT_COMPRESS)
 					{
-						len += sprintf(&buff[len+tlen],"   ");
+						if (flags&CONVERT_TABS)
+						{
+							len += sprintf(&buff[len+tlen],"\t\t\t\t");
+						}
+						else
+						{
+							len += sprintf(&buff[len+tlen],"   ");
+						}
 					}
 					else
 					{
@@ -1022,7 +1026,14 @@ void CLASS::process(void)
 			{
 				if (flags&CONVERT_COMPRESS)
 				{
-					len += sprintf(&buff[len+tlen]," ");
+					if (flags&CONVERT_TABS)
+					{
+						len += sprintf(&buff[len+tlen],"\t\t\t");
+					}
+					else
+					{
+						len += sprintf(&buff[len+tlen]," ");
+					}
 				}
 				else
 				{
@@ -1039,7 +1050,14 @@ void CLASS::process(void)
 			{
 				if (flags&CONVERT_COMPRESS)
 				{
-					len += sprintf(&buff[len+tlen]," ");
+					if (flags&CONVERT_TABS)
+					{
+						len += sprintf(&buff[len+tlen],"\t\t\t");
+					}
+					else
+					{
+						len += sprintf(&buff[len+tlen]," ");
+					}
 				}
 				else
 				{
@@ -1056,7 +1074,14 @@ void CLASS::process(void)
 			{
 				if (flags&CONVERT_COMPRESS)
 				{
-					len += sprintf(&buff[len+tlen]," ");
+					if (flags&CONVERT_TABS)
+					{
+						len += sprintf(&buff[len+tlen],"\t\t\t");
+					}
+					else
+					{
+						len += sprintf(&buff[len+tlen]," ");
+					}
 				}
 				else
 				{
@@ -1125,8 +1150,11 @@ void CLASS::process(void)
 				buff[idx++]=c|orval;
 			}
 		}
+		buff[idx]=0;
+		fprintf(stdout,"%s",buff);
+#if 0
 		FILE *f=NULL;
-		//string outfile=
+
 		f=fopen("./aout.s","w+");
 		if (f!=NULL)
 		{
@@ -1138,18 +1166,20 @@ void CLASS::process(void)
 		{
 			printf("file error\n");
 		}
+#endif
 	}
 }
 
 void CLASS::complete(void)
 {
 }
+#endif
 
 
 #undef CLASS
 #define CLASS T65816Asm
 
-CLASS::CLASS() : TFileProcessor()
+CLASS::CLASS(ConfigOptions &opt) : TFileProcessor(opt)
 {
 	lines.clear();
 	psuedoops = new TPsuedoOp();
@@ -1588,7 +1618,8 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 			break;
 		case '|':
-			if (syntax == SYNTAX_MERLIN)
+			//if (syntax == SYNTAX_MERLIN)
+			if (options.isMerlin())
 			{
 				line.setError(errBadLabel);
 				line.expr_value = 0;
@@ -1790,6 +1821,7 @@ void CLASS::initpass(void)
 
 
 	savepath = getConfig("option.objfile", "");
+	//printf("savepath: %s\n",savepath.c_str());
 
 	lastcarry = false;
 	relocatable = false;
@@ -1847,7 +1879,10 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			savepath = processFilename(savepath, currentdir, 0);
-			printf("saving to file: %s\n", savepath.c_str());
+			if (!options.isQuiet())
+			{
+				printf("saving to file: %s\n", savepath.c_str());
+			}
 
 			std::ofstream f(savepath);
 
@@ -1878,8 +1913,10 @@ void CLASS::complete(void)
 			printf("\nErrors in assembly. Output not SAVED.\n\n");
 		}
 	}
-
-	printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct, lines.size(), symbols.size());
+	if ((!options.isQuiet()) || (options.isList()))
+	{
+		printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct, lines.size(), symbols.size());
+	}
 
 	TFileProcessor::complete();
 
@@ -1909,10 +1946,17 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 		{
 			if (isDebug() > 2)
 			{
-				int c = SetColor(CL_RED);
+				int c;
+				if (options.useColor())
+				{
+					c = SetColor(CL_RED);
+				}
 				uint32_t rr = result & 0xFFFFFFFF;
 				printf("eval Error=%d %08X |%s|\n", res, rr, eval.badsymbol.c_str());
-				SetColor(c);
+				if (options.useColor())
+				{
+					SetColor(c);
+				}
 			}
 		}
 		if (res == 0)
@@ -2015,7 +2059,8 @@ int CLASS::getAddrMode(MerlinLine & line)
 											// symbol is defined later, we will generate different
 											// bytes on the next pass
 
-											if ((line.syntax & SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
+											if (options.isMerlin32())
+												//if ((line.syntax & SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
 											{
 												if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
 												{
@@ -2281,7 +2326,7 @@ void CLASS::process(void)
 	int x;;
 	char c;
 	char buff[256];
-	MerlinLine errLine;
+	MerlinLine errLine(options);
 	std::string op, realop, operand, ls;
 
 	pass = 0;
@@ -2351,7 +2396,7 @@ void CLASS::process(void)
 			line.linemx = mx;
 			line.bytect = 0;
 			line.showmx = showmx;
-			line.syntax = syntax;
+			//line.syntax = syntax;
 			line.merlinerrors = merlinerrors;
 
 			if ((line.lable != "") && (op != "mac"))
@@ -2476,7 +2521,7 @@ void CLASS::process(void)
 						for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
 						{
 							//printf("pushing %s\n", lines[lc].wholetext.c_str());
-							MerlinLine nl(lines[lc].wholetext);  // create a new clean line (without errors,data)
+							MerlinLine nl(lines[lc].wholetext,options);  // create a new clean line (without errors,data)
 							expand_macro.lines.push_back(nl);
 						}
 						expand_macro.running = true;
@@ -2603,7 +2648,7 @@ int CLASS::doline(int lineno, std::string line)
 
 	UNUSED(lineno);
 
-	MerlinLine l(line);
+	MerlinLine l(line,options);
 
 	op = Poco::toLower(l.opcode);
 	if (op == "merlin")
@@ -2614,7 +2659,7 @@ int CLASS::doline(int lineno, std::string line)
 	{
 		syntax = SYNTAX_ORCA;
 	}
-	l.syntax = syntax;
+	//l.syntax = syntax;
 	lines.push_back(l);
 
 	if ((op == "use") || (op == "put"))
@@ -2653,7 +2698,7 @@ int CLASS::doline(int lineno, std::string line)
 
 #define CLASS T65816Link
 
-CLASS::CLASS() : TFileProcessor()
+CLASS::CLASS(ConfigOptions &opt) : TFileProcessor(opt)
 {
 }
 

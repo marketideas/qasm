@@ -8,6 +8,7 @@
             // Resolved by CMake Tools:
             "program": "${command:cmake.launchTargetPath}",
             "args": [
+                " -d -d -d",
                 "${workspaceFolder}/test.s"
             ],
             "stopAtEntry": false,

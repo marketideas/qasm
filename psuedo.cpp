@@ -179,31 +179,32 @@ int CLASS::doMAC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	}
 	else // it is EOM or <<<
 	{
-		while (a.macrostack.size() > 0)
+		if (a.macrostack.size()>0)
 		{
-			a.currentmacro.end = line.lineno - 1;
-			a.currentmacro.len = 0;
-			if (a.currentmacro.end >= a.currentmacro.start)
+			while (a.macrostack.size() > 0)
 			{
-				a.currentmacro.len = a.currentmacro.end - a.currentmacro.start;
-				//printf("macro len=%d\n",a.currentmacro.len);
+				a.currentmacro.end = line.lineno - 1;
+				a.currentmacro.len = 0;
+				if (a.currentmacro.end >= a.currentmacro.start)
+				{
+					a.currentmacro.len = a.currentmacro.end - a.currentmacro.start;
+					//printf("macro len=%d\n",a.currentmacro.len);
+				}
+				a.currentmacro.running = false;
+
+				std::pair<std::string, TMacro> p(a.currentmacro.name, a.currentmacro);
+				//printf("macro insert %s\n",a.currentmacro.name.c_str());
+				a.macros.insert(p);
+
+				a.currentmacro = a.macrostack.top();
+				a.macrostack.pop();
 			}
-			a.currentmacro.running = false;
-
-			std::pair<std::string, TMacro> p(a.currentmacro.name, a.currentmacro);
-			//printf("macro insert %s\n",a.currentmacro.name.c_str());
-			a.macros.insert(p);
-
-			a.currentmacro = a.macrostack.top();
-			a.macrostack.pop();
 		}
-#if 0
 		else
 		{
 			err = errUnexpectedOp;
 			goto out;
 		}
-#endif
 	}
 out:
 	if (err)
@@ -351,27 +352,27 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	const char *ptr = (const char *)op.c_str();
 	switch (strhash(ptr) )
 	{
-		case strhash((const char *)"DA"):
-		case strhash((const char *)"DW"):
-			wordsize = 2;
-			break;
-		case strhash((const char *)"DDB"):
-			wordsize = 2;
-			endian = 1;
-			break;
-		case strhash((const char *)"DFB"):
-		case strhash((const char *)"DB"):
-			wordsize = 1;
-			break;
-		case strhash((const char *)"ADR"):
-			wordsize = 3;
-			break;
-		case strhash((const char *)"ADRL"):
-			wordsize = 4;
-			break;
-		default:
-			wordsize = 0;
-			break;
+	case strhash((const char *)"DA"):
+	case strhash((const char *)"DW"):
+		wordsize = 2;
+		break;
+	case strhash((const char *)"DDB"):
+		wordsize = 2;
+		endian = 1;
+		break;
+	case strhash((const char *)"DFB"):
+	case strhash((const char *)"DB"):
+		wordsize = 1;
+		break;
+	case strhash((const char *)"ADR"):
+		wordsize = 3;
+		break;
+	case strhash((const char *)"ADRL"):
+		wordsize = 4;
+		break;
+	default:
+		wordsize = 0;
+		break;
 	}
 
 	for (auto itr = tok.begin(); itr != tok.end(); ++itr)
@@ -666,12 +667,12 @@ int CLASS::doHEX(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		// Got a good char, append to hex string and see if we've got a byte
 		switch (ct)
 		{
-			case 0:
-				b = (hv << 4);
-				break;
-			case 1:
-				b |= hv;
-				break;
+		case 0:
+			b = (hv << 4);
+			break;
+		case 1:
+			b |= hv;
+			break;
 		}
 		ct = (ct + 1) & 0x01;
 		if (!ct)
@@ -695,7 +696,8 @@ out:
 	return bytect;
 }
 
-static int usr_hash(std::string os) {
+static int usr_hash(std::string os)
+{
 	int hash = 0;
 
 	os.resize(4, ' ');
@@ -704,7 +706,10 @@ static int usr_hash(std::string os) {
 	hash = (os[0] & 0x1f) << 11;
 	hash |= (os[1] & 0x1f) << 6;
 	hash |= (os[2] & 0x1f) << 1;
-	if (os[3] == 'L') hash |= 0x01;
+	if (os[3] == 'L')
+	{
+		hash |= 0x01;
+	}
 
 	return hash;
 }
@@ -727,34 +732,43 @@ int CLASS::doUSR(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	char c = os.empty() ? 0 : os.front();
 
-	if (c == '$' && os.length() > 1) {
+	if (c == '$' && os.length() > 1)
+	{
 
 		for (uint32_t i = 1; i < os.length(); ++i)
 		{
 			char hv = hexVal(os[i]);
-			if (hv < 0) {
+			if (hv < 0)
+			{
 				line.setError(errIllegalCharOperand);
 				bytect = 0;
-				goto out;		
+				goto out;
 			}
 			hash <<= 4;
 			hash |= hv;
 		}
 
-	} else if ((c == '\'' || c == '\"') && os.front() == os.back() && os.length() == 6) {
+	}
+	else if ((c == '\'' || c == '\"') && os.front() == os.back() && os.length() == 6)
+	{
 		hash = usr_hash(os.substr(1, 4));
-	} else if (os.length() > 0 && os.length() <= 4) {
+	}
+	else if (os.length() > 0 && os.length() <= 4)
+	{
 		hash = usr_hash(os);
-	} else {
+	}
+	else
+	{
 		printf("line.setError(errBadOperand);\n");
 		line.setError(errBadOperand);
 		bytect = 0;
-		goto out;		
+		goto out;
 	}
 
-	if (a.pass > 0) {
-		line.outbytes.push_back(hash & 0xff);		
-		line.outbytes.push_back(hash >> 8);		
+	if (a.pass > 0)
+	{
+		line.outbytes.push_back(hash & 0xff);
+		line.outbytes.push_back(hash >> 8);
 	}
 
 out:
@@ -778,7 +792,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint8_t ct = 0;
 	uint8_t delimiter = 0;
 	uint32_t ss = 0;
-    uint32_t lastdelimidx = 0;
+	uint32_t lastdelimidx = 0;
 
 	std::vector<uint8_t> bytes;
 
@@ -809,7 +823,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 						}
 
 						bytes.push_back(c);
-                        lastdelimidx = (uint32_t)(bytes.size() - 1);
+						lastdelimidx = (uint32_t)(bytes.size() - 1);
 					}
 				}
 
@@ -847,12 +861,12 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			// Got a hex char, append to hex string and see if we've got a byte
 			switch (ct)
 			{
-				case 0:
-					b = (hv << 4);
-					break;
-				case 1:
-					b |= hv;
-					break;
+			case 0:
+				b = (hv << 4);
+				break;
+			case 1:
+				b |= hv;
+				break;
 			}
 			ct = (ct + 1) & 0x01;
 			if (!ct)
@@ -885,33 +899,33 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		//printf("bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
 		switch (strhash(ptr) )
 		{
-			case strhash((const char *)"STRL"):
-				addlen = 2;
-				break;
-			case strhash((const char *)"STR"):
-				addlen = 1;
-				break;
-			case strhash((const char *)"REV"):
-				reverse = true;
-				break;
-			case strhash((const char *)"FLS"):
-				andval = (uint8_t)~0xC0;
-				orval = (uint8_t)0x40;
-				break;
-			case strhash((const char *)"INV"):
-				andval = (uint8_t)~0xC0;
-				orval = 0x00;
-				break;
-			case strhash((const char *)"DCI"):
-				dci = true;
-				break;
-			case strhash((const char *)"ASC"):
-				break;
-			default:
-				line.setError(errBadOpcode);
-				bytect = 0;
-				addlen = 0;
-				break;
+		case strhash((const char *)"STRL"):
+			addlen = 2;
+			break;
+		case strhash((const char *)"STR"):
+			addlen = 1;
+			break;
+		case strhash((const char *)"REV"):
+			reverse = true;
+			break;
+		case strhash((const char *)"FLS"):
+			andval = (uint8_t)~0xC0;
+			orval = (uint8_t)0x40;
+			break;
+		case strhash((const char *)"INV"):
+			andval = (uint8_t)~0xC0;
+			orval = 0x00;
+			break;
+		case strhash((const char *)"DCI"):
+			dci = true;
+			break;
+		case strhash((const char *)"ASC"):
+			break;
+		default:
+			line.setError(errBadOpcode);
+			bytect = 0;
+			addlen = 0;
+			break;
 		}
 		if (a.pass > 0)
 		{
@@ -930,7 +944,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					b = bytes[i];
 				}
 
-                b1 = b & 0x7F;
+				b1 = b & 0x7F;
 				if ((andval != 0xFF) || (orval != 0x00))
 				{
 					b = b1;
@@ -947,17 +961,17 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					// SGQ BUG - Merlin16+ does it like Merlin32 and now does the last
 					// byte not the way merlin816 and earlier do it documented below.
 					// use OPTION_M16_PLUS when implemented.
-					
-                    //lr - Merlin only toggles the high bit of string chars, not hex values
-                    // 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
-                    //
-                    // The DCI instruction is documented to work like this on page 108
-                    // (regardless of how this effects the desired lda, (bpl/bmi) functionality)
-                    //
-                    // I am now checking the delimiter character to determine hi/lo toggle (reversed)
-                    // and am tracking the index to the last delimited character put into 'bytes'.
-                    // This produces the same results as Merlin 16+ in my testing.
-                    if ( firstdelim >= '\'' )
+
+					//lr - Merlin only toggles the high bit of string chars, not hex values
+					// 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
+					//
+					// The DCI instruction is documented to work like this on page 108
+					// (regardless of how this effects the desired lda, (bpl/bmi) functionality)
+					//
+					// I am now checking the delimiter character to determine hi/lo toggle (reversed)
+					// and am tracking the index to the last delimited character put into 'bytes'.
+					// This produces the same results as Merlin 16+ in my testing.
+					if ( firstdelim >= '\'' )
 					{
 						b |= 0x80;
 					}
@@ -982,108 +996,116 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
 	int res = 0;
-	std::string s;
+	std::string s,sp;
 
 	switch (opinfo.opcode)
 	{
-		default:
-			res = -1; // undefined p-op
-			line.setError(errUnimplemented);
-			break;
-		case P_DS:
-			res = doDS(a, line, opinfo);
-			break;
-		case P_PUT:
-		case P_USE:
-			// both of these are handled by the input file processor, just allow them to be
-			// processed with no errors here
-			break;
-		case P_DUM:
-		case P_DEND:
-			res = doDUM(a, line, opinfo);
-			line.flags |= FLAG_FORCEADDRPRINT;
+	default:
+		res = -1; // undefined p-op
+		line.setError(errUnimplemented);
+		break;
+	case P_DS:
+		res = doDS(a, line, opinfo);
+		break;
+	case P_PUT:
+	case P_USE:
+		// both of these are handled by the input file processor, just allow them to be
+		// processed with no errors here
+		break;
+	case P_DUM:
+	case P_DEND:
+		res = doDUM(a, line, opinfo);
+		line.flags |= FLAG_FORCEADDRPRINT;
 
-			break;
-		case P_ORG:
-			if (line.operand_expr.length() > 0)
-			{
-				a.PC.orgsave = a.PC.currentpc;
-				a.PC.currentpc = line.expr_value;
-				line.startpc = line.expr_value;
-			}
-			else
-			{
-				a.PC.currentpc = a.PC.orgsave;
-				line.startpc = a.PC.orgsave;
-			}
+		break;
+	case P_ORG:
+		if (line.operand_expr.length() > 0)
+		{
+			a.PC.orgsave = a.PC.currentpc;
+			a.PC.currentpc = line.expr_value;
+			line.startpc = line.expr_value;
+		}
+		else
+		{
+			a.PC.currentpc = a.PC.orgsave;
+			line.startpc = a.PC.orgsave;
+		}
 
 #if 0
-			// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
-			if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
-			{
-				// so clear the bank word in all variables
-				a.PC.orgsave &= 0xFFFF;
-				a.PC.currentpc &= 0xFFFF;
-				line.startpc &= 0xFFFF;
-			}
+		// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
+		if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+		{
+			// so clear the bank word in all variables
+			a.PC.orgsave &= 0xFFFF;
+			a.PC.currentpc &= 0xFFFF;
+			line.startpc &= 0xFFFF;
+		}
 #endif
 
-			line.flags |= FLAG_FORCEADDRPRINT;
-			break;
-		case P_SAV:
+		line.flags |= FLAG_FORCEADDRPRINT;
+		break;
+	case P_SAV:
+		sp = getConfig("option.objfile", "");
+		if (sp=="")
+		{
 			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
-			break;
-		case P_CAS:
-			s = Poco::toUpper(line.operand);
-			if (s == "SE")
+		}
+		else // if they specified an output name on the command line, use it.
+		{
+			a.savepath = sp;
+		}
+		break;
+	case P_CAS:
+		s = Poco::toUpper(line.operand);
+		if (s == "SE")
+		{
+			a.casesen = true;
+		}
+		if (s=="IN")
+		{
+			a.casesen=false;
+		}
+		res = 0;
+		break;
+	case P_MAC:
+		res = doMAC(a, line, opinfo);
+		break;
+	case P_ERR:
+		if (a.pass > 0)
+		{
+			if ((line.expr_value != 0) || (line.eval_result < 0))
 			{
-				a.casesen = true;
+				line.setError(errErrOpcode);
+				//a.passcomplete=true; // terminate assembly
 			}
-			if (s=="IN")
-			{
-				a.casesen=false;
-			}
-			res = 0;
-			break;
-		case P_MAC:
-			res = doMAC(a, line, opinfo);
-			break;
-		case P_ERR:
-			if (a.pass > 0)
-			{
-				if ((line.expr_value != 0) || (line.eval_result < 0))
-				{
-					line.setError(errErrOpcode);
-					//a.passcomplete=true; // terminate assembly
-				}
-			}
-			res = 0;
-			break;
-		case P_LST:
-			res = doLST(a, line, opinfo);
-			break;
-		case P_HEX:
-			res = doHEX(a, line, opinfo);
-			break;
-		case P_DATA:
-			res = doDATA(a, line, opinfo);
-			break;
-		case P_LUP:
-			res = doLUP(a, line, opinfo);
-			break;
-		case P_DO:
-			res = doDO(a, line, opinfo);
-			break;
-		case P_TR:
-			res = doTR(a, line, opinfo);
-			break;
-		case P_ASC:
-			res = doASC(a, line, opinfo);
-			break;
+		}
+		res = 0;
+		break;
+	case P_LST:
+		res = doLST(a, line, opinfo);
+		break;
+	case P_HEX:
+		res = doHEX(a, line, opinfo);
+		break;
+	case P_DATA:
+		res = doDATA(a, line, opinfo);
+		break;
+	case P_LUP:
+		res = doLUP(a, line, opinfo);
+		break;
+	case P_DO:
+		res = doDO(a, line, opinfo);
+		break;
+	case P_TR:
+		res = doTR(a, line, opinfo);
+		break;
+	case P_ASC:
+		res = doASC(a, line, opinfo);
+		break;
 
-		case P_USR:
-			res = doUSR(a, line, opinfo);
-			break;
+	case P_USR:
+		res = doUSR(a, line, opinfo);
+		break;
 
 	}
 	return (res);

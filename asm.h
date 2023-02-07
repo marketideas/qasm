@@ -5,27 +5,6 @@
 //
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
-#define MODE_6502 0
-#define MODE_65C02 1
-#define MODE_65816 2
-
-#define SYNTAX_MERLIN 	0x01
-#define SYNTAX_MERLIN32 0x02
-#define SYNTAX_APW	    0x04
-#define SYNTAX_MPW		0x08
-#define SYNTAX_ORCA	    0x10
-#define SYNTAX_CC65		0x20
-#define SYNTAX_LISA		0x40
-
-#define SYNTAX_QASM	    (0x80 | SYNTAX_MERLIN)
-#define OPTION_ALLOW_A_OPERAND 0x0100
-#define OPTION_ALLOW_LOCAL     0x0200
-#define OPTION_ALLOW_COLON	   0x0400
-#define OPTION_FORCE_REPSEP    0x0800
-#define OPTION_NO_REPSEP       0x1000
-#define OPTION_CFG_REPSEP	   0x2000
-#define OPTION_M32_VARS		   0x4000
-#define OPTION_M16_PLUS	       0x8000
 
 #define FLAG_FORCELONG 0x01
 #define FLAG_FORCEABS  0x02
@@ -196,7 +175,8 @@ class MerlinLine
 {
 public:
 
-	uint32_t syntax;
+	//uint32_t syntax;
+	ConfigOptions *options;
 	std::string wholetext;
 	std::string lable;
 	std::string printlable;
@@ -233,8 +213,8 @@ public:
 	std::vector<uint8_t> outbytes;
 
 public:
-	MerlinLine();
-	MerlinLine(std::string line);
+	MerlinLine(ConfigOptions &opt);
+	MerlinLine(std::string line, ConfigOptions &opt);
 	void clear();
 	void set(std::string line);
 	void print(uint32_t lineno);
@@ -255,11 +235,12 @@ protected:
 	uint32_t filecount; // how many files have been read in (because of included files from source
 
 public:
+	ConfigOptions &options;
 	uint32_t errorct;
 	std::string filename;
 	uint32_t format_flags;
 
-	TFileProcessor();
+	TFileProcessor(ConfigOptions &opt);
 	virtual ~TFileProcessor();
 	virtual std::string processFilename(std::string p, std::string currentdir, int level);
 	virtual int processfile(std::string p, std::string &newfilename);
@@ -268,7 +249,7 @@ public:
 	virtual void process(void);
 	virtual void complete(void);
 	virtual void errorOut(uint16_t code);
-	virtual void setSyntax(uint32_t syn);
+	virtual void setProduct(string product);
 };
 
 
@@ -277,6 +258,7 @@ public:
 #define CONVERT_CRLF 0x02
 #define CONVERT_COMPRESS 0x04
 #define CONVERT_HIGH 0x08
+#define CONVERT_TABS 0x10
 #define CONVERT_MERLIN (CONVERT_HIGH|CONVERT_COMPRESS)
 #define CONVERT_LINUX (CONVERT_LF)
 #define CONVERT_WINDOWS (CONVERT_CRLF)
@@ -284,19 +266,22 @@ public:
 #define CONVERT_MPW (CONVERT_NONE)
 #define CONVERT_TEST (CONVERT_COMPRESS|CONVERT_LF)
 
+
+#if 1
 class TMerlinConverter : public TFileProcessor
 {
 protected:
 	std::vector<MerlinLine> lines;
 
 public:
-	TMerlinConverter();
+	TMerlinConverter(ConfigOptions &opt);
 	virtual ~TMerlinConverter();
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);
 	virtual void process(void);
 	virtual void complete(void);
 };
+#endif
 
 class TLUPstruct
 {
@@ -466,7 +451,7 @@ public:
 
 	uint16_t pass;
 
-	T65816Asm();
+	T65816Asm(ConfigOptions &opt);
 	virtual ~T65816Asm();
 
 	virtual void init(void);
@@ -527,7 +512,7 @@ public:
 class T65816Link : public TFileProcessor
 {
 public:
-	T65816Link();
+	T65816Link(ConfigOptions &opt);
 	virtual ~T65816Link();
 	virtual void init(void);
 	virtual int doline(int lineno, std::string line);

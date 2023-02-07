@@ -6,7 +6,6 @@
 
 #define CLASS PAL_APPCLASS
 
-
 // return a pointer to the actual Application class
 PAL_BASEAPP *PAL::appFactory(void)
 {
@@ -21,8 +20,16 @@ programOption PAL::appOptions[] =
 #endif
 	//{ "config", "f", "load configuration data from a <file>", "<file>", false, false},
 	{ "exec", "x", "execute a command [asm, link, format, script] default=asm", "<command>", false, false},
-	{ "objfile", "o", "write output to file", "<file>", false, false},
-	{ "syntax", "s", "enforce syntax of other assembler [qasm, merlin, merlin32, ORCA, APW, MPW, CC65]", "<syntax>", false, false},
+	{ "objfile", "o", "write output to <objfile>", "<objfile>", false, false},
+	{ "instruction", "i", "force the CPU instruction set ('xc' ingored) [6502, 65C02, 65816]", "<cpu>", false, false},
+
+	{ "type", "t", "enforce syntax/features/bugs of other assembler [qasm, merlin8, merlin16, merlin16plus, merlin32, orca, apw, mpw, lisa, ca65]", "<type>", false, false},
+	{ "quiet", "q", "print as little as possible, equivalent to lst off in the assembler ('lst' opcodes will be ignored)", "", false, true},
+	{ "list", "l", "force assembly listing ('lst' opcodes will be ignored)", "", false, true},
+
+	{ "color", "c", "colorize the output", "", false, true},
+	{ "parms", "p", "show the working parameters/options", "", false, true},
+
 
 
 	{ "", "", "", "", false, false}
@@ -75,62 +82,49 @@ int CLASS::runCommandLineApp(void)
 	TFileProcessor *t = NULL;
 	std::string line;
 	std::string startdirectory;
+	std::string appPath;
 	std::string fname;
-	uint32_t syntax;
+	//uint32_t syntax;
+	string product="";
+	string syn;
 	int res = -1;
+	ConfigOptions options;
 
+//Poco::Util::Application::instance().config()
+
+	utils=new QUtils();
+
+	//LOG_NOTE << "this is it!" << endl;
 
 	startdirectory = Poco::Path::current();
-
+	appPath=utils->getAppPath();
 	if (commandargs.size() == 0)
 	{
 		displayHelp();
 		return (res);
 	}
 
-	options.ReadFile(startdirectory+"/parms.json");
+	options.ReadFile(Poco::Path::config()+"/parms.json");
+	options.ReadFile(appPath+"/parms.json");
+	options.ReadFile(Poco::Path::configHome()+"/parms.json");
+	options.ReadFile(Poco::Path::current()+"/parms.json");
 
-	string syn=options.GetString("assembler.syntax","QASM");
+	syn="QASM";
+	//syn=options.GetString("assembler.syntax","QASM");
 
-	string cmdsyn = Poco::toUpper(getConfig("option.syntax", ""));
+	string cmdsyn = Poco::toUpper(getConfig("option.type", ""));
 	if (cmdsyn!="")
 	{
 		syn=cmdsyn; // if they overrode the syntax on the command line, use it
 	}
 
 	syn=Poco::toUpper(syn);
-	syn=Poco::trim(syn);
-	syntax=SYNTAX_QASM;
-	if ((syn=="MERLIN") || (syn=="MERLIN16") || (syn=="MERLIN8") || (syn=="MERLIN16PLUS"))
-	{
-		syntax=SYNTAX_MERLIN;
-	}
-	else if (syn=="MERLIN32")
-	{
-		syntax=SYNTAX_MERLIN32;
-	}
-	else if (syn=="QASM")
-	{
-		syntax=SYNTAX_QASM;
-	}
-	else if (syn=="APW")
-	{
-		syntax=SYNTAX_APW;
-	}
-	else if (syn=="ORCA")
-	{
-		syntax=SYNTAX_ORCA;
-	}
-	else if (syn=="MPW")
-	{
-		syntax=SYNTAX_MPW;
-	}
-	else if (syn=="CC65")
-	{
-		syntax=SYNTAX_CC65;
-	}
+	product=Poco::trim(syn);
 
-	//printf("SYNTAX: |%s|\n",syn.c_str());
+	if (isDebug()>0)
+	{
+		printf("SYNTAX: |%s|\n",syn.c_str());
+	}
 
 	try
 	{
@@ -196,7 +190,7 @@ int CLASS::runCommandLineApp(void)
 					{
 						format_flags=CONVERT_TEST;
 					}
-
+					options.format_flags=format_flags;
 					cmd=toks[0];
 				}
 			}
@@ -205,13 +199,14 @@ int CLASS::runCommandLineApp(void)
 				if (cmd == "FORMAT")
 				{
 					res = 0;
-					t = new TMerlinConverter();
+					t = new TMerlinConverter(options);
+					//t=NULL;
 					if (t != NULL)
 					{
 						try
 						{
 							t->init();
-							t->setSyntax(syntax);
+							t->setProduct(product);
 							t->format_flags=format_flags;
 
 							std::string f = path.toString();
@@ -239,13 +234,14 @@ int CLASS::runCommandLineApp(void)
 				else if (cmd == "ASM")
 				{
 					int x;
-					t = new T65816Asm();
+					t = new T65816Asm(options);
 					if (t != NULL)
 					{
 						try
 						{
 							t->init();
-							t->setSyntax(syntax);
+							t->setProduct(product);
+
 
 							std::string f = path.toString();
 							t->filename = f;
@@ -275,13 +271,13 @@ int CLASS::runCommandLineApp(void)
 				else if (cmd == "SCRIPT")
 				{
 					res = 0;
-					t = new CiderPress();
+					t = new CiderPress(options);
 					if (t!=NULL)
 					{
 						try
 						{
 							t->init();
-							t->setSyntax(syntax);
+							t->setProduct(product);
 
 							std::string f = path.toString();
 							t->filename = f;

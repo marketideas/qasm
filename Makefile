@@ -30,6 +30,12 @@ debug:
 	-mkdir -p ./build
 	-cd ./build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
 
+cider:
+	-rm -rf ./build
+	-mkdir -p ./build
+	-cd ./build && cmake -DCIDER=1 -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
+
+
 distclean: clean
 	-rm -rf ./qasmout
 	-rm -rf ./m32out
@@ -37,7 +43,6 @@ distclean: clean
 
 clean:
 	-rm -rf ./build *.2mg test.bin
-
 
 depend:
 	-cd ./build && $(MAKE) depend

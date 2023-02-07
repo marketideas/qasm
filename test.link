@@ -1,0 +1,10 @@
+product QASM
+nolist
+asm test.s -o test.o
+asm test1.s -o test1.o
+asm test2.s -o test2.o
+link test.o test1.o test2.o
+volume TESTASM test.2mg 800K prodos .2mg
+copyto TESTASM test.o :SOURCE: 0x06 0x2000
+copyto TESTASM test.s :SOURCE: 0x04 0x0000 FORMAT-MERLIN
+
