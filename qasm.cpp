@@ -115,10 +115,11 @@ int CLASS::runCommandLineApp(void)
 		return (res);
 	}
 
-	options.ReadFile(Poco::Path::config()+"/parms.json");
-	options.ReadFile(appPath+"/parms.json");
-	options.ReadFile(Poco::Path::configHome()+"/parms.json");
-	options.ReadFile(Poco::Path::current()+"/parms.json");
+	//printf("apppath: |%s|\n",appPath.c_str());
+	options.ReadFile(Poco::Path::config()+"/parms.json",false);
+	options.ReadFile(appPath+"/parms.json",true);
+	options.ReadFile(Poco::Path::configHome()+"/parms.json",false);
+	options.ReadFile(Poco::Path::current()+"/parms.json",false);
 
 	syn="QASM";
 
@@ -145,6 +146,7 @@ int CLASS::runCommandLineApp(void)
 	}
 
 	language=syn;
+	options.setLanguage(syn,true);
 
 	if (isDebug()>0)
 	{
@@ -237,7 +239,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setLanguage(language);
+							t->setLanguage(language,true);
 							t->format_flags=format_flags;
 
 							std::string f = path.toString();
@@ -271,7 +273,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setLanguage(language);
+							t->setLanguage(language,true);
 
 
 							std::string f = path.toString();
@@ -308,7 +310,7 @@ int CLASS::runCommandLineApp(void)
 						try
 						{
 							t->init();
-							t->setLanguage(language);
+							t->setLanguage(language,true);
 
 							std::string f = path.toString();
 							t->filename = f;

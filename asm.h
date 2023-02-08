@@ -37,6 +37,7 @@ enum asmErrors
 {
 	errNone,
 	errWarn,
+	errDebug,
 	errIncomplete,
 	errUnimplemented,
 	errFatal,
@@ -72,6 +73,7 @@ const std::string errStrings[errMAX + 1] =
 {
 	"No Error",
 	"Warning",
+	"Debug Error",
 	"Unfinished Opcode",
 	"Unimplemented Instruction",
 	"Fatal",
@@ -181,6 +183,7 @@ public:
 	std::string lable;
 	std::string printlable;
 	std::string printoperand;
+	std::string strippedoperand;
 	std::string opcode;
 	std::string opcodelower;
 	std::string orig_operand;
@@ -189,6 +192,7 @@ public:
 	std::string operand_expr2;
 	std::string comment;
 	std::string addrtext;
+	char shiftchar;
 	uint8_t linemx;
 	uint8_t tabs[16];
 	bool showmx;
@@ -228,7 +232,7 @@ protected:
 	int win_rows;
 	std::string initialdir;
 	std::vector<std::string> filenames;
-	uint32_t syntax;
+	//uint32_t syntax;
 	uint64_t starttime;
 	uint8_t tabs[16];
 
@@ -249,7 +253,7 @@ public:
 	virtual void process(void);
 	virtual void complete(void);
 	virtual void errorOut(uint16_t code);
-	virtual void setLanguage(string lang);
+	virtual void setLanguage(string lang,bool force);
 };
 
 
@@ -403,6 +407,9 @@ class TPsuedoOp;
 
 class T65816Asm : public TFileProcessor
 {
+protected:
+	std::vector<uint8_t> outputbytes;
+
 public:
 	// options
 	bool casesen;
@@ -486,6 +493,7 @@ public:
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
+	string addrModeEnglish(int mode);
 	void setOpcode(MerlinLine &line, uint8_t op);
 
 

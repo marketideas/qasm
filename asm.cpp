@@ -11,12 +11,12 @@
 #define CLASS MerlinLine
 
 
-CLASS::CLASS(ConfigOptions &opt) //: options(opt)
+CLASS::CLASS(ConfigOptions &opt) : options(&opt)
 {
 	clear();
 }
 
-CLASS::CLASS(std::string line, ConfigOptions &opt) //: options(opt)
+CLASS::CLASS(std::string line, ConfigOptions &opt) : options(&opt)
 {
 	clear();
 	set(line);
@@ -68,11 +68,17 @@ void CLASS::print(uint32_t lineno)
 
 	bool np=(flags & FLAG_NOLINEPRINT)?true:false;
 	if (options->isQuiet())
+	{
 		np=true;
+	}
 	if (options->isList())
-	  np=false;
-	if (force)
+	{
 		np=false;
+	}
+	if (force)
+	{
+		np=false;
+	}
 	if (np)
 	{
 		return;
@@ -221,6 +227,8 @@ void CLASS::print(uint32_t lineno)
 		}
 		//pcol += printf("%-12s %-8s %-10s ", printlable.c_str(), opcode.c_str(), operand.c_str());
 	}
+	//printf("merlinerrors=%d\n",merlinerrors);
+	//merlinerrors=false;
 	if ((errorcode > 0) && (!merlinerrors))
 	{
 		while (pcol < commentcol)
@@ -245,7 +253,7 @@ void CLASS::print(uint32_t lineno)
 
 	if ((options->useColor()) && (errorcode > 0))
 	{
-		SetColor(CL_NORMAL | BG_NORMAL);
+		SetColor(CL_NORMAL);
 	}
 
 	uint32_t obc = datafillct;
@@ -297,6 +305,7 @@ void CLASS::print(uint32_t lineno)
 
 void CLASS::clear()
 {
+	shiftchar=0;
 	wholetext = "";
 	lable = "";
 	printlable = "";
@@ -305,6 +314,7 @@ void CLASS::clear()
 	operand = "";
 	printoperand = "";
 	orig_operand="";
+	strippedoperand="";
 	comment = "";
 	operand_expr = "";
 	operand_expr2 = "";
@@ -317,16 +327,15 @@ void CLASS::clear()
 	startpc = 0;
 	errorcode = 0;
 	errorText = "";
-	outbytect = 0;
 	datafillct = 0;
 	datafillbyte = 0;
 	lineno = 0;
-	outbytes.clear();
 	addressmode = 0;
 	expr_value = 0;
 	eval_result = 0;
 	flags = 0;
 	outbytes.clear();
+	outbytect = 0;
 }
 
 std::string operEx[] =
@@ -556,9 +565,9 @@ CLASS::~CLASS()
 {
 }
 
-void CLASS::setLanguage(string lang)
+void CLASS::setLanguage(string lang,bool force)
 {
-	options.setLanguage(lang);
+	options.setLanguage(lang,force);
 }
 
 void CLASS::errorOut(uint16_t code)
@@ -614,7 +623,7 @@ void CLASS::complete(void)
 		//cout << "Processing Time: " << n - starttime << "ms" << endl;
 		uint64_t x = n - starttime;
 		uint32_t x1 = x & 0xFFFFFFFF;
-		if ((!getBool("option.quiet",false)) && (isDebug()>0))
+		//if ((!getBool("option.quiet",false)) && (isDebug()>0))
 		{
 			printf("Elapsed time: %u ms\n", x1);
 		}
@@ -1639,7 +1648,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			break;
 		case '>':
 #if 0
-			if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+			if (options.isMerlin32())
 			{
 				// bug in M32 or not, do what it does
 				line.flags |= FLAG_FORCEABS;
@@ -1768,16 +1777,17 @@ void CLASS::initpass(void)
 	showmx = getBool("asm.showmx", true);
 	merlinerrors = getBool("asm.merlinerrors", true);
 
+	outputbytes.clear();
 	trackrep = getBool("asm.trackrep", false);
-	if (syntax == SYNTAX_MERLIN32)
+	if (options.isMerlin32())
 	{
 		trackrep = true; // can't turn this off in M32
 	}
-	else if (syntax == SYNTAX_MERLIN)
+	else if (options.isMerlin())
 	{
 		trackrep = false; // can't turn this ON in M16
 	}
-	else if (syntax == SYNTAX_QASM)
+	else if (options.isQASM())
 	{
 		// we will allow this to be settable default off
 		trackrep = false;
@@ -1797,28 +1807,33 @@ void CLASS::initpass(void)
 	s = getConfig("asm.cpu", "M6502");
 	s = Poco::trim(Poco::toUpper(s));
 
-	cpumode = MODE_65816;
-	mx = 0x03;
-
-	if (s == "M65816")
+	s=PAL::getString("option.instruction","");
+	if (s!="")
 	{
+		printf("CPU command line %s\n",s.c_str());
 		cpumode = MODE_65816;
 		mx = 0x03;
-	}
-	else if (s == "M65C02")
-	{
-		cpumode = MODE_65C02;
-		mx = 0x03;
-	}
-	else if (s == "M6502")
-	{
-		cpumode = MODE_6502;
-		mx = 0x03;
-	}
-	else
-	{
-		printf("Unknown CPU type in .ini\n");
-		mx = 0x03;
+
+		if (s == "M65816")
+		{
+			cpumode = MODE_65816;
+			mx = 0x03;
+		}
+		else if (s == "M65C02")
+		{
+			cpumode = MODE_65C02;
+			mx = 0x03;
+		}
+		else if (s == "M6502")
+		{
+			cpumode = MODE_6502;
+			mx = 0x03;
+		}
+		else
+		{
+			printf("Unknown CPU type in .ini\n");
+			mx = 0x03;
+		}
 	}
 	mx = getInt("asm.startmx", mx);;
 
@@ -1829,7 +1844,7 @@ void CLASS::initpass(void)
 	lastcarry = false;
 	relocatable = false;
 	currentsym = NULL;
-	if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+	if (options.isMerlin32())
 	{
 		// M32 allows locals that don't have a global above. this is the catchall for that
 		currentsym = &topSymbol;    // this is the default symbol for :locals without a global above;
@@ -1875,45 +1890,75 @@ void CLASS::initpass(void)
 
 void CLASS::complete(void)
 {
+	bool writeerr=false;
 	if (savepath != "")
 	{
 		if (errorct == 0)
 		{
 			std::string currentdir = Poco::Path::current();
 
-			savepath = processFilename(savepath, currentdir, 0);
+			//savepath = processFilename(savepath, currentdir, 0);
+			savepath=options.formatPath(savepath);
 			if (!options.isQuiet())
 			{
 				printf("saving to file: %s\n", savepath.c_str());
 			}
 
-			std::ofstream f(savepath);
+			std::ofstream f(savepath, std::ios::out|std::ios::trunc);
 
-			uint32_t lineno = 0;
-			uint32_t l = (uint32_t)lines.size();
-			while (lineno < l)
+			if (f.is_open())
 			{
-				MerlinLine &line = lines.at(lineno++);
-				if ((line.outbytect > 0) && ((line.flags & FLAG_INDUM) == 0))
+#if 0
+				uint32_t lineno = 0;
+				uint32_t l = (uint32_t)lines.size();
+				while (lineno < l)
 				{
-					for (uint32_t i = 0; i < line.outbytect; i++)
+					MerlinLine &line = lines.at(lineno++);
+					if ((line.outbytect > 0) && ((line.flags & FLAG_INDUM) == 0))
 					{
-						f.put(line.outbytes[i]);
+						for (uint32_t i = 0; i < line.outbytect; i++)
+						{
+							f.put(line.outbytes[i]);
+						}
 					}
-				}
-				if ((line.datafillct > 0) && ((line.flags & FLAG_INDUM) == 0))
-				{
-					for (uint32_t i = 0; i < line.datafillct; i++)
+					if ((line.datafillct > 0) && ((line.flags & FLAG_INDUM) == 0))
 					{
-						f.put(line.datafillbyte & 0xFF);
-					}
+						for (uint32_t i = 0; i < line.datafillct; i++)
+						{
+							f.put(line.datafillbyte & 0xFF);
+						}
 
+					}
 				}
+#else
+
+				for (unsigned int i=0; i<outputbytes.size(); i++)
+				{
+					f.put(outputbytes[i]);
+				}
+				f.flush();
+				//printf("outbytect=%ld\n",outputbytes.size());
+
+				if (f.fail())
+				{
+					writeerr=true;
+				}
+				f.close();
+
+#endif
+			}
+			else
+			{
+				writeerr=true;
 			}
 		}
 		else
 		{
 			printf("\nErrors in assembly. Output not SAVED.\n\n");
+		}
+		if (writeerr)
+		{
+			printf("unable to save file.\n"); // TODO SGQ need to push error up the so exit code is non-zero
 		}
 	}
 	if ((!options.isQuiet()) || (options.isList()))
@@ -2001,12 +2046,77 @@ int CLASS::getAddrMode(MerlinLine & line)
 	int idx, x;
 	std::string s, oper;
 	std::vector<std::string> groups;
+	char shiftchar;
 
 	oper = line.operand;
-
-	if ((line.opcode.length() == 0) || (line.operand.length() == 0))
+	int l=oper.length();
+	if ((line.opcode.length() == 0) || (l <= 0))
 	{
-		return (syn_implied);
+		return (syn_none);
+	}
+
+	bool supportbar=false;
+	bool modified=false;
+
+	shiftchar=oper[0];
+	if (shiftchar=='#')
+	{
+		shiftchar=0;
+		if (l>1)
+		{
+			shiftchar=oper[1];
+
+			//oper=oper.substr(1);
+			//oper="#"+oper;
+		}
+	}
+	if (shiftchar=='^')
+	{
+		if (options.isMerlin())
+		{
+			return(syn_err);
+			//shiftchar=0x00; // merlin8 does not support the bank addr
+		}
+	}
+	if (shiftchar=='|')
+	{
+		if (options.isMerlinCompat())
+		{
+			if ((options.isMerlin() || options.isMerlin16())) // merlin8 and merlin16 do not support the bar
+			{
+				return(syn_err);
+			}
+			else
+			{
+				supportbar=true;
+			}
+		}
+	}
+
+	if ((shiftchar=='^') || (shiftchar=='<') || (shiftchar=='>') || (supportbar && shiftchar=='|'))
+	{
+		modified=true;
+	}
+	if (supportbar)
+	{
+
+	}
+	if (modified)
+	{
+		line.shiftchar=shiftchar;
+		if (oper[0]=='#')
+		{
+			oper=oper.substr(2);
+			oper="#"+oper;
+			l=oper.length();
+		}
+		else if (shiftchar!=0)
+		{
+			oper=oper.substr(1);
+			l=oper.length();
+		}
+		printf("old: |%s| new: |%s|\n",line.operand.c_str(),oper.c_str());
+		line.strippedoperand=oper;
 	}
 
 	idx = 0;
@@ -2136,7 +2246,33 @@ int CLASS::parseOperand(MerlinLine & line)
 	{
 		//errorOut(errBadAddressMode);
 	}
+	printf("addressmode=%d %s\n",res,addrModeEnglish(res).c_str());
 	return (res);
+}
+
+string CLASS::addrModeEnglish(int mode)
+{
+	string res="<none>";
+	switch(mode)
+	{
+		case syn_err: res="addrmode_error";break;
+		case syn_none: res="addrmode_none";break;
+		case syn_implied: res="implied";break;
+		case syn_s: res="dp,s";break;
+		case syn_sy: res="(dp,s),y";break;
+		case syn_imm: res="#immediate";break;
+		case syn_diix: res="(dp,x)";break;
+		case syn_diiy: res="(dp),y";break;
+		case syn_di: res="(dp)";break;
+		case syn_iyl: res="[expr],y";break;
+		case syn_dil: res="[expr]";break;
+		case syn_absx: res="abs,x";break;
+		case syn_absy: res="abs,y";break;
+		case syn_bm: res="block move";break;
+		case syn_abs: res="absolute";break;
+		default: res="addr_mode bad";break;
+	}
+	return(res);
 }
 
 int CLASS::substituteVariables(MerlinLine & line, std::string &outop)
@@ -2580,6 +2716,24 @@ void CLASS::process(void)
 					line.errorText = line.operand_expr;
 				}
 				line.bytect = x;
+				if (pass>0)
+				{
+					if ((line.flags & FLAG_INDUM) == 0) // don't write bytes if inside DUM section
+					{
+						for (unsigned int i=0; i<line.outbytes.size(); i++)
+						{
+							outputbytes.push_back(line.outbytes[i]);
+						}
+						if (line.datafillct>0)
+						{
+							for (int i=0; i<line.datafillct; i++)
+							{
+								outputbytes.push_back(line.datafillbyte);
+							}
+						}
+					}
+				}
+
 				PC.currentpc += x;
 				PC.totalbytes += x;
 			}
@@ -2623,6 +2777,9 @@ void CLASS::process(void)
 					line.print(lineno);
 				}
 				skiplist = false;
+				line.outbytes.clear();  // clear the outbytes on the line so LUP works correctly
+				line.outbytect=0;
+
 			}
 			lineno++;
 		}
@@ -2654,15 +2811,6 @@ int CLASS::doline(int lineno, std::string line)
 	MerlinLine l(line,options);
 
 	op = Poco::toLower(l.opcode);
-	if (op == "merlin")
-	{
-		syntax = SYNTAX_MERLIN;
-	}
-	else if (op == "orca")
-	{
-		syntax = SYNTAX_ORCA;
-	}
-	//l.syntax = syntax;
 	lines.push_back(l);
 
 	if ((op == "use") || (op == "put"))

@@ -793,6 +793,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	uint8_t delimiter = 0;
 	uint32_t ss = 0;
 	uint32_t lastdelimidx = 0;
+	bool dci = false;
 
 	std::vector<uint8_t> bytes;
 
@@ -890,7 +891,6 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	{
 		uint32_t i;
 		bool reverse = false;
-		bool dci = false;
 		uint8_t andval = 0xFF;
 		uint8_t orval = 0x00;
 		uint8_t addlen = 0;
@@ -956,28 +956,42 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					b |= orval;
 				}
 
-				if (dci && (i == lastdelimidx))
+				if ((line.options->isMerlin32()) || (line.options->isMerlin16plus()))
 				{
-					// SGQ BUG - Merlin16+ does it like Merlin32 and now does the last
-					// byte not the way merlin816 and earlier do it documented below.
-					// use OPTION_M16_PLUS when implemented.
+					// invert last byte of total bytes out
 
-					//lr - Merlin only toggles the high bit of string chars, not hex values
-					// 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
-					//
-					// The DCI instruction is documented to work like this on page 108
-					// (regardless of how this effects the desired lda, (bpl/bmi) functionality)
-					//
-					// I am now checking the delimiter character to determine hi/lo toggle (reversed)
-					// and am tracking the index to the last delimited character put into 'bytes'.
-					// This produces the same results as Merlin 16+ in my testing.
-					if ( firstdelim >= '\'' )
+					if ((dci) && ((i+1)>=truebytect))
 					{
-						b |= 0x80;
+						b^=0x80;
 					}
-					else
+				}
+				else
+				{
+					printf("bug\n");
+					// invert last byte of last string (old merlin way (pre-merlin16+))
+					if (dci && (i == lastdelimidx))
 					{
-						b &= 0x7F;
+						// SGQ BUG - Merlin16+ does it like Merlin32 and now does the last
+						// byte not the way merlin816 and earlier do it documented below.
+						// use OPTION_M16_PLUS when implemented.
+
+						//lr - Merlin only toggles the high bit of string chars, not hex values
+						// 8D,'Hello',8D,'there',8D becomes 8D 48 65 6C 6C 6F 8D 74 68 65 72 E5
+						//
+						// The DCI instruction is documented to work like this on page 108
+						// (regardless of how this effects the desired lda, (bpl/bmi) functionality)
+						//
+						// I am now checking the delimiter character to determine hi/lo toggle (reversed)
+						// and am tracking the index to the last delimited character put into 'bytes'.
+						// This produces the same results as Merlin 16+ in my testing.
+						if ( firstdelim >= '\'' )
+						{
+							b |= 0x80;
+						}
+						else
+						{
+							b &= 0x7F;
+						}
 					}
 				}
 				line.outbytes.push_back(b);
@@ -986,7 +1000,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		bytect = bytect + addlen;
 
 	}
-	//printf("XXX bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
+//printf("XXX bytect=%d bytes.size()=%zu\n",bytect,bytes.size());
 
 	line.outbytect = bytect;
 	return bytect;
@@ -1033,7 +1047,8 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 #if 0
 		// Merlin32 seems to have a bug where ORG seems like it can only be 16 bits
-		if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+		//if ((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
+		if (options.isMerlin32())
 		{
 			// so clear the bank word in all variables
 			a.PC.orgsave &= 0xFFFF;
@@ -1048,7 +1063,8 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		sp = getConfig("option.objfile", "");
 		if (sp=="")
 		{
-			a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
+			//a.savepath = a.processFilename(line.operand, Poco::Path::current(), 0);
+			a.savepath=line.operand;
 		}
 		else // if they specified an output name on the command line, use it.
 		{

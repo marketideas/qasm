@@ -10,9 +10,36 @@
          xc    off
          xc
          xc
+         lst
                           ;lst  OFF
 ZP       equ   $00
          org   $2000
+         lda   $04,y
+         adc   $04,y
+         sbc   $04,y
+         sta   $04,y
+
+         lda   <$fff0     ;zp
+         lda   >$fff0     ;ABS (lo word)
+         lda   ^$fff0     ;ABS (hi word)
+         lda   |$fff0     ;ABS (long in 65816 mode)
+         lda   <$FFF0+$FFFF
+
+         lda   <$fff0+24  ;zp
+         lda   >$fff0+24  ;ABS (lo word)
+         lda   ^$fff0+24  ;ABS (hi word)
+         lda   |$fff0+24  ;ABS (long in 65816 mode)
+
+         lda   #<$fff0     ;zp
+         lda   #>$fff0     ;ABS (lo word)
+         lda   #^$fff0     ;ABS (hi word)
+         lda   #<$FFF0+$FFFF
+         lda   #>$FFF0+$FFFF
+
+
+
+         lst   off
+         end
          ora   ($00)
          lda   ($00)
          bit:  $FFFE,X
@@ -51,11 +78,15 @@ another  lda   #$00       ;line with everything
          lda   ]m
          bra   ]m
          --^
+         sav   2/test.bin
+         end
+
+
 ]1       nop
          nop
                           ;lst
          bra   ]1
 
                           ;typ  $06
-         sav   0/test.bin
+         db    255
                           ;lst  off

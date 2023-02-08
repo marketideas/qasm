@@ -29,10 +29,14 @@ for S in $SRC ; do
 	BASE=${BASE/.s/}
 	#./qasm -o 0/$OUTDIR/$S1 ./testdata/$S 
 
-	./qasm --syntax merlin32 -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
+	./qasm -l -t merlin32 -i M65816 -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
+
+	X="./qasm -l -t merlin32 -i M65816 -o 0/$OUTDIR/$S1 ./testdata/$S"
+	#echo $X
 
 	R=?$
 	#echo $S " " $S1
+	#cat $TMPFILE
 	R=`cat $TMPFILE | grep "End qASM assembly"`
 	E=`echo $R | awk -e '{ print $6; }'`
 	ect=`echo $(($E))`
@@ -64,8 +68,12 @@ for S in $SRC ; do
 	if [ $pct != 0  ] ; then
 		printf 'FAIL: (%3s) ' $ect
 		printf '%s  ' $CX
+		echo " $S"
 
 		FAILCT=$(($FAILCT+1))
+		cat $TMPFILE
+		echo $X
+		exit 255
 	else
 		printf "PASS:          "
 	fi

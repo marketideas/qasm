@@ -7,20 +7,26 @@
                 "0": "${PWD}"
             },
             {
-                "1": "0/source"
+                "1": "${QASM_BASE}"
             },
             {
                 "2": "0/object"
             },
             {
-                "3": "0/macros"
+                "3": "1/macros"
+            },
+            {
+                "4": "1/toolmacs"
+            },
+            {
+                "5": "../backup"
             }
         ]
     },
+    "language": "qasm", 
     "asm": {
-        "language": "merlin16plus", 
-        "cpu": "M6502",
-        "start_mx": 2,
+        "cpu": "M65816",
+        "start_mx": 0,
         "listmode": "on",
         "casesen": true,
         "start_lst": false,

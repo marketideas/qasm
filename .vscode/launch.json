@@ -9,8 +9,8 @@
             "program": "${workspaceFolder}/build/qasm",
             "args": [
                 "${workspaceFolder}/test.s",
-                "-s",
-                "-d"
+                "-d",
+                "-l"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

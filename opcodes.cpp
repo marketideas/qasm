@@ -7,6 +7,7 @@ void CLASS::setOpcode(MerlinLine &line, uint8_t op)
 {
 	if (pass > 0)
 	{
+		//printf("cpumode=%d\n",cpumode);
 		if (cpumode < MODE_65816) // instructions are valid if we are in 65816
 		{
 			uint8_t m = opCodeCompatibility[op];
@@ -39,6 +40,15 @@ int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 
 	std::string s;
 	int res = 0;
+
+	if (options.isMerlin()) // in merlin8 mode we don't support XC psuedoop
+	{
+		if (line.errorcode == 0) // don't replace other errors
+		{
+			line.setError(errIncompatibleOpcode);
+		}
+		return(res);
+	}
 
 	if (cpumode < MODE_65816)
 	{
@@ -203,7 +213,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			// these bytes are the two bank registers
 
 			if (options.isMerlin32() && (v<256))
-			//if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
+				//if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
 			{
 				// merlin32 uses the low byte of the two operands
 				line.outbytes.push_back((v) & 0xFF);
@@ -248,40 +258,40 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 
 	switch (sym.opcode)
 	{
-		case 1:		// STZ
-			res++;
-			op = (m == syn_abs ? 0x64 : op);
-			op = (m == syn_absx ? 0x74 : op);
+	case 1:		// STZ
+		res++;
+		op = (m == syn_abs ? 0x64 : op);
+		op = (m == syn_absx ? 0x74 : op);
 
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
-			{
-				res++;
-				op = (op == 0x64) ? 0x9C : op;
-				op = (op == 0x74) ? 0x9E : op;
-			}
-			break;
-		case 2:		// TSB
+		if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
+		{
 			res++;
-			op = (m == syn_abs ? 0x04 : op);
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
-			{
-				res++;
-				op = 0x0C;
-			}
-			break;
-		case 3:		// TRB
+			op = (op == 0x64) ? 0x9C : op;
+			op = (op == 0x74) ? 0x9E : op;
+		}
+		break;
+	case 2:		// TSB
+		res++;
+		op = (m == syn_abs ? 0x04 : op);
+		if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
+		{
 			res++;
-			op = (m == syn_abs ? 0x14 : op);
-			if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
-			{
-				res++;
-				op = 0x1C;
-			}
-			break;
-		default:
-			op = 0;
-			err = errBadOpcode;
-			break;
+			op = 0x0C;
+		}
+		break;
+	case 3:		// TRB
+		res++;
+		op = (m == syn_abs ? 0x14 : op);
+		if ((op != 0) && ((line.expr_value >= 0x100) || (line.flags & FLAG_FORCEABS)))
+		{
+			res++;
+			op = 0x1C;
+		}
+		break;
+	default:
+		op = 0;
+		err = errBadOpcode;
+		break;
 	}
 
 	if (op == 0x00)
@@ -316,15 +326,15 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 		//}
 		switch(line.expr_shift)
 		{
-			case '^':
-				line.expr_value=(line.expr_value>>16)&0xFFFF;
-				break;
-			case '<':
-				line.expr_value=(line.expr_value)&0xFF;
-				break;
-			case '>':
-				line.expr_value=(line.expr_value>>8)&0xFFFF;
-				break;
+		case '^':
+			line.expr_value=(line.expr_value>>16)&0xFFFF;
+			break;
+		case '<':
+			line.expr_value=(line.expr_value)&0xFF;
+			break;
+		case '>':
+			line.expr_value=(line.expr_value>>8)&0xFFFF;
+			break;
 		}
 
 		//line.setError(errIncomplete);
@@ -347,12 +357,12 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 			uint8_t newmx = (line.expr_value & 0x30) >> 4;
 			switch (sym.opcode)
 			{
-				case 0xC2: // REP
-					mx &= ~newmx;
-					break;
-				case 0xE2: // SEP
-					mx |= newmx;
-					break;
+			case 0xC2: // REP
+				mx &= ~newmx;
+				break;
+			case 0xE2: // SEP
+				mx |= newmx;
+				break;
 			}
 			line.linemx = mx;
 		}
@@ -544,21 +554,21 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			int add = 0;
 			switch (sym.opcode)
 			{
-				case 7:  // CPX
-				case 6:  // CPY
-				case 5:  // LDY
-				case 4:  // STY
-					if ((mx & 0x01) == 0)
-					{
-						add = 1;
-					}
-					break;
-				case 1:  // BIT
-					if ((mx & 0x02) == 0)
-					{
-						add = 1;
-					}
-					break;
+			case 7:  // CPX
+			case 6:  // CPY
+			case 5:  // LDY
+			case 4:  // STY
+				if ((mx & 0x01) == 0)
+				{
+					add = 1;
+				}
+				break;
+			case 1:  // BIT
+				if ((mx & 0x02) == 0)
+				{
+					add = 1;
+				}
+				break;
 
 			}
 			bytelen += add;
@@ -571,34 +581,55 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	{
 		switch (m)
 		{
-			case syn_diix: amode = 0; break;
-			case syn_abs: amode = 1; break;
-			case syn_imm: amode = 2; break;
-			case syn_diiy: amode = 4; break;
-			case syn_absx: amode = 5; break;
-			case syn_absy: amode = 6; break;
-			default:
-				err = true;
-				break;
+		case syn_diix:
+			amode = 0;
+			break;
+		case syn_abs:
+			amode = 1;
+			break;
+		case syn_imm:
+			amode = 2;
+			break;
+		case syn_diiy:
+			amode = 4;
+			break;
+		case syn_absx:
+			amode = 5;
+			break;
+		case syn_absy:
+			amode = 6;
+			break;
+		default:
+			err = true;
+			break;
 		}
 	}
 	else if (cc == 0x02)
 	{
 		switch (m)
 		{
-			case syn_imm: amode = 0; break;
-			case syn_abs: amode = 1; break;
-			case syn_implied: amode = 2; bytelen = 0; break;
-			case syn_absy:
-				if ((opflags & OP_STX) == OP_STX)
-				{
-					amode = 5;
-				}
-				break;
-			case syn_absx: amode = 5; break; // this is actually Y addressing because X register is used
-			default:
-				err = true;
-				break;
+		case syn_imm:
+			amode = 0;
+			break;
+		case syn_abs:
+			amode = 1;
+			break;
+		case syn_implied:
+			amode = 2;
+			bytelen = 0;
+			break;
+		case syn_absy:
+			if ((opflags & OP_STX) == OP_STX)
+			{
+				amode = 5;
+			}
+			break;
+		case syn_absx:
+			amode = 5;
+			break; // this is actually Y addressing because X register is used
+		default:
+			err = true;
+			break;
 		}
 
 		if ((opflags & OP_STX) == OP_STX)
@@ -715,17 +746,32 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			err = false;
 			switch (m)
 			{
-				case syn_s: amode = 0; break;
-				case syn_sy: amode = 4; break;
-				case syn_di: cc = 0x02; amode = 4; break;
-				case syn_iyl: amode = 5; break;
-				case syn_dil: amode = 1; break;
-				case syn_absx: amode = 7; break;
-				case syn_abs: amode = 3; break;
-				default:
-					//printf("bad syn_mode=%d\n", m);
-					err = true;
-					break;
+			case syn_s:
+				amode = 0;
+				break;
+			case syn_sy:
+				amode = 4;
+				break;
+			case syn_di:
+				cc = 0x02;
+				amode = 4;
+				break;
+			case syn_iyl:
+				amode = 5;
+				break;
+			case syn_dil:
+				amode = 1;
+				break;
+			case syn_absx:
+				amode = 7;
+				break;
+			case syn_abs:
+				amode = 3;
+				break;
+			default:
+				//printf("bad syn_mode=%d\n", m);
+				err = true;
+				break;
 			}
 			if (!err)
 			{
@@ -750,15 +796,29 @@ out:
 	if (err)
 	{
 		line.setError(errBadAddressMode);
-		//printf("bad address mode %d\n",line.addressmode);
+		printf("bad address mode %d\n",line.addressmode);
 		op = 0x00;
 		res = 0;
 		bytelen = 0;
 	}
 
 	res += bytelen;
+	//if (options.isMerlin32())
+	{
+		if ((op==0xB9) || (op==0x79) || (op==0xF9) || (op==0x99))
+		{
+			// there are 4 instructions that don't have (dp),y addressing so convert to (abs),
+			if (bytelen<2)
+			{
+				res++;
+				bytelen++;
+			}
+		}
+	}
+
 	if ((pass > 0) && (res > 0))
 	{
+
 		setOpcode(line, op);
 		for (i = 0; i < (res - 1); i++)
 		{
@@ -794,23 +854,26 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	}
 
 	// SGQ merlin32 apparently tracks XCE instructions when tracking MX status
-	// who know how they determine this. I am assuming the NEXT instruction
+	// who knows how they determine this. I am assuming the NEXT instruction
 	// after a SEC/CLC instruction must be an XCE
-	if (sym.opcode == 0x38) // SEC
+	if (options.isMerlin32())
 	{
-		lastcarry = true;
-	}
-	else if (sym.opcode == 0x18) // CLC
-	{
-		lastcarry = false;
-	}
-	else if (sym.opcode == 0xFB) // XCE
-	{
-		if (trackrep)
+		if (sym.opcode == 0x38) // SEC
 		{
-			if (lastcarry)
+			lastcarry = true;
+		}
+		else if (sym.opcode == 0x18) // CLC
+		{
+			lastcarry = false;
+		}
+		else if (sym.opcode == 0xFB) // XCE
+		{
+			if (trackrep)
 			{
-				mx = 0x03;
+				if (lastcarry)
+				{
+					mx = 0x03;
+				}
 			}
 		}
 	}
@@ -847,11 +910,11 @@ void CLASS::insertOpcodes(void)
 {
 	pushopcode("=",   0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
 	pushopcode("EQU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
-    pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
-    pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
-    pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
+	pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
+	pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
+	pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
 
-    pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ENT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ORG", P_ORG, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DSK", P_SAV, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

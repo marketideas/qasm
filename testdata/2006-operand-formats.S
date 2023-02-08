@@ -4,7 +4,9 @@
 ; Assembler: Merlin 32
 
         org     $1000
-
+        xc off
+        xc
+        xc
 ; 65816 with short regs
         clc
         xce
