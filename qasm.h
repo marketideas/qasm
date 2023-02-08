@@ -26,6 +26,7 @@ protected:
 	virtual int runServerApp(PAL_EVENTMANAGER *em);
 #endif
 	virtual void displayVersion();
+	virtual void displayHelp();
 
 public:
 

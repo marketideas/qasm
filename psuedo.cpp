@@ -967,7 +967,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				}
 				else
 				{
-					printf("bug\n");
+					//printf("bug\n"); // SGQ BUG - still not working right
 					// invert last byte of last string (old merlin way (pre-merlin16+))
 					if (dci && (i == lastdelimidx))
 					{

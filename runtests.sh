@@ -29,9 +29,9 @@ for S in $SRC ; do
 	BASE=${BASE/.s/}
 	#./qasm -o 0/$OUTDIR/$S1 ./testdata/$S 
 
-	./qasm -l -t merlin32 -i M65816 -o 0/$OUTDIR/$S1 ./testdata/$S >> $TMPFILE
+	X="./qasm -q -c -t merlin32 -i M65816 -o 0/$OUTDIR/$S1 ./testdata/$S"
 
-	X="./qasm -l -t merlin32 -i M65816 -o 0/$OUTDIR/$S1 ./testdata/$S"
+	$X >$TMPFILE
 	#echo $X
 
 	R=?$
@@ -71,9 +71,9 @@ for S in $SRC ; do
 		echo " $S"
 
 		FAILCT=$(($FAILCT+1))
-		cat $TMPFILE
-		echo $X
-		exit 255
+		#cat $TMPFILE
+		#echo $X
+		#exit 255
 	else
 		printf "PASS:          "
 	fi

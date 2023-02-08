@@ -149,6 +149,17 @@ void CLASS::print(uint32_t lineno)
 		{
 			pcol += printf("    ");
 		}
+
+		
+		string addrmode=options->addrModeEnglish(addressmode).c_str();
+		pcol+=printf("%s ",addrmode.c_str());
+
+		while(pcol<50)
+		{
+			pcol+=printf(" ");
+		}
+		pcol+=printf("|");
+
 	}
 
 	if (isDebug() > 1)
@@ -1810,7 +1821,7 @@ void CLASS::initpass(void)
 	s=PAL::getString("option.instruction","");
 	if (s!="")
 	{
-		printf("CPU command line %s\n",s.c_str());
+		//printf("CPU command line %s\n",s.c_str());
 		cpumode = MODE_65816;
 		mx = 0x03;
 
@@ -1904,7 +1915,8 @@ void CLASS::complete(void)
 				printf("saving to file: %s\n", savepath.c_str());
 			}
 
-			std::ofstream f(savepath, std::ios::out|std::ios::trunc);
+			//std::ofstream f(savepath, std::ios::out|std::ios::trunc);
+			std::ofstream f(savepath, std::ios::out);
 
 			if (f.is_open())
 			{
@@ -2050,9 +2062,17 @@ int CLASS::getAddrMode(MerlinLine & line)
 
 	oper = line.operand;
 	int l=oper.length();
-	if ((line.opcode.length() == 0) || (l <= 0))
+	int ol=line.opcode.length();
+	if ((ol == 0) || (l <= 0))
 	{
-		return (syn_none);
+		if (ol>0)
+		{
+			return (syn_implied);
+		}
+		else
+		{
+			return(syn_none);
+		}
 	}
 
 	bool supportbar=false;
@@ -2093,13 +2113,13 @@ int CLASS::getAddrMode(MerlinLine & line)
 		}
 	}
 
-	if ((shiftchar=='^') || (shiftchar=='<') || (shiftchar=='>') || (supportbar && shiftchar=='|'))
+	if ((shiftchar=='^') || (shiftchar=='<') || (shiftchar=='>') || (supportbar && (shiftchar=='|')))
 	{
 		modified=true;
 	}
-	if (supportbar)
+	if (supportbar && shiftchar=='|')
 	{
-
+		line.flags|=FLAG_FORCELONG;
 	}
 	if (modified)
 	{
@@ -2115,7 +2135,10 @@ int CLASS::getAddrMode(MerlinLine & line)
 			oper=oper.substr(1);
 			l=oper.length();
 		}
-		printf("old: |%s| new: |%s|\n",line.operand.c_str(),oper.c_str());
+		if (isDebug()>1)
+		{
+			printf("old: |%s| new: |%s|\n",line.operand.c_str(),oper.c_str());
+		}
 		line.strippedoperand=oper;
 	}
 
@@ -2246,34 +2269,13 @@ int CLASS::parseOperand(MerlinLine & line)
 	{
 		//errorOut(errBadAddressMode);
 	}
-	printf("addressmode=%d %s\n",res,addrModeEnglish(res).c_str());
+	if (isDebug()>1)
+	{
+		printf("addressmode=%d %s\n",res,options.addrModeEnglish(res).c_str());
+	}
 	return (res);
 }
 
-string CLASS::addrModeEnglish(int mode)
-{
-	string res="<none>";
-	switch(mode)
-	{
-		case syn_err: res="addrmode_error";break;
-		case syn_none: res="addrmode_none";break;
-		case syn_implied: res="implied";break;
-		case syn_s: res="dp,s";break;
-		case syn_sy: res="(dp,s),y";break;
-		case syn_imm: res="#immediate";break;
-		case syn_diix: res="(dp,x)";break;
-		case syn_diiy: res="(dp),y";break;
-		case syn_di: res="(dp)";break;
-		case syn_iyl: res="[expr],y";break;
-		case syn_dil: res="[expr]";break;
-		case syn_absx: res="abs,x";break;
-		case syn_absy: res="abs,y";break;
-		case syn_bm: res="block move";break;
-		case syn_abs: res="absolute";break;
-		default: res="addr_mode bad";break;
-	}
-	return(res);
-}
 
 int CLASS::substituteVariables(MerlinLine & line, std::string &outop)
 {
@@ -2592,10 +2594,10 @@ void CLASS::process(void)
 				line.operand = outop;
 			}
 			x = parseOperand(line);
-			if (x >= 0)
-			{
+			//if (x >= 0)
+			//{
 				line.addressmode = x;
-			}
+			//}
 
 			int64_t value = -1;
 			x = evaluate(line, line.operand_expr, value);

@@ -72,6 +72,11 @@ void CLASS::showerror(int ecode, std::string fname)
 	}
 }
 
+void CLASS::displayHelp()
+{
+	PAL_BASEAPP::displayHelp();
+	printf("\n\t\t...remembering Glen Bredon\n\n");
+}
 // int main(int argc, char *argv[])
 // this is where libpal calls to run a command line program
 int CLASS::runCommandLineApp(void)

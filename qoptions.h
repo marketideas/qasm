@@ -31,6 +31,27 @@ using namespace Poco;
 #define OPTION_M32_VARS		   0x4000
 #define OPTION_M16_PLUS	       0x8000
 
+enum
+{
+	syn_err = -1,  	// error - not recognized
+	syn_none = 0,   // should never be returned 0
+	syn_implied,    // no operand               1
+	syn_s, 			// expr,s                   2
+	syn_sy,			// (expr,s),y               3
+	syn_imm,		// #expr                    4
+	syn_diix,		// (expr,x)                 5
+	syn_diiy,		// (expr),y                 6
+	syn_di,			// (expr)                   7
+	syn_iyl,		// [expr],y                 8
+	syn_dil,		// [expr]                   9
+	syn_absx,		// expr,x                  10
+	syn_absy,		// expr,y                  11
+	syn_bm,			// block move              12
+	syn_abs,		// expr                    13
+
+	syn_MAX
+};
+
 
 class myLayeredConfiguration : public Poco::Util::LayeredConfiguration
 {
@@ -522,7 +543,7 @@ public:
 		string pn=Poco::toUpper(lang);
 		if ((old!=pn) || (force))
 		{
-			printf("setting language options to %s\n",pn.c_str());
+			//printf("setting language options to %s\n",pn.c_str());
 			language=pn;
 			setCurrent();
 			if (pn=="QASM")
@@ -653,6 +674,63 @@ public:
 		{
 			res=def;
 			//throw;
+		}
+		return(res);
+	}
+
+	string addrModeEnglish(int mode)
+	{
+		string res="<none>";
+		switch(mode)
+		{
+		case syn_err:
+			res="error";
+			break;
+		case syn_none:
+			res="<none>";
+			break;
+		case syn_implied:
+			res="impl";
+			break;
+		case syn_s:
+			res="dp,s";
+			break;
+		case syn_sy:
+			res="(dp,s),y";
+			break;
+		case syn_imm:
+			res="#imme";
+			break;
+		case syn_diix:
+			res="(dp,x)";
+			break;
+		case syn_diiy:
+			res="(dp),y";
+			break;
+		case syn_di:
+			res="(dp)";
+			break;
+		case syn_iyl:
+			res="[expr],y";
+			break;
+		case syn_dil:
+			res="[expr]";
+			break;
+		case syn_absx:
+			res="abs,x";
+			break;
+		case syn_absy:
+			res="abs,y";
+			break;
+		case syn_bm:
+			res="blkmv";
+			break;
+		case syn_abs:
+			res="abs";
+			break;
+		default:
+			res="unknown";
+			break;
 		}
 		return(res);
 	}

@@ -110,26 +110,6 @@ extern uint8_t opCodeCompatibility[256];
 
 #endif
 
-enum
-{
-	syn_err = -1,  	// error - not recognized
-	syn_none = 0,   // should never be returned 0
-	syn_implied,    // no operand               1
-	syn_s, 			// expr,s                   2
-	syn_sy,			// (expr,s),y               3
-	syn_imm,		// #expr                    4
-	syn_diix,		// (expr,x)                 5
-	syn_diiy,		// (expr),y                 6
-	syn_di,			// (expr)                   7
-	syn_iyl,		// [expr],y                 8
-	syn_dil,		// [expr]                   9
-	syn_absx,		// expr,x                  10
-	syn_absy,		// expr,y                  11
-	syn_bm,			// block move              12
-	syn_abs,		// expr                    13
-
-	syn_MAX
-};
 
 
 class TOriginSection
@@ -493,7 +473,6 @@ public:
 
 	int parseOperand(MerlinLine &line);
 	int  getAddrMode(MerlinLine &line);
-	string addrModeEnglish(int mode);
 	void setOpcode(MerlinLine &line, uint8_t op);
 
 

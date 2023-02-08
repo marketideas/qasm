@@ -599,6 +599,9 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 		case syn_absy:
 			amode = 6;
 			break;
+		//case syn_none:
+		//	printf("syn_none on ROR OP_A\n");
+		//		break;
 		default:
 			err = true;
 			break;
