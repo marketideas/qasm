@@ -10,3 +10,8 @@ Finder.Data
 
 *.xcuserstate
 *.xcbkptlist
+*.l
+qasm
+IFD.LIB
+qlinkgs
+qasmgs

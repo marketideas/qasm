@@ -7,20 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2F5E54C2237BAE370091163D /* libPocoJSON.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */; };
-		2F5E54C3237BAE370091163D /* libPocoEncodings.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */; };
-		2F5E54C4237BAE370091163D /* libPocoMongoDB.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */; };
-		2F5E54C5237BAE370091163D /* libPocoDataSQLite.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */; };
-		2F5E54C6237BAE370091163D /* libPocoNetSSL.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */; };
-		2F5E54C7237BAE370091163D /* libPocoData.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BA237BAE370091163D /* libPocoData.64.dylib */; };
-		2F5E54C8237BAE370091163D /* libPocoCrypto.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */; };
-		2F5E54C9237BAE370091163D /* libPocoRedis.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */; };
-		2F5E54CA237BAE370091163D /* libPocoUtil.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */; };
-		2F5E54CB237BAE370091163D /* libPocoFoundation.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */; };
-		2F5E54CC237BAE370091163D /* libPocoZip.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */; };
-		2F5E54CD237BAE370091163D /* libPocoNet.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */; };
-		2F5E54CE237BAE370091163D /* libPocoXML.64.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */; };
-		2F5E54D0237BAE3F0091163D /* libboringssl.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2F5E54CF237BAE3F0091163D /* libboringssl.tbd */; };
 		2F5E550B237BB3090091163D /* eval.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E54FE237BB3090091163D /* eval.cpp */; };
 		2F5E550C237BB3090091163D /* asm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5500237BB3090091163D /* asm.cpp */; };
 		2F5E550D237BB3090091163D /* qasm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E5501237BB3090091163D /* qasm.cpp */; };
@@ -33,6 +19,12 @@
 		2F5E55FC237CBECB0091163D /* httpclient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E55F3237CBECB0091163D /* httpclient.cpp */; };
 		2F5E55FD237CBECB0091163D /* pallogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E55F4237CBECB0091163D /* pallogger.cpp */; };
 		2F5E55FE237CBECB0091163D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F5E55F5237CBECB0091163D /* main.cpp */; };
+		3D4CE2D226ED6ACC00454F39 /* libPocoUtil.80.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4CE2D126ED6ACC00454F39 /* libPocoUtil.80.dylib */; };
+		3D4CE2D426ED6B0700454F39 /* libPocoCrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4CE2D326ED6B0700454F39 /* libPocoCrypto.dylib */; };
+		3D4CE2D526ED6B0700454F39 /* libPocoCrypto.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 3D4CE2D326ED6B0700454F39 /* libPocoCrypto.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		3D4CE2DB26ED6B1B00454F39 /* libPocoFoundation.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D4CE2DA26ED6B1B00454F39 /* libPocoFoundation.dylib */; };
+		3D4CE2DC26ED6B1B00454F39 /* libPocoFoundation.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 3D4CE2DA26ED6B1B00454F39 /* libPocoFoundation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		3D4CE2DD26ED6B3200454F39 /* libPocoUtil.80.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 3D4CE2D126ED6ACC00454F39 /* libPocoUtil.80.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -45,24 +37,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		3D4CE2D626ED6B0700454F39 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				3D4CE2DC26ED6B1B00454F39 /* libPocoFoundation.dylib in Embed Libraries */,
+				3D4CE2DD26ED6B3200454F39 /* libPocoUtil.80.dylib in Embed Libraries */,
+				3D4CE2D526ED6B0700454F39 /* libPocoCrypto.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2F5E5497237BAC9A0091163D /* qasm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = qasm; sourceTree = BUILT_PRODUCTS_DIR; };
-		2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoJSON.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoJSON.64.dylib; sourceTree = "<group>"; };
-		2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoEncodings.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoEncodings.64.dylib; sourceTree = "<group>"; };
-		2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoMongoDB.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoMongoDB.64.dylib; sourceTree = "<group>"; };
-		2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoDataSQLite.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoDataSQLite.64.dylib; sourceTree = "<group>"; };
-		2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoNetSSL.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoNetSSL.64.dylib; sourceTree = "<group>"; };
-		2F5E54BA237BAE370091163D /* libPocoData.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoData.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoData.64.dylib; sourceTree = "<group>"; };
-		2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoCrypto.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoCrypto.64.dylib; sourceTree = "<group>"; };
-		2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoRedis.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoRedis.64.dylib; sourceTree = "<group>"; };
-		2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoUtil.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoUtil.64.dylib; sourceTree = "<group>"; };
-		2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoFoundation.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoFoundation.64.dylib; sourceTree = "<group>"; };
-		2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoZip.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoZip.64.dylib; sourceTree = "<group>"; };
-		2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoNet.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoNet.64.dylib; sourceTree = "<group>"; };
-		2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoXML.64.dylib; path = ../../../../../../usr/local/Cellar/poco/1.9.4/lib/libPocoXML.64.dylib; sourceTree = "<group>"; };
-		2F5E54CF237BAE3F0091163D /* libboringssl.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libboringssl.tbd; path = usr/lib/libboringssl.tbd; sourceTree = SDKROOT; };
 		2F5E54FE237BB3090091163D /* eval.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = eval.cpp; sourceTree = SOURCE_ROOT; };
 		2F5E54FF237BB3090091163D /* eval.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = eval.h; sourceTree = SOURCE_ROOT; };
 		2F5E5500237BB3090091163D /* asm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asm.cpp; sourceTree = SOURCE_ROOT; };
@@ -175,6 +166,10 @@
 		2F5E56C5237CC2700091163D /* edit */ = {isa = PBXFileReference; lastKnownFileType = text; path = edit; sourceTree = "<group>"; };
 		2F5E56C6237CC2700091163D /* qlinkgs */ = {isa = PBXFileReference; lastKnownFileType = file; path = qlinkgs; sourceTree = "<group>"; };
 		2F5E571B237CDF0A0091163D /* testdata */ = {isa = PBXFileReference; lastKnownFileType = folder; path = testdata; sourceTree = "<group>"; };
+		3D4CE2D126ED6ACC00454F39 /* libPocoUtil.80.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoUtil.80.dylib; path = ../../../../../../usr/local/Cellar/poco/1.11.0/lib/libPocoUtil.80.dylib; sourceTree = "<group>"; };
+		3D4CE2D326ED6B0700454F39 /* libPocoCrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoCrypto.dylib; path = ../../../../../../usr/local/Cellar/poco/1.11.0/lib/libPocoCrypto.dylib; sourceTree = "<group>"; };
+		3D4CE2D726ED6B1700454F39 /* libPocoEncodings.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoEncodings.dylib; path = ../../../../../../usr/local/Cellar/poco/1.11.0/lib/libPocoEncodings.dylib; sourceTree = "<group>"; };
+		3D4CE2DA26ED6B1B00454F39 /* libPocoFoundation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libPocoFoundation.dylib; path = ../../../../../../usr/local/Cellar/poco/1.11.0/lib/libPocoFoundation.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,20 +177,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2F5E54D0237BAE3F0091163D /* libboringssl.tbd in Frameworks */,
-				2F5E54C2237BAE370091163D /* libPocoJSON.64.dylib in Frameworks */,
-				2F5E54C3237BAE370091163D /* libPocoEncodings.64.dylib in Frameworks */,
-				2F5E54C4237BAE370091163D /* libPocoMongoDB.64.dylib in Frameworks */,
-				2F5E54C5237BAE370091163D /* libPocoDataSQLite.64.dylib in Frameworks */,
-				2F5E54C6237BAE370091163D /* libPocoNetSSL.64.dylib in Frameworks */,
-				2F5E54C7237BAE370091163D /* libPocoData.64.dylib in Frameworks */,
-				2F5E54C8237BAE370091163D /* libPocoCrypto.64.dylib in Frameworks */,
-				2F5E54C9237BAE370091163D /* libPocoRedis.64.dylib in Frameworks */,
-				2F5E54CA237BAE370091163D /* libPocoUtil.64.dylib in Frameworks */,
-				2F5E54CB237BAE370091163D /* libPocoFoundation.64.dylib in Frameworks */,
-				2F5E54CC237BAE370091163D /* libPocoZip.64.dylib in Frameworks */,
-				2F5E54CD237BAE370091163D /* libPocoNet.64.dylib in Frameworks */,
-				2F5E54CE237BAE370091163D /* libPocoXML.64.dylib in Frameworks */,
+				3D4CE2DB26ED6B1B00454F39 /* libPocoFoundation.dylib in Frameworks */,
+				3D4CE2D426ED6B0700454F39 /* libPocoCrypto.dylib in Frameworks */,
+				3D4CE2D226ED6ACC00454F39 /* libPocoUtil.80.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -243,20 +227,10 @@
 		2F5E54B4237BAE370091163D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2F5E54CF237BAE3F0091163D /* libboringssl.tbd */,
-				2F5E54BB237BAE370091163D /* libPocoCrypto.64.dylib */,
-				2F5E54BA237BAE370091163D /* libPocoData.64.dylib */,
-				2F5E54B8237BAE370091163D /* libPocoDataSQLite.64.dylib */,
-				2F5E54B6237BAE370091163D /* libPocoEncodings.64.dylib */,
-				2F5E54BE237BAE370091163D /* libPocoFoundation.64.dylib */,
-				2F5E54B5237BAE370091163D /* libPocoJSON.64.dylib */,
-				2F5E54B7237BAE370091163D /* libPocoMongoDB.64.dylib */,
-				2F5E54C0237BAE370091163D /* libPocoNet.64.dylib */,
-				2F5E54B9237BAE370091163D /* libPocoNetSSL.64.dylib */,
-				2F5E54BC237BAE370091163D /* libPocoRedis.64.dylib */,
-				2F5E54BD237BAE370091163D /* libPocoUtil.64.dylib */,
-				2F5E54C1237BAE370091163D /* libPocoXML.64.dylib */,
-				2F5E54BF237BAE370091163D /* libPocoZip.64.dylib */,
+				3D4CE2DA26ED6B1B00454F39 /* libPocoFoundation.dylib */,
+				3D4CE2D726ED6B1700454F39 /* libPocoEncodings.dylib */,
+				3D4CE2D326ED6B0700454F39 /* libPocoCrypto.dylib */,
+				3D4CE2D126ED6ACC00454F39 /* libPocoUtil.80.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -522,6 +496,7 @@
 				2F5E5493237BAC9A0091163D /* Sources */,
 				2F5E5494237BAC9A0091163D /* Frameworks */,
 				2F5E5495237BAC9A0091163D /* CopyFiles */,
+				3D4CE2D626ED6B0700454F39 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -538,7 +513,7 @@
 		2F5E548F237BAC9A0091163D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1120;
+				LastUpgradeCheck = 1250;
 				ORGANIZATIONNAME = "Lane Roathe";
 				TargetAttributes = {
 					2F5E5496237BAC9A0091163D = {
@@ -613,6 +588,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -677,6 +653,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -716,7 +693,7 @@
 				DEVELOPMENT_TEAM = 32JVURPAZ7;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/poco/1.9.4/lib,
+					./libpoco,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -730,7 +707,7 @@
 				DEVELOPMENT_TEAM = 32JVURPAZ7;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/poco/1.9.4/lib,
+					./libpoco,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
