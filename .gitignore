@@ -10,3 +10,7 @@ Finder.Data
 
 *.xcuserstate
 *.xcbkptlist
+**/log_qasm
+.vscode/compile_commands.json
+.vscode/settings.json
+

@@ -30,16 +30,19 @@ ZP       equ   $00
          lda   ^$fff0+24  ;ABS (hi word)
          lda   |$fff0+24  ;ABS (long in 65816 mode)
 
-         lda   #<$fff0     ;zp
-         lda   #>$fff0     ;ABS (lo word)
-         lda   #^$fff0     ;ABS (hi word)
+         lda   #<$fff0    ;zp
+         lda   #>$fff0    ;ABS (lo word)
+         lda   #^$fff0    ;ABS (hi word)
          lda   #<$FFF0+$FFFF
          lda   #>$FFF0+$FFFF
 
 
 
          lst   off
-         end
+                          ;end
+
+
+                          
          ora   ($00)
          lda   ($00)
          bit:  $FFFE,X
