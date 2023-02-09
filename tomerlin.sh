@@ -1,6 +1,8 @@
 #!/bin/bash
+mkdir -p ./testdata1
 rm -rf ./testdata1/*
 cp -r ./testdata/*.S testdata1/
+cp ./merlintest.s ./testdata1/merlintest.S
 cd ./testdata1
 X=`ls *.S`
 

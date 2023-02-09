@@ -8,6 +8,7 @@
 //#define SERVERAPP
 //#define ENABLE_SSL
 #define USE_LOGGER
+#define NO_DISK_LOG
 //#define USE_NET
 //#define USE_SSL
 #define USE_JSON
