@@ -654,7 +654,7 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 			}
 			if ((m == syn_absx) || (m == syn_abs) || (m == syn_absy))
 			{
-				if ((line.flags & FLAG_FORCEABS) || (line.expr_value >= 0x100))
+				if ((line.flags & FLAG_FORCEABS) || (line.expr_value >= 0x100) )
 				{
 					bytelen++;
 					amode += 2;
@@ -725,6 +725,7 @@ int CLASS::doBase6502(MerlinLine & line, TSymbol & sym)
 	{
 		if ((((line.flags & FLAG_DP) == 0) && ((line.flags & FLAG_FORCEDP) == 0))
 		        || (line.flags & FLAG_FORCEABS)
+		        || (m==syn_absy)
 		   )
 		{
 			bytelen++;
@@ -806,26 +807,58 @@ out:
 	}
 
 	res += bytelen;
-	//if (options.isMerlin32())
-	{
-		if ((op==0xB9) || (op==0x79) || (op==0xF9) || (op==0x99))
-		{
-			// there are 4 instructions that don't have (dp),y addressing so convert to (abs),
-			if (bytelen<2)
-			{
-				res++;
-				bytelen++;
-			}
-		}
-	}
 
 	if ((pass > 0) && (res > 0))
 	{
+		int pidx=0;
+		uint8_t *ptr=(uint8_t *)&line.expr_value;
 
 		setOpcode(line, op);
+		if (line.shiftchar!=0)
+		{
+			if (m==syn_imm)
+			{
+				switch(line.shiftchar)
+				{
+				case '>':
+					pidx+=1;
+					break;
+				case '^':
+					pidx+=2;
+					break;
+				}
+			}
+			else
+			{
+				switch(line.shiftchar)
+				{
+				case '>':
+				{
+					if ((line.flags&FLAG_FORCELONG)!=FLAG_FORCELONG)
+					{
+						pidx+=1;
+					}
+				}
+				break;
+				case '^':
+				{
+
+				}
+				break;
+				}
+			}
+		}
 		for (i = 0; i < (res - 1); i++)
 		{
-			line.outbytes.push_back(line.expr_value >> (8 * i));
+			if (pidx>3) // don't over index into 32 bit int
+			{
+				line.outbytes.push_back(0x00);
+			}
+			else
+			{
+				line.outbytes.push_back(ptr[pidx]);
+				pidx++;
+			}
 		}
 		line.outbytect = res;
 	}
@@ -941,6 +974,7 @@ void CLASS::insertOpcodes(void)
 	pushopcode("PAG", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TTL", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SKP", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("PAU", P_PAU, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("TR",  P_TR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ASC", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("DCI", P_ASC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
@@ -961,12 +995,11 @@ void CLASS::insertOpcodes(void)
 	pushopcode("ELSE", P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("IF",  P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("FIN", P_DO, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("CHK", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
+	pushopcode("CHK", P_CHK, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ERR", P_ERR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("KBD", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("LUP", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("--^", P_LUP, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
-	pushopcode("PAU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("SW", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("USR", P_USR, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("MAC", P_MAC, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

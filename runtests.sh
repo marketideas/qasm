@@ -5,6 +5,8 @@ TMPFILE=/tmp/qasm_out.txt
 
 rm -f $TMPFILE
 rm -rf $OUTDIR
+rm -rf ./testdata/*.bin
+
 mkdir -p $OUTDIR
 
 SRC=`ls ./testdata | grep -E '^([0-9]+)(.*)\.[Ss]'`
@@ -16,6 +18,7 @@ SRC=`ls ./testdata | grep -E '^([0-9]+)(.*)\.[Ss]'`
 
 TOTAL=0
 FAILCT=0
+
 
 for S in $SRC ; do
 

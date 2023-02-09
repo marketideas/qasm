@@ -150,15 +150,21 @@ void CLASS::print(uint32_t lineno)
 			pcol += printf("    ");
 		}
 
-		
+
 		string addrmode=options->addrModeEnglish(addressmode).c_str();
 		pcol+=printf("%s ",addrmode.c_str());
+		pcol+=printf("/%04X ",flags);
 
 		while(pcol<50)
 		{
 			pcol+=printf(" ");
 		}
-		pcol+=printf("|");
+		char sc=shiftchar;
+		if (sc==0)
+		{
+			sc=' ';
+		}
+		pcol+=printf("%c |",sc);
 
 	}
 
@@ -1624,57 +1630,75 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		}
 	}
 
-	if (line.addressmode == syn_imm)
+	if (line.addressmode == syn_imm) //page 83 merlin16 manual
 	{
 		//printf("immediate mode\n");
-		switch (line.expr_shift)
+		switch (line.shiftchar)
 		{
 		case '<':
 			//line.expr_value &= 0xFF;
 			break;
 		case '>':
-			line.expr_value >>= 8;
+			//line.expr_value >>= 8;
 			//line.expr_value &= 0xFFFF;
 			break;
 		case '^':
-			line.expr_value = (line.expr_value >> 16);
+			//line.expr_value = (line.expr_value >> 16);
 			//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 			break;
-		case '|':
+		case '|': // should never get here, handled in getAddrMode
 			//if (syntax == SYNTAX_MERLIN)
 			if (options.isMerlin())
 			{
-				line.setError(errBadLabel);
+				line.setError(errBadOperand);
 				line.expr_value = 0;
 			}
+			//line.shiftchar=0;
 			break;
 		}
 	}
 	else
 	{
-		switch (line.expr_shift)
+		switch (line.shiftchar)  // page 84 Merlin16 manual
 		{
 		case '<':
-			line.flags |= FLAG_DP;
+			if (options.isMerlin32())
+			{
+				line.flags |= FLAG_DP;
+				line.expr_value &= 0xFF;
+			}
 			break;
 		case '>':
-#if 0
 			if (options.isMerlin32())
 			{
 				// bug in M32 or not, do what it does
-				line.flags |= FLAG_FORCEABS;
+				//line.flags |= FLAG_FORCEABS;
+				line.flags |= FLAG_FORCELONG;
 			}
 			else
-#endif
 			{
-				line.flags |= FLAG_FORCELONG;
+				// Merlin16+ uses this to force long addressing
+				// need to check Merlin16
+				if (!options.isMerlin())  // not merlin8
+				{
+					line.flags |= FLAG_FORCELONG;
+				}
+
 			}
 			break;
 		case '|':
-			line.flags |= FLAG_FORCEABS;
+			if ((!options.isMerlin32()) && (options.isMerlinCompat()))
+			{
+				line.flags |= FLAG_FORCEABS;
+				//line.shiftchar=0;
+			}
 			break;
 		case '^':
-			//line.flags |= FLAG_FORCELONG;
+			if (options.isMerlin32())
+			{
+				line.flags |= FLAG_DP;
+				line.expr_value >>= 16;
+			}
 			break;
 		}
 	}
@@ -1737,7 +1761,7 @@ const std::string valExpression = "^([^\\[,();]+)$";
 
 // this one looks for ]variables
 const std::string varExpression = "([]]{1}[:0-9A-Z_a-z]{1}[0-9A-Z_a-z]*)";
-const std::string varMACExpression = "([]]{1}[:0-9]{1}[0-9]*)";
+const std::string macExpression = "([]]{1}[:0-9]{1}[0-9]*)";
 
 // opcode check. emitted opcodes are compared against this
 // table, and if the XC status doesn't meet the requirements
@@ -1798,7 +1822,7 @@ void CLASS::initpass(void)
 	{
 		trackrep = false; // can't turn this ON in M16
 	}
-	else if (options.isQASM())
+	else if (options.isNative())
 	{
 		// we will allow this to be settable default off
 		trackrep = false;
@@ -1920,30 +1944,6 @@ void CLASS::complete(void)
 
 			if (f.is_open())
 			{
-#if 0
-				uint32_t lineno = 0;
-				uint32_t l = (uint32_t)lines.size();
-				while (lineno < l)
-				{
-					MerlinLine &line = lines.at(lineno++);
-					if ((line.outbytect > 0) && ((line.flags & FLAG_INDUM) == 0))
-					{
-						for (uint32_t i = 0; i < line.outbytect; i++)
-						{
-							f.put(line.outbytes[i]);
-						}
-					}
-					if ((line.datafillct > 0) && ((line.flags & FLAG_INDUM) == 0))
-					{
-						for (uint32_t i = 0; i < line.datafillct; i++)
-						{
-							f.put(line.datafillbyte & 0xFF);
-						}
-
-					}
-				}
-#else
-
 				for (unsigned int i=0; i<outputbytes.size(); i++)
 				{
 					f.put(outputbytes[i]);
@@ -1956,8 +1956,6 @@ void CLASS::complete(void)
 					writeerr=true;
 				}
 				f.close();
-
-#endif
 			}
 			else
 			{
@@ -1980,7 +1978,7 @@ void CLASS::complete(void)
 
 	TFileProcessor::complete();
 
-	if (listing)
+	if ((errorct==0) && (listing) && (!options.isQuiet()))
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
@@ -2117,10 +2115,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 	{
 		modified=true;
 	}
-	if (supportbar && shiftchar=='|')
-	{
-		line.flags|=FLAG_FORCELONG;
-	}
+
 	if (modified)
 	{
 		line.shiftchar=shiftchar;
@@ -2142,6 +2137,17 @@ int CLASS::getAddrMode(MerlinLine & line)
 		line.strippedoperand=oper;
 	}
 
+	if (supportbar && shiftchar=='|')
+	{
+		//if ((options.isMerlin32()) || (options.isNative()))
+		if (options.isMerlin32())
+		{
+			// regular Merlin16/16+ seems to accept this character, but does NOT force long (bank) addressing
+			line.flags|=FLAG_FORCELONG;
+		}
+		//shiftchar=0; // don't process this as a shift because we only needed to set a flag to force long addressing
+	}
+
 	idx = 0;
 	RegularExpression valEx(valExpression, 0, true);
 
@@ -2150,7 +2156,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 		s = addrRegEx[idx].regEx;
 		if (s == "")
 		{
-			mode = syn_err;
+			mode = syn_err; // no more RegX left (nothing matched)
 		}
 		else
 		{
@@ -2179,7 +2185,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 
 					if (s != "")
 					{
-						if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
+						//if ((s != "^") && (s != "<") && (s != ">") && (s != "|"))
 						{
 							bool v = true;
 							if (mode == syn_abs)
@@ -2234,7 +2240,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 							ct++;
 							//printf("line expression=|%s|\n", s.c_str());
 						}
-						else
+						//else
 						{
 							// SGQ need to set a flag for a shift and process it after eval
 						}
@@ -2334,7 +2340,7 @@ restart:
 						sym = findVariable(s, expand_macro.variables);
 						if (sym!=NULL)
 						{
-							RegularExpression varEx1(varMACExpression, 0, true);
+							RegularExpression varEx1(macExpression, 0, true);
 							Poco::RegularExpression::MatchVec  mVec1;
 							try
 							{
@@ -2596,7 +2602,7 @@ void CLASS::process(void)
 			x = parseOperand(line);
 			//if (x >= 0)
 			//{
-				line.addressmode = x;
+			line.addressmode = x;
 			//}
 
 			int64_t value = -1;

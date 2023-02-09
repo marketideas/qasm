@@ -367,7 +367,7 @@ public:
 		}
 		return(res);
 	}
-	bool isQASM(void)
+	bool isNative(void) // use this as we are running in 'native/qasm' mode so we can add special options
 	{
 		bool res=false;
 		if (language=="QASM")

@@ -777,6 +777,32 @@ out:
 
 }
 
+int CLASS::doPAU(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	UNUSED(opinfo);
+
+	return 0;
+}
+
+int CLASS::doCHK(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
+{
+	int res=1;
+
+	UNUSED(opinfo);
+	if (a.pass>0)
+	{
+		uint8_t val=0;
+		for (uint64_t i=0;i<a.outputbytes.size();i++)
+		{
+			val^=a.outputbytes[i];
+			//printf("%02X ",val);
+		}
+		line.outbytes.push_back(val);
+	}
+	line.outbytect=res;
+	return (res);
+}
+
 // the handler for STR,STRL,REV,FLS,INV,DCI,ASC
 int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 {
@@ -1121,6 +1147,12 @@ int CLASS::ProcessOpcode(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 
 	case P_USR:
 		res = doUSR(a, line, opinfo);
+		break;
+	case P_PAU:
+		res = doPAU(a, line, opinfo);
+		break;
+	case P_CHK:
+		res = doCHK(a, line, opinfo);
 		break;
 
 	}

@@ -388,9 +388,10 @@ class TPsuedoOp;
 class T65816Asm : public TFileProcessor
 {
 protected:
-	std::vector<uint8_t> outputbytes;
 
 public:
+	std::vector<uint8_t> outputbytes;
+
 	// options
 	bool casesen;
 	bool showmx;

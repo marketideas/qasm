@@ -35,14 +35,14 @@ cider:
 	-mkdir -p ./build
 	-cd ./build && cmake -DCIDER=1 -DCMAKE_BUILD_TYPE=DEBUG .. && $(MAKE) $S
 
-
 distclean: clean
 	-rm -rf ./qasmout
 	-rm -rf ./m32out
 	-rm -rf ./libhfs/build ./nufxlib/build ./diskimg/build ./libpal/build
 
 clean:
-	-rm -rf ./build *.2mg test.bin
+	-rm -rf ./build *.2mg test.bin *_Output.txt _FileInforma*.txt testdata/*.bin testdata/Finder.Data
+	-rm -rf ./log_qasm ./testdata1 test 
 
 depend:
 	-cd ./build && $(MAKE) depend

@@ -10,16 +10,29 @@
                 "1": "${QASM_BASE}"
             },
             {
-                "2": "0/object"
+                "2": "0/source"
             },
             {
-                "3": "1/macros"
+                "3": "0/object"
             },
             {
-                "4": "1/toolmacs"
+                "4": "1/macros"
             },
             {
-                "5": "../backup"
+                "5": "1/lib"
+            },
+            {
+                "6": "1/commands"
+            },
+            {
+                "7": "1/help"
+            },
+            {
+                "8": "object",
+                "volume": "0/merlin.2mg",
+                "size": "800K",
+                "format": "prodos",
+                "fileformat": "2mg"
             }
         ]
     },

@@ -10,14 +10,9 @@
          xc    off
          xc
          xc
-         lst
-                          ;lst  OFF
+
 ZP       equ   $00
          org   $2000
-         lda   $04,y
-         adc   $04,y
-         sbc   $04,y
-         sta   $04,y
 
          lda   <$fff0     ;zp
          lda   >$fff0     ;ABS (lo word)
@@ -29,31 +24,35 @@ ZP       equ   $00
          lda   >$fff0+24  ;ABS (lo word)
          lda   ^$fff0+24  ;ABS (hi word)
          lda   |$fff0+24  ;ABS (long in 65816 mode)
+         ldal  $fff0+24   ;ABS (long in 65816 mode)
+         lda:  $fff0+24   ;ABS (long in 65816 mode)
+         lda:  $00
 
+         mx    %11
          lda   #<$fff0    ;zp
          lda   #>$fff0    ;ABS (lo word)
          lda   #^$fff0    ;ABS (hi word)
          lda   #<$FFF0+$FFFF
          lda   #>$FFF0+$FFFF
+         lda   #^$FFF0+$FFFF
 
+         mx    %00
+         lda   #<$fff0    ;zp
+         lda   #>$fff0    ;ABS (lo word)
+         lda   #^$fff0    ;ABS (hi word)
+         lda   #<$FFF0+$FFFF
+         lda   #>$FFF0+$FFFF
+         lda   #^$FFF0+$FFFF
 
-
-         lst   off
-                          ;end
-
-
-                          
          ora   ($00)
          lda   ($00)
          bit:  $FFFE,X
          ror:  $FFFE,X
          ora   #ZP
 begin
-                          ;]m   equ        *
-                          ;     lda        begin
-                          ;     lda        ]m
-                          ;lst  on
-                          ;end
+                          ;]m      equ   *
+         lda   begin
+                          ;lda  ]m
 
 _mymac   mac
 ]mac1    lda   ]mac1
@@ -64,7 +63,6 @@ _mymac   mac
 _ascmac  mac
          asc   ]1,]2,8D
          eom
-                          ;lst  off
                           ;var  'one';'two';'three'
 justlable                  ;line with just a lable
 start
@@ -73,23 +71,31 @@ another  lda   #$00       ;line with everything
          nop              ;line with just opcode
          _mymac *;1
          _mymac *;2
-         _ascmac 'hello';'there'
+                          ;_ascmac 'hello';'there'
 
-         lup   2
-]m       equ   *
-         nop
-         lda   ]m
-         bra   ]m
-         --^
-         sav   2/test.bin
-         end
-
+                          ;lup  2
+                          ;]m      equ   *
+                          ;nop
+                          ;lda  ]m
+                          ;bra  ]m
+                          ;--^
 
 ]1       nop
          nop
-                          ;lst
-         bra   ]1
+                          ;bra  ]1
 
                           ;typ  $06
          db    255
-                          ;lst  off
+]DPNOP   equ   $80
+         lda   ]DPNOP
+         jsr   DPCODE
+         rts
+         org   $0080
+DPCODE   nop
+         lda   DPCODE
+         lda   |DPCODE
+         lda   >DPCODE
+
+         lst
+         chk
+         lst   off

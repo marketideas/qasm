@@ -8,9 +8,10 @@ fi
 cp testdata/$FNAME.S /tmp
 
 cd /tmp
-OUTNAME=compare.txt
+OUTNAME=/tmp/compare.txt
 merlin32 -V ${FNAME}.S >/dev/null
 cat ${FNAME}_Output.txt >OUTNAME
+cat ${FNAME}_Output.txt
 
 qasm ${FNAME}.S -t merlin32 -i M65816 -o 0/${FNAME}.S.bin
 qasm ${FNAME}.S -t qasm -i M65816 -o 0/${FNAME}.S_q.bin
