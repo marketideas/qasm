@@ -2,15 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug",
+            "name": "DEBUG",
             "type": "cppdbg",
             "request": "launch",
             // Resolved by CMake Tools:
             "program": "${workspaceFolder}/build/qasm",
             "args": [
+                //"${workspaceFolder}/testdata/3006-pea.S",
                 "${workspaceFolder}/test.s",
                 "-d",
-                "-l"
+                "-d",
+                "-d",
+                "-l",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

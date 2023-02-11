@@ -1,5 +1,4 @@
 #pragma once
-#include "asm.h"
 
 #define CLASS TPsuedoOp
 
@@ -25,6 +24,8 @@ enum
     P_USR,
     P_PAU,
     P_CHK,
+    P_MX,
+    P_XC,
 
     P_MAX
 };

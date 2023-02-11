@@ -1,5 +1,4 @@
-#include "asm.h"
-#include "psuedo.h"
+#include "app.h"
 
 #define CLASS T65816Asm
 
@@ -41,7 +40,7 @@ int CLASS::doXC(MerlinLine &line, TSymbol &sym)
 	std::string s;
 	int res = 0;
 
-	if (options.isMerlin()) // in merlin8 mode we don't support XC psuedoop
+	if (qoptions.isMerlin()) // in merlin8 mode we don't support XC psuedoop
 	{
 		if (line.errorcode == 0) // don't replace other errors
 		{
@@ -73,6 +72,7 @@ int CLASS::doMX(MerlinLine &line, TSymbol &sym)
 	if (cpumode < MODE_65816)
 	{
 		line.setError(errIncompatibleOpcode);
+		return(-1);
 	}
 	else
 	{
@@ -178,7 +178,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 	uint8_t op;
 	UNUSED(sym);
 
-	if (line.addressmode == syn_bm)
+	if (line.addressmode == syn_params)
 	{
 		res = 3;
 		if (pass > 0)
@@ -212,7 +212,7 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			setOpcode(line, op);
 			// these bytes are the two bank registers
 
-			if (options.isMerlin32() && (v<256))
+			if (qoptions.isMerlin32() && (v<256))
 				//if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
 			{
 				// merlin32 uses the low byte of the two operands
@@ -313,7 +313,6 @@ int CLASS::doNoPattern(MerlinLine &line, TSymbol &sym)
 
 int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 {
-
 	// this routine uses the 'opcode' specifed in the sym.opcode field.
 	// it also adds the number of bytes stored in the sym.stype field after doing an evaluation
 	int res, i;
@@ -324,7 +323,8 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 		//if (isMerlin816())
 		//{
 		//}
-		switch(line.expr_shift)
+		//switch(line.expr_shift)
+		switch(line.shiftchar)
 		{
 		case '^':
 			line.expr_value=(line.expr_value>>16)&0xFFFF;
@@ -800,7 +800,7 @@ out:
 	if (err)
 	{
 		line.setError(errBadAddressMode);
-		printf("bad address mode %d\n",line.addressmode);
+		//printf("bad address mode %d\n",line.addressmode);
 		op = 0x00;
 		res = 0;
 		bytelen = 0;
@@ -892,7 +892,7 @@ int CLASS::doBYTE(MerlinLine & line, TSymbol & sym)
 	// SGQ merlin32 apparently tracks XCE instructions when tracking MX status
 	// who knows how they determine this. I am assuming the NEXT instruction
 	// after a SEC/CLC instruction must be an XCE
-	if (options.isMerlin32())
+	if (qoptions.isMerlin32())
 	{
 		if (sym.opcode == 0x38) // SEC
 		{
@@ -947,8 +947,8 @@ void CLASS::insertOpcodes(void)
 	pushopcode("=",   0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
 	pushopcode("EQU", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEQU));
 	pushopcode("END", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doEND));
-	pushopcode("MX", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
-	pushopcode("XC", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
+	pushopcode("MX", P_MX, OP_PSUEDO, OPHANDLER(&CLASS::doMX));
+	pushopcode("XC", P_XC, OP_PSUEDO, OPHANDLER(&CLASS::doXC));
 
 	pushopcode("EXT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));
 	pushopcode("ENT", 0x00, OP_PSUEDO, OPHANDLER(&CLASS::doPSEUDO));

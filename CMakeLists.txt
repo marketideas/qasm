@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-#set(CIDER "1")
-#set (CMAKE_C_COMPILER /usr/bin/clang)
-#set (CMAKE_CXX_COMPILER /usr/bin/clang++)
-
+set(CIDER "1")
 
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

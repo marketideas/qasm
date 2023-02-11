@@ -1,5 +1,4 @@
 #pragma once
-#include <palPoco.h>
 
 class QUtils
 {

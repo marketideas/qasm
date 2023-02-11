@@ -1,9 +1,27 @@
 #include "app.h"
-#include "asm.h"
-#ifdef CIDERPRESS
-#include "cider.h"
-#endif
 
+ConfigOptions qoptions;
+
+//#define XX printf
+//#undef printf
+int myprintf(const char *format, ...)
+{
+	int res=0;
+	va_list arg;
+	char buff[1024];
+
+	va_start(arg,format);
+
+	buff[0]=0;
+	res=vsprintf(buff,format,arg);
+	string v=buff;
+	//LOG_DEBUG << v;
+	//printf("%s",buff);
+	return(res);
+}
+//#define printf XX
+
+#undef CLASS
 #define CLASS PAL_APPCLASS
 
 // return a pointer to the actual Application class
@@ -26,6 +44,9 @@ programOption PAL::appOptions[] =
 	{ "type", "t", "enforce syntax/features/bugs of other assembler [qasm, merlin8, merlin16, merlin16plus, merlin32, orca, apw, mpw, lisa, ca65]", "<type>", false, false},
 	{ "quiet", "q", "print as little as possible, equivalent to lst off in the assembler ('lst' opcodes will be ignored)", "", false, true},
 	{ "list", "l", "force assembly listing ('lst' opcodes will be ignored)", "", false, true},
+	{ "no-list", "nl", "force assembly listing off ('lst' opcodes will be ignored)", "", false, true},
+	{ "symbols", "sym", "show symbol table after assembly", "", false, true},
+
 	{ "color", "c", "colorize the output", "", false, true},
 	{ "settings", "s", "show the working settings/options", "", false, true},
 
@@ -91,8 +112,8 @@ int CLASS::runCommandLineApp(void)
 	string syn;
 	bool settings;
 	int res = -1;
-	ConfigOptions options;
 
+	qoptions.init();
 	utils=new QUtils();
 
 	startdirectory = Poco::Path::current();
@@ -121,10 +142,10 @@ int CLASS::runCommandLineApp(void)
 	}
 
 	//printf("apppath: |%s|\n",appPath.c_str());
-	options.ReadFile(Poco::Path::config()+"/parms.json",false);
-	options.ReadFile(appPath+"/parms.json",true);
-	options.ReadFile(Poco::Path::configHome()+"/parms.json",false);
-	options.ReadFile(Poco::Path::current()+"/parms.json",false);
+	qoptions.ReadFile(Poco::Path::config()+"/parms.json",false);
+	qoptions.ReadFile(appPath+"/parms.json",true);
+	qoptions.ReadFile(Poco::Path::configHome()+"/parms.json",false);
+	qoptions.ReadFile(Poco::Path::current()+"/parms.json",false);
 
 	syn="QASM";
 
@@ -137,21 +158,21 @@ int CLASS::runCommandLineApp(void)
 	syn=Poco::toUpper(syn); // if they overrode the syntax on the command line, use it
 	syn=Poco::trim(syn);
 
-	if (!options.supportedLanguage(syn))
+	if (!qoptions.supportedLanguage(syn))
 	{
 		printf("Unsupported Language Type\n");
 		return(-1);
 	}
-	syn=options.convertLanguage(syn);
+	syn=qoptions.convertLanguage(syn);
 
 	if (settings)
 	{
-		int x=options.printDefaults(syn);
+		int x=qoptions.printDefaults(syn);
 		return(x);
 	}
 
 	language=syn;
-	options.setLanguage(syn,true);
+	qoptions.setLanguage(syn,true);
 
 	if (isDebug()>0)
 	{
@@ -228,7 +249,7 @@ int CLASS::runCommandLineApp(void)
 					{
 						format_flags=CONVERT_TEST;
 					}
-					options.format_flags=format_flags;
+					qoptions.format_flags=format_flags;
 					cmd=toks[0];
 				}
 			}
@@ -237,7 +258,7 @@ int CLASS::runCommandLineApp(void)
 				if (cmd == "FORMAT")
 				{
 					res = 0;
-					t = new TMerlinConverter(options);
+					t = new TMerlinConverter(qoptions);
 					//t=NULL;
 					if (t != NULL)
 					{
@@ -272,7 +293,7 @@ int CLASS::runCommandLineApp(void)
 				else if (cmd == "ASM")
 				{
 					int x;
-					t = new T65816Asm(options);
+					t = new T65816Asm(qoptions);
 					if (t != NULL)
 					{
 						try
@@ -309,7 +330,7 @@ int CLASS::runCommandLineApp(void)
 				else if (cmd == "SCRIPT")
 				{
 					res = 0;
-					t = new CiderPress(options);
+					t = new CiderPress(qoptions);
 					if (t!=NULL)
 					{
 						try

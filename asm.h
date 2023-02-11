@@ -1,8 +1,10 @@
 
 #pragma once
 
-#include "app.h"
+#include "qasm.h"
 //
+//extern ConfigOptions qoptions;
+
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
 
@@ -153,12 +155,149 @@ public:
 #endif
 };
 
+class shiftStruct
+{
+public:
+	string shiftString;
+	string origString;
+	uint32_t flags;
+	uint32_t amode;
+	uint8_t shiftchar;
+	uint8_t shiftamount;
+	bool immediate;
+	bool iserror;
+
+	shiftStruct(string in) : shiftStruct()
+	{
+		origString=in;
+		parse();
+	}
+
+	shiftStruct()
+	{
+		shiftString="";
+		origString="";
+		flags=0;
+		shiftchar=0;
+		immediate=false;
+		iserror=true;
+		shiftamount=0;
+		amode=syn_none;
+	}
+
+	~shiftStruct()
+	{
+
+	}
+	int parse()
+	{
+		int res=0;
+		string oper;
+		flags=0;
+		shiftchar=0;
+		shiftamount=0;
+		iserror=false;
+		amode=syn_none;
+
+		oper=trim(origString);
+		shiftString=oper;
+
+		bool supportbar=false;
+		bool modified=false;
+
+		int l=oper.length();
+		if (l==0)
+		{
+			return(res);
+		}
+
+		shiftchar=oper[0];
+		if (shiftchar=='#')
+		{
+			shiftchar=0;
+			immediate=true;
+			if (l>1)
+			{
+				shiftchar=oper[1];
+			}
+		}
+		if (shiftchar=='^')
+		{
+			if (qoptions.isMerlin())
+			{
+				iserror=true;
+				amode=syn_err;
+				return(res);
+				//shiftchar=0x00; // merlin8 does not support the bank addr
+			}
+		}
+		if (shiftchar=='|')
+		{
+			if (qoptions.isMerlinCompat())
+			{
+				if ((qoptions.isMerlin() || qoptions.isMerlin16())) // merlin8 and merlin16 do not support the bar
+				{
+					//line.setError(errIllegalCharOperand);
+					amode=syn_err;
+					iserror=true;
+					return(res);
+				}
+				else
+				{
+					supportbar=true;
+				}
+			}
+		}
+
+		if ((shiftchar=='^') || (shiftchar=='<') || (shiftchar=='>') || (supportbar && (shiftchar=='|')))
+		{
+			modified=true;
+		}
+		else
+		{
+			shiftchar=0; // erase anything that is not one of those above
+		}
+
+		if (modified)
+		{
+			//line.shiftchar=shiftchar;
+			if (oper[0]=='#')
+			{
+				oper=oper.substr(2);
+				oper="#"+oper;
+				l=oper.length();
+			}
+			else if (shiftchar!=0)
+			{
+				oper=oper.substr(1);
+				l=oper.length();
+			}
+			shiftString=oper;
+			if (isDebug()>1)
+			{
+				//printf("old: |%s| new: |%s|\n",origString.c_str(),shiftString.c_str());
+			}
+		}
+
+		if (supportbar && shiftchar=='|')
+		{
+			if (qoptions.isMerlin32())
+			{
+				// regular Merlin16/16+ seems to accept this character, but does NOT force long (bank) addressing
+				flags|=FLAG_FORCELONG;
+			}
+			//shiftchar=0; // don't process this as a shift because we only needed to set a flag to force long addressing
+		}
+		return(res);
+	}
+};
+
 class MerlinLine
 {
 public:
 
 	//uint32_t syntax;
-	ConfigOptions *options;
+	ConfigOptions *qoptions;
 	std::string wholetext;
 	std::string lable;
 	std::string printlable;
@@ -184,7 +323,7 @@ public:
 	int32_t startpc;
 	uint32_t addressmode;
 	uint32_t expr_value;
-	uint8_t expr_shift;  // after an eval, this byte will reflect any shift code on expr (|^<>)
+	//uint8_t expr_shift;  // after an eval, this byte will reflect any shift code on expr (|^<>)
 	int32_t eval_result; // this is the error code from the evaluate routing (0 or neg)
 	uint32_t errorcode;
 	std::string errorText;
@@ -219,7 +358,7 @@ protected:
 	uint32_t filecount; // how many files have been read in (because of included files from source
 
 public:
-	ConfigOptions &options;
+	ConfigOptions &qoptions;
 	uint32_t errorct;
 	std::string filename;
 	uint32_t format_flags;

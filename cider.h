@@ -1,17 +1,45 @@
 #ifdef CIDERPRESS
 #pragma once
 
-#include "asm.h"
-#include "eval.h"
-#include "psuedo.h"
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-#include "DiskImg.h"
-
-#define CLASS CiderPress
 
 enum CIDER_VOLFORMAT {CP_PRODOS,CP_HFS};
+
+#undef CLASS
+#define CLASS A2Volume
+
+class CLASS
+{
+protected:
+	string volumeName;
+	string volumePath;
+	string filename;
+	string fileFormat;
+	string format;
+	string sizeString;
+public:
+	CLASS()
+	{
+		volumeName="";
+		volumePath="";
+		filename="";
+		fileFormat="";
+		format="";
+		sizeString="";
+	}
+
+	virtual ~CLASS()
+	{
+
+	}
+	int CreateVolume(string OSName, string VolName, uint64_t size, CIDER_VOLFORMAT format)
+	{
+		return(-1);
+	}
+
+};
+
+#undef CLASS
+#define CLASS CiderPress
 class CLASS : public TFileProcessor
 {
 protected:

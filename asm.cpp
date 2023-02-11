@@ -1,22 +1,16 @@
 #define ADD_ERROR_STRINGS
 
-#include "asm.h"
-#include "eval.h"
-#include "psuedo.h"
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-
+#include "app.h"
 
 #define CLASS MerlinLine
 
 
-CLASS::CLASS(ConfigOptions &opt) : options(&opt)
+CLASS::CLASS(ConfigOptions &opt) : qoptions(&opt)
 {
 	clear();
 }
 
-CLASS::CLASS(std::string line, ConfigOptions &opt) : options(&opt)
+CLASS::CLASS(std::string line, ConfigOptions &opt) : qoptions(&opt)
 {
 	clear();
 	set(line);
@@ -67,11 +61,11 @@ void CLASS::print(uint32_t lineno)
 	}
 
 	bool np=(flags & FLAG_NOLINEPRINT)?true:false;
-	if (options->isQuiet())
+	if (qoptions->isQuiet())
 	{
 		np=true;
 	}
-	if (options->isList())
+	if (qoptions->isList())
 	{
 		np=false;
 	}
@@ -83,7 +77,7 @@ void CLASS::print(uint32_t lineno)
 	{
 		return;
 	}
-	if (options->useColor())
+	if (qoptions->useColor())
 	{
 		if (errorcode > 0)
 		{
@@ -151,7 +145,7 @@ void CLASS::print(uint32_t lineno)
 		}
 
 
-		string addrmode=options->addrModeEnglish(addressmode).c_str();
+		string addrmode=qoptions->addrModeEnglish(addressmode).c_str();
 		pcol+=printf("%s ",addrmode.c_str());
 		pcol+=printf("/%04X ",flags);
 
@@ -268,7 +262,7 @@ void CLASS::print(uint32_t lineno)
 	}
 	//printf("\n");
 
-	if ((options->useColor()) && (errorcode > 0))
+	if ((qoptions->useColor()) && (errorcode > 0))
 	{
 		SetColor(CL_NORMAL);
 	}
@@ -349,6 +343,7 @@ void CLASS::clear()
 	lineno = 0;
 	addressmode = 0;
 	expr_value = 0;
+	//expr_shift=0;
 	eval_result = 0;
 	flags = 0;
 	outbytes.clear();
@@ -542,7 +537,7 @@ void CLASS::set(std::string line)
 	{
 		// M32 syntax allows a colon after lable, and it is not part of the lable
 		//if ((syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32)
-		if (options->isMerlin32())
+		if (qoptions->isMerlin32())
 		{
 			while ((x > 1) && (lable[x - 1] == ':'))
 			{
@@ -559,7 +554,7 @@ void CLASS::set(std::string line)
 #undef CLASS
 #define CLASS TFileProcessor
 
-CLASS::CLASS(ConfigOptions &opt) : options(opt)
+CLASS::CLASS(ConfigOptions &opt) : qoptions(opt)
 {
 	int x;
 	errorct = 0;
@@ -584,7 +579,7 @@ CLASS::~CLASS()
 
 void CLASS::setLanguage(string lang,bool force)
 {
-	options.setLanguage(lang,force);
+	qoptions.setLanguage(lang,force);
 }
 
 void CLASS::errorOut(uint16_t code)
@@ -971,7 +966,7 @@ int CLASS::doline(int lineno, std::string line)
 {
 	UNUSED(lineno);
 
-	MerlinLine l(line, options);
+	MerlinLine l(line, qoptions);
 	lines.push_back(l);
 	return 0;
 }
@@ -1360,9 +1355,9 @@ TSymbol * CLASS::findSymbol(std::string symname)
 				//printf("symbol found: |%s| |%s|\n",symname.c_str(),res->var_text.c_str());
 				TEvaluator eval(*this);
 				int64_t er_val=0;
-				uint8_t shift=0;
+				//uint8_t shift=0;
 				int er;
-				er = eval.evaluate(res->var_text, er_val, shift);
+				er = eval.evaluate(res->var_text, er_val);
 				if (er == 0)
 				{
 					res->value=er_val;
@@ -1646,14 +1641,12 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			//line.expr_value = (line.expr_value >> 16);
 			//line.expr_value = (line.expr_value >> 16) & 0xFFFF;
 			break;
-		case '|': // should never get here, handled in getAddrMode
-			//if (syntax == SYNTAX_MERLIN)
-			if (options.isMerlin())
+		case '|':
+			if (qoptions.isMerlin())
 			{
 				line.setError(errBadOperand);
 				line.expr_value = 0;
 			}
-			//line.shiftchar=0;
 			break;
 		}
 	}
@@ -1662,14 +1655,14 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		switch (line.shiftchar)  // page 84 Merlin16 manual
 		{
 		case '<':
-			if (options.isMerlin32())
+			if (qoptions.isMerlin32())
 			{
 				line.flags |= FLAG_DP;
 				line.expr_value &= 0xFF;
 			}
 			break;
 		case '>':
-			if (options.isMerlin32())
+			if (qoptions.isMerlin32())
 			{
 				// bug in M32 or not, do what it does
 				//line.flags |= FLAG_FORCEABS;
@@ -1679,7 +1672,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			{
 				// Merlin16+ uses this to force long addressing
 				// need to check Merlin16
-				if (!options.isMerlin())  // not merlin8
+				if (!qoptions.isMerlin())  // not merlin8
 				{
 					line.flags |= FLAG_FORCELONG;
 				}
@@ -1687,16 +1680,20 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 			}
 			break;
 		case '|':
-			if ((!options.isMerlin32()) && (options.isMerlinCompat()))
+			if ((!qoptions.isMerlin32()) && (qoptions.isMerlinCompat()))
 			{
 				line.flags |= FLAG_FORCEABS;
 				//line.shiftchar=0;
 			}
 			break;
 		case '^':
-			if (options.isMerlin32())
+			if (qoptions.isMerlin32())
 			{
 				line.flags |= FLAG_DP;
+				line.expr_value >>= 16;
+			}
+			else
+			{
 				line.expr_value >>= 16;
 			}
 			break;
@@ -1750,7 +1747,9 @@ const TaddrMode addrRegEx[] =
 	{"^\\[(?'expr'.+)\\]$", syn_dil, "[e]"}, 						// [expr]
 	{"^(?'expr'.+)[,]{1}[(X|x)]{1}$", syn_absx, "addr,x"},				// expr,x
 	{"^(?'expr'.+)[,]{1}[(Y|y)]{1}$", syn_absy, "addr,y"},				// expr,y
-	{"^(?'expr'.+)[,]{1}(?'expr2'.+)$", syn_bm, "block"},  			// block move expr,expr1
+	{"^[[:punct:]]{1}(?'expr'.+)[[:punct:]]{1}$", syn_data, "data"}, 				// delimitted string
+	{"^(?'expr'.+)[,]{1}(?'expr2'.+)$", syn_params, "params"},  			// block move expr,expr1
+
 	{"^(?'expr'.+)$", syn_abs, "absolute"},  							// expr (MUST BE LAST)
 	{"", 0, ""}
 };
@@ -1814,15 +1813,15 @@ void CLASS::initpass(void)
 
 	outputbytes.clear();
 	trackrep = getBool("asm.trackrep", false);
-	if (options.isMerlin32())
+	if (qoptions.isMerlin32())
 	{
 		trackrep = true; // can't turn this off in M32
 	}
-	else if (options.isMerlin())
+	else if (qoptions.isMerlin())
 	{
 		trackrep = false; // can't turn this ON in M16
 	}
-	else if (options.isNative())
+	else if (qoptions.isNative())
 	{
 		// we will allow this to be settable default off
 		trackrep = false;
@@ -1842,12 +1841,22 @@ void CLASS::initpass(void)
 	s = getConfig("asm.cpu", "M6502");
 	s = Poco::trim(Poco::toUpper(s));
 
+	if (qoptions.isMerlin())
+	{
+		cpumode=MODE_6502;
+	}
+	else
+	{
+		cpumode = MODE_65816;
+	}
+	mx = 0x03;
+
 	s=PAL::getString("option.instruction","");
+	s=Poco::trim(Poco::toUpper(s));
 	if (s!="")
 	{
 		//printf("CPU command line %s\n",s.c_str());
-		cpumode = MODE_65816;
-		mx = 0x03;
+
 
 		if (s == "M65816")
 		{
@@ -1870,7 +1879,7 @@ void CLASS::initpass(void)
 			mx = 0x03;
 		}
 	}
-	mx = getInt("asm.startmx", mx);;
+	//mx = getInt("asm.startmx", mx);;
 
 
 	savepath = getConfig("option.objfile", "");
@@ -1879,7 +1888,7 @@ void CLASS::initpass(void)
 	lastcarry = false;
 	relocatable = false;
 	currentsym = NULL;
-	if (options.isMerlin32())
+	if (qoptions.isMerlin32())
 	{
 		// M32 allows locals that don't have a global above. this is the catchall for that
 		currentsym = &topSymbol;    // this is the default symbol for :locals without a global above;
@@ -1933,8 +1942,8 @@ void CLASS::complete(void)
 			std::string currentdir = Poco::Path::current();
 
 			//savepath = processFilename(savepath, currentdir, 0);
-			savepath=options.formatPath(savepath);
-			if (!options.isQuiet())
+			savepath=qoptions.formatPath(savepath);
+			if (!qoptions.isQuiet())
 			{
 				printf("saving to file: %s\n", savepath.c_str());
 			}
@@ -1971,14 +1980,14 @@ void CLASS::complete(void)
 			printf("unable to save file.\n"); // TODO SGQ need to push error up the so exit code is non-zero
 		}
 	}
-	if ((!options.isQuiet()) || (options.isList()))
+	if ((!qoptions.isQuiet()) || (qoptions.isList()))
 	{
 		printf("\n\nEnd qASM assembly, %d bytes, %u errors, %lu lines, %lu symbols.\n", PC.totalbytes, errorct, lines.size(), symbols.size());
 	}
 
 	TFileProcessor::complete();
 
-	if ((errorct==0) && (listing) && (!options.isQuiet()))
+	if ((errorct==0) && (listing) && (!qoptions.isQuiet()))
 	{
 		showSymbolTable(true);
 		showSymbolTable(false);
@@ -1993,46 +2002,72 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 	int res = -1;
 	int64_t result = 0;
 
+	line.eval_result = 0;
+
 	if (expr.length() > 0)
 	{
 
 		TEvaluator eval(*this);
-		line.eval_result = 0;
 
-		res = eval.evaluate(expr, result, line.expr_shift);
-		if (res != 0)
+		if (line.addressmode==syn_data)
 		{
-			if (isDebug() > 2)
+			printf("\n<data>\n");
+			value=0;
+			int l=line.operand_expr.length();
+			int i=0;
+			while ((i<l) && (i<4))
 			{
-				int c;
-				if (options.useColor())
-				{
-					c = SetColor(CL_RED);
-				}
-				uint32_t rr = result & 0xFFFFFFFF;
-				printf("eval Error=%d %08X |%s|\n", res, rr, eval.badsymbol.c_str());
-				if (options.useColor())
-				{
-					SetColor(c);
-				}
+				value<<=8;
+				value|=line.operand_expr[i];
+				i++;
 			}
+			res=0;
 		}
-		if (res == 0)
+		else if (line.addressmode==syn_params)
 		{
-			uint64_t v1 = (uint64_t) result;
-			value = result;
-			if ((listing) && (pass > 0) && (isDebug() > 2))
+			// if this is a parameter list, don't eval here, because it will
+			// fail
+			res=0;
+		}
+		else
+		{
+			//res = eval.evaluate(expr, result, line.expr_shift);
+			res = eval.evaluate(expr, result);
+
+			if (res != 0)
 			{
-				uint32_t rr = v1 & 0xFFFFFFFF;
-				printf("EV1=%08X '%c'\n", rr, line.expr_shift);
+				if (isDebug() > 2)
+				{
+					int c;
+					if (qoptions.useColor())
+					{
+						c = SetColor(CL_RED);
+					}
+					uint32_t rr = result & 0xFFFFFFFF;
+					printf("eval Error=%d %08X |%s|\n", res, rr, eval.badsymbol.c_str());
+					if (qoptions.useColor())
+					{
+						SetColor(c);
+					}
+				}
 			}
-			if (v1 >= 0x10000)
+			if (res == 0)
 			{
-				line.flags |= FLAG_BIGNUM;
-			}
-			if (v1 < 0x100)
-			{
-				line.flags |= FLAG_DP;
+				uint64_t v1 = (uint64_t) result;
+				value = result;
+				if ((listing) && (pass > 0) && (isDebug() > 2))
+				{
+					//uint32_t rr = v1 & 0xFFFFFFFF;
+					//printf("EV1=%08X '%c'\n", rr);
+				}
+				if (v1 >= 0x10000)
+				{
+					line.flags |= FLAG_BIGNUM;
+				}
+				if (v1 < 0x100)
+				{
+					line.flags |= FLAG_DP;
+				}
 			}
 		}
 	}
@@ -2056,9 +2091,9 @@ int CLASS::getAddrMode(MerlinLine & line)
 	int idx, x;
 	std::string s, oper;
 	std::vector<std::string> groups;
-	char shiftchar;
+	shiftStruct shift(line.operand);
 
-	oper = line.operand;
+	oper=line.operand;
 	int l=oper.length();
 	int ol=line.opcode.length();
 	if ((ol == 0) || (l <= 0))
@@ -2073,80 +2108,10 @@ int CLASS::getAddrMode(MerlinLine & line)
 		}
 	}
 
-	bool supportbar=false;
-	bool modified=false;
-
-	shiftchar=oper[0];
-	if (shiftchar=='#')
-	{
-		shiftchar=0;
-		if (l>1)
-		{
-			shiftchar=oper[1];
-
-			//oper=oper.substr(1);
-			//oper="#"+oper;
-		}
-	}
-	if (shiftchar=='^')
-	{
-		if (options.isMerlin())
-		{
-			return(syn_err);
-			//shiftchar=0x00; // merlin8 does not support the bank addr
-		}
-	}
-	if (shiftchar=='|')
-	{
-		if (options.isMerlinCompat())
-		{
-			if ((options.isMerlin() || options.isMerlin16())) // merlin8 and merlin16 do not support the bar
-			{
-				return(syn_err);
-			}
-			else
-			{
-				supportbar=true;
-			}
-		}
-	}
-
-	if ((shiftchar=='^') || (shiftchar=='<') || (shiftchar=='>') || (supportbar && (shiftchar=='|')))
-	{
-		modified=true;
-	}
-
-	if (modified)
-	{
-		line.shiftchar=shiftchar;
-		if (oper[0]=='#')
-		{
-			oper=oper.substr(2);
-			oper="#"+oper;
-			l=oper.length();
-		}
-		else if (shiftchar!=0)
-		{
-			oper=oper.substr(1);
-			l=oper.length();
-		}
-		if (isDebug()>1)
-		{
-			printf("old: |%s| new: |%s|\n",line.operand.c_str(),oper.c_str());
-		}
-		line.strippedoperand=oper;
-	}
-
-	if (supportbar && shiftchar=='|')
-	{
-		//if ((options.isMerlin32()) || (options.isNative()))
-		if (options.isMerlin32())
-		{
-			// regular Merlin16/16+ seems to accept this character, but does NOT force long (bank) addressing
-			line.flags|=FLAG_FORCELONG;
-		}
-		//shiftchar=0; // don't process this as a shift because we only needed to set a flag to force long addressing
-	}
+	//shift.parse();
+	oper = shift.shiftString;
+	//printf("shiftstring: |%s|\n",oper.c_str());
+	line.shiftchar=shift.shiftchar;
 
 	idx = 0;
 	RegularExpression valEx(valExpression, 0, true);
@@ -2201,7 +2166,7 @@ int CLASS::getAddrMode(MerlinLine & line)
 											// symbol is defined later, we will generate different
 											// bytes on the next pass
 
-											if (options.isMerlin32())
+											if (qoptions.isMerlin32())
 												//if ((line.syntax & SYNTAX_MERLIN32)  == SYNTAX_MERLIN32)
 											{
 												if (Poco::toUpper(oper) == "A") // check the whole operand, not just the expression
@@ -2277,7 +2242,7 @@ int CLASS::parseOperand(MerlinLine & line)
 	}
 	if (isDebug()>1)
 	{
-		printf("addressmode=%d %s\n",res,options.addrModeEnglish(res).c_str());
+		//printf("addressmode=%d %s\n",res,qoptions.addrModeEnglish(res).c_str());
 	}
 	return (res);
 }
@@ -2473,7 +2438,7 @@ void CLASS::process(void)
 	int x;;
 	char c;
 	char buff[256];
-	MerlinLine errLine(options);
+	MerlinLine errLine(qoptions);
 	std::string op, realop, operand, ls;
 
 	pass = 0;
@@ -2668,7 +2633,7 @@ void CLASS::process(void)
 						for (uint32_t lc = expand_macro.start; lc < expand_macro.end; lc++)
 						{
 							//printf("pushing %s\n", lines[lc].wholetext.c_str());
-							MerlinLine nl(lines[lc].wholetext,options);  // create a new clean line (without errors,data)
+							MerlinLine nl(lines[lc].wholetext,qoptions);  // create a new clean line (without errors,data)
 							expand_macro.lines.push_back(nl);
 						}
 						expand_macro.running = true;
@@ -2780,7 +2745,7 @@ void CLASS::process(void)
 				{
 					errorct++;
 				}
-				if (((!skiplist) && (listing) && (pass == 1)) || (line.errorcode != 0) || (options.isList()))
+				if (((!skiplist) && (listing) && (pass == 1)) || (line.errorcode != 0) || (qoptions.isList()))
 				{
 					line.print(lineno);
 				}
@@ -2816,7 +2781,7 @@ int CLASS::doline(int lineno, std::string line)
 
 	UNUSED(lineno);
 
-	MerlinLine l(line,options);
+	MerlinLine l(line,qoptions);
 
 	op = Poco::toLower(l.opcode);
 	lines.push_back(l);

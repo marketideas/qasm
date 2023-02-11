@@ -9,7 +9,7 @@ cp testdata/$FNAME.S /tmp
 
 cd /tmp
 OUTNAME=/tmp/compare.txt
-merlin32 -V ${FNAME}.S >/dev/null
+merlin32 -V ${FNAME}.S 
 cat ${FNAME}_Output.txt >OUTNAME
 cat ${FNAME}_Output.txt
 

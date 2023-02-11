@@ -1,5 +1,4 @@
-#include "psuedo.h"
-#include "eval.h"
+#include "app.h"
 
 #define CLASS TPsuedoOp
 
@@ -39,7 +38,7 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	eval.allowMX = true; // allow the built in MX symbol
 
 	int64_t eval_value = 0;
-	uint8_t shift;
+	//uint8_t shift;
 	uint32_t result32;
 	int res = 0;
 	int err = 0;
@@ -68,9 +67,9 @@ int CLASS::doDO(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			goto out;
 		}
 
-		shift = 0;
+		//shift = 0;
 		eval_value = 0;
-		int x = eval.evaluate(line.operand_expr, eval_value, shift);
+		int x = eval.evaluate(line.operand_expr, eval_value);
 
 		if (x < 0)
 		{
@@ -221,7 +220,7 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	TEvaluator eval(a);
 
 	int64_t eval_value = 0;
-	uint8_t shift;
+	//uint8_t shift;
 	int lidx, len;
 	int res = 0;
 	int err = 0;
@@ -235,9 +234,9 @@ int CLASS::doLUP(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		if (len >= 0)
 		{
 
-			shift = 0;
+			//shift = 0;
 			eval_value = 0;
-			int x = eval.evaluate(line.operand_expr, eval_value, shift);
+			int x = eval.evaluate(line.operand_expr, eval_value);
 
 			a.LUPstack.push(a.curLUP);
 
@@ -384,7 +383,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		//printf("DFB TOK : |%s|\n", expr.c_str());
 
 		int64_t eval_value = 0;
-		uint8_t shift;
+		//uint8_t shift;
 		int r;
 		uint8_t b;
 
@@ -395,10 +394,10 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				expr[0] = ' ';
 				expr = Poco::trim(expr);
 			}
-			shift = 0;
+			//shift = 0;
 			eval_value = 0;
 			//printf("DFB EVAL: |%s|\n", expr.c_str());
-			r = eval.evaluate(expr, eval_value, shift);
+			r = eval.evaluate(expr, eval_value);
 			if (r < 0)
 			{
 				//printf("error %d\n",r);
@@ -407,7 +406,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					line.setError(errBadEvaluation);
 				}
 			}
-			eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
+			//eval_value = (uint64_t)doShift((uint32_t)eval_value);
 		}
 
 		outct += wordsize;
@@ -450,7 +449,7 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 	TEvaluator eval(a);
 
 	int64_t eval_value = 0;
-	uint8_t shift;
+	//uint8_t shift;
 
 	line.eval_result = 0; // since this is an data  p-op, clear the global 'bad operand' flag
 	line.flags |= FLAG_FORCEADDRPRINT;
@@ -477,15 +476,15 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 			else
 			{
 
-				shift = 0;
+				//shift = 0;
 				eval_value = 0;
-				int x = eval.evaluate(s, eval_value, shift);
+				int x = eval.evaluate(s, eval_value);
 				if (x < 0)
 				{
 					line.setError(errBadOperand);
 					goto out;
 				}
-				eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
+				//eval_value = (uint64_t)doShift((uint32_t)eval_value);
 				datact = eval_value & 0xFFFF;
 				if (datact < 0)
 				{
@@ -497,15 +496,15 @@ int CLASS::doDS(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 		else if (ct == 1)
 		{
 
-			shift = 0;
+			//shift = 0;
 			eval_value = 0;
-			int x = eval.evaluate(s, eval_value, shift);
+			int x = eval.evaluate(s, eval_value);
 			if (x < 0)
 			{
 				line.setError(errBadOperand);
 				goto out;
 			}
-			eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
+			//eval_value = (uint64_t)doShift((uint32_t)eval_value, shift);
 			fill = eval_value & 0xFF;
 		}
 		else if (ct > 1)
@@ -982,7 +981,7 @@ int CLASS::doASC(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 					b |= orval;
 				}
 
-				if ((line.options->isMerlin32()) || (line.options->isMerlin16plus()))
+				if ((line.qoptions->isMerlin32()) || (line.qoptions->isMerlin16plus()))
 				{
 					// invert last byte of total bytes out
 

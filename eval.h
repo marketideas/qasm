@@ -5,15 +5,7 @@
 //
 // https://ideone.com/kn4FUu
 //
-#include "asm.h"
-#include <functional>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <deque>
-#include <stdio.h>
-#include <math.h>
+#include "qasm.h"
 
 #define CLASS TEvaluator
 
@@ -42,7 +34,7 @@ public:
         Number,
         Symbol,
         Ascii,
-        Shift,
+        //Shift,
         Operator,
         LeftParen,
         RightParen,
@@ -64,7 +56,7 @@ protected:
     T65816Asm &assembler;
     int evalerror;
     void setError(int ecode);
-    uint8_t shiftmode;
+    //uint8_t shiftmode;
 public:
     CLASS(T65816Asm &_asm);
     ~CLASS();
@@ -75,7 +67,7 @@ public:
     int parseNumber(std::string n, int64_t &val);
     int parseAscii(std::string n, int64_t &val);
 
-    int evaluate(std::string &expr, int64_t &res, uint8_t &_shiftmode);
+    int evaluate(std::string &expr, int64_t &res);
 
 };
 

@@ -29,7 +29,8 @@
             },
             {
                 "8": "object",
-                "volume": "0/merlin.2mg",
+                "volume": "0/qasm.2mg",
+                "name": "qasm",
                 "size": "800K",
                 "format": "prodos",
                 "fileformat": "2mg"

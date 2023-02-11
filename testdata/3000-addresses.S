@@ -10,8 +10,13 @@ long	equ	$020304
 
 		mx	%00
 start	nop
-		pea	^start
+		pea	#^start
+		pea	#start
+		pea ^start
 		pea	start
+		lda #^start
+		lda start
+		lda ^start
 		mvn	bank02,bank03
 		mvp	bank03,bank02
 		lda	dp
@@ -25,4 +30,6 @@ start	nop
 		lda	#^long
 		lda	#long
 
+		lst
+		chk
 		lst off

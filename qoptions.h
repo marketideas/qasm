@@ -46,8 +46,9 @@ enum
 	syn_dil,		// [expr]                   9
 	syn_absx,		// expr,x                  10
 	syn_absy,		// expr,y                  11
-	syn_bm,			// block move              12
+	syn_params,		// multiple/comma separated 12
 	syn_abs,		// expr                    13
+	syn_data,
 
 	syn_MAX
 };
@@ -102,17 +103,22 @@ public:
 	CLASS()
 	{
 		language="";
+	}
+
+	~CLASS()
+	{
+		clear();
+	}
+
+	void init()
+	{
 		setEnvironment();
 		clear();
 		setDefaults();
 		setLanguage("QASM",true);
 		setCurrent();
 	}
-	~CLASS()
-	{
-		clear();
-	}
-
+	
 	void clear()
 	{
 		if (config!=NULL)
@@ -680,17 +686,19 @@ public:
 
 	string addrModeEnglish(int mode)
 	{
-		string res="<none>";
+		string res="----";
 		switch(mode)
 		{
 		case syn_err:
 			res="error";
 			break;
 		case syn_none:
-			res="<none>";
 			break;
 		case syn_implied:
 			res="impl";
+			break;
+		case syn_data:
+			res="data";
 			break;
 		case syn_s:
 			res="dp,s";
@@ -699,7 +707,7 @@ public:
 			res="(dp,s),y";
 			break;
 		case syn_imm:
-			res="#imme";
+			res="#imm";
 			break;
 		case syn_diix:
 			res="(dp,x)";
@@ -722,15 +730,19 @@ public:
 		case syn_absy:
 			res="abs,y";
 			break;
-		case syn_bm:
-			res="blkmv";
+		case syn_params:
+			res="params";
 			break;
 		case syn_abs:
 			res="abs";
 			break;
 		default:
-			res="unknown";
+			res="BAD";
 			break;
+		}
+		while(res.length()<8)
+		{
+			res=res+" ";
 		}
 		return(res);
 	}

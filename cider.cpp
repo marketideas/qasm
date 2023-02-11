@@ -1,15 +1,6 @@
 #ifdef CIDERPRESS
 
-#include "asm.h"
-#include "eval.h"
-#include "psuedo.h"
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-
-#include <cider.h>
-#include <DiskImg.h>
-#include <util.h>
+#include "app.h"
 
 #undef CLASS
 #define CLASS CiderPress
@@ -25,7 +16,7 @@ void dbgMessage(const char *file, int line, const char *msg)
   }
 }
 
-CLASS::CLASS() : TFileProcessor()
+CLASS::CLASS(ConfigOptions &opt): TFileProcessor(opt)
 {
 	if (!Global::GetAppInitCalled())
 	{
