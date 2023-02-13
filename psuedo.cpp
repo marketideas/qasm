@@ -403,7 +403,7 @@ int CLASS::doDATA(T65816Asm &a, MerlinLine &line, TSymbol &opinfo)
 				//printf("error %d\n",r);
 				if (a.pass > 0)
 				{
-					line.setError(errBadEvaluation);
+					//  SGQ line.setError(errBadEvaluation);
 				}
 			}
 			//eval_value = (uint64_t)doShift((uint32_t)eval_value);

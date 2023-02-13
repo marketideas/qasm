@@ -2,6 +2,7 @@
 
 ConfigOptions qoptions;
 
+extern void runShell(void);
 //#define XX printf
 //#undef printf
 int myprintf(const char *format, ...)
@@ -46,7 +47,7 @@ programOption PAL::appOptions[] =
 	{ "list", "l", "force assembly listing ('lst' opcodes will be ignored)", "", false, true},
 	{ "no-list", "nl", "force assembly listing off ('lst' opcodes will be ignored)", "", false, true},
 	{ "symbols", "sym", "show symbol table after assembly", "", false, true},
-
+	{ "shell", "", "enter the shell", "", false, true},
 	{ "color", "c", "colorize the output", "", false, true},
 	{ "settings", "s", "show the working settings/options", "", false, true},
 
@@ -111,6 +112,7 @@ int CLASS::runCommandLineApp(void)
 	string language="";
 	string syn;
 	bool settings;
+	bool shell;
 	int res = -1;
 
 	qoptions.init();
@@ -119,6 +121,9 @@ int CLASS::runCommandLineApp(void)
 	startdirectory = Poco::Path::current();
 	appPath=utils->getAppPath();
 	settings=getBool("option.settings",false);
+	shell=getBool("option.shell",false);
+
+#if 0
 	if (isDebug()>0)
 	{
 		printf("num args: %ld\n",commandargs.size());
@@ -127,20 +132,24 @@ int CLASS::runCommandLineApp(void)
 			printf("commandarg[%ld] |%s|\n",i,commandargs[i].c_str());
 		}
 	}
-	//string help=getConfig("option.help","0");
-	//printf("help=|%s|\n",help.c_str());
-	//if(help!="0")
-	//{
-	//	displayHelp();
-	//	printf("help!\n");
-	//	return(-4);
-	//}
-	if ((commandargs.size() == 0) && (!settings))
+#endif
+	if ((commandargs.size()==0))
 	{
-		displayHelp();
-		return (res);
-	}
+		if (settings)
+		{
 
+		}
+		else if (shell)
+		{
+			runShell();
+			return(0);
+		}
+		else
+		{
+			displayHelp();
+			return (res);
+		}
+	}
 	//printf("apppath: |%s|\n",appPath.c_str());
 	qoptions.ReadFile(Poco::Path::config()+"/parms.json",false);
 	qoptions.ReadFile(appPath+"/parms.json",true);
@@ -176,7 +185,7 @@ int CLASS::runCommandLineApp(void)
 
 	if (isDebug()>0)
 	{
-		printf("SYNTAX: |%s|\n",language.c_str());
+		//printf("SYNTAX: |%s|\n",language.c_str());
 	}
 
 	try

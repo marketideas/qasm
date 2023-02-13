@@ -318,6 +318,7 @@ void CLASS::clear()
 {
 	shiftchar=0;
 	wholetext = "";
+	operparams.clear();
 	lable = "";
 	printlable = "";
 	opcode = "";
@@ -1625,6 +1626,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 		}
 	}
 
+#if 0
 	if (line.addressmode == syn_imm) //page 83 merlin16 manual
 	{
 		//printf("immediate mode\n");
@@ -1703,6 +1705,7 @@ int CLASS::callOpCode(std::string op, MerlinLine &line)
 	{
 		line.flags |= FLAG_FORCEABS;
 	}
+#endif
 
 	auto itr = opcodes.find(Poco::toUpper(op));
 	if (itr != opcodes.end())
@@ -1997,6 +2000,14 @@ void CLASS::complete(void)
 
 }
 
+int CLASS::split_params(string param_string, std::vector<TOperParam> &params)
+{
+	int res=-1;
+	printf("split: |%s|\n",param_string.c_str());
+	TOperParam p(param_string);
+
+	return(res);
+}
 int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 {
 	int res = -1;
@@ -2011,7 +2022,7 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 
 		if (line.addressmode==syn_data)
 		{
-			printf("\n<data>\n");
+			//printf("\n<data>\n");
 			value=0;
 			int l=line.operand_expr.length();
 			int i=0;
@@ -2023,10 +2034,13 @@ int CLASS::evaluate(MerlinLine &line, std::string expr, int64_t &value)
 			}
 			res=0;
 		}
-		else if (line.addressmode==syn_params)
+		//else if ((line.addressmode==syn_params) || (line.addressmode=syn_data))
+		else if ((line.addressmode==syn_params))
+
 		{
 			// if this is a parameter list, don't eval here, because it will
 			// fail
+			split_params(expr,line.operparams);
 			res=0;
 		}
 		else

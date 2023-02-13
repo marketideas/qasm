@@ -12,7 +12,6 @@ project(QAsm)
 
 set(APPVERSION "4.0.10")
 set(LIBRARY_NAME pal)
-set(FIND_LIBRARY_USE_LIB64_PATHS TRUE)
 
 
 #message("root: ${PROJECT_ROOT}")
@@ -42,6 +41,7 @@ set(SOURCE
   ${PROJECT_ROOT}/psuedo.cpp
   ${PROJECT_ROOT}/qoptions.cpp
   ${PROJECT_ROOT}/cider.cpp
+  ${PROJECT_ROOT}/shell.cpp
   ${PROJECT_ROOT}/util.cpp
 
 )
@@ -89,6 +89,8 @@ target_link_libraries (
 ${PROJECT_NAME}
 ${LIBRARY_NAME}
 pthread
+readline
+history
 ${CIDERLIBS}
 ${Poco_LIBRARIES}
 )

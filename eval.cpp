@@ -2,8 +2,6 @@
 
 #define CLASS TEvaluator
 
-#define DEF_VAL 0
-
 std::ostream& operator<<(std::ostream& os, const Token& token)
 {
 	os << token.str;
@@ -781,6 +779,12 @@ out:
 	if (stack.size() > 0)
 	{
 		v = stack.back();
+		switch(shift.shiftchar)
+		{
+			case '^': v>>=16;break;
+			case '<': break;
+			case '>': v>>=8;break;
+		}
 		if (isDebug() > 0)
 		{
 			printf("eval: expression: |%s| %08lX\n", expr.c_str(),v);

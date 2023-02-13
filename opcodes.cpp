@@ -192,8 +192,10 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 				op = 0x44;    // MVP
 			}
 
+			TEvaluator eval(*this);
 			int64_t value = -1;
-			int x = evaluate(line, line.operand_expr2, value);
+			printf("oper1=|%s| oper2=|%s|\n",line.operand_expr.c_str(),line.operand_expr2.c_str());
+			int x = eval.evaluate(line.operand_expr2, value);
 			if (x == 0)
 			{
 				value &= 0xFFFFFFFF;
@@ -212,14 +214,13 @@ int CLASS::doMVN(MerlinLine &line, TSymbol &sym)
 			setOpcode(line, op);
 			// these bytes are the two bank registers
 
-			if (qoptions.isMerlin32() && (v<256))
-				//if (((line.syntax & SYNTAX_MERLIN32) == SYNTAX_MERLIN32) && (v<256))
-			{
-				// merlin32 uses the low byte of the two operands
-				line.outbytes.push_back((v) & 0xFF);
-				line.outbytes.push_back((line.expr_value) & 0xFF);
-			}
-			else
+			//if (qoptions.isMerlin32() && (v<256))
+			//{
+			// merlin32 uses the low byte of the two operands
+			//	line.outbytes.push_back((v) & 0xFF);
+			//	line.outbytes.push_back((line.expr_value) & 0xFF);
+			//}
+			//else
 			{
 				// merlin16 uses the high byte (bank) as the opcode
 				line.outbytes.push_back((v>>16) & 0xFF);
@@ -320,10 +321,6 @@ int CLASS::doAddress(MerlinLine &line, TSymbol &sym)
 	res = 1 + sym.stype;
 	if (pass > 0)
 	{
-		//if (isMerlin816())
-		//{
-		//}
-		//switch(line.expr_shift)
 		switch(line.shiftchar)
 		{
 		case '^':

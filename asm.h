@@ -7,6 +7,7 @@
 
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
+#define DEF_VAL 0
 
 #define FLAG_FORCELONG 0x01
 #define FLAG_FORCEABS  0x02
@@ -112,7 +113,184 @@ extern uint8_t opCodeCompatibility[256];
 
 #endif
 
+class TOperParam
+{
+public:
+	std::string splitString;
+	//const string splitHex="^[$]?(?'hex'[A-Za-z0-9]+)(?'sep'[[:blank:],;]*)$";
+	//const string splitNum="^(?'number'[0-9]+)(?'sep'[[:blank:],;]*)$";
+	//const string splitBin="^[%]?(?'binary'[01]+)(?'sep'[[:blank:],;]*)$";
+	//const string splitLabel="^[#|<>^]?(?'label'[A-Za-z:]?[A-Za-z0-9_]*)[:]?(?'sep'[[:blank:],;]*)$";
+	//const string splitVariable="^[#|<>\\^]?[\\]]{1}(?'variable'[A-Za-z:]?[A-Za-z0-9_]*)[:]?(?'sep'[[:blank:],;]*)$";
 
+	//Poco::RegularExpression splitStringRegEx;
+	//Poco::RegularExpression splitStringRegEx(&splitString,0,true);
+
+#if 0
+/(?x) # ignore pattern whitespace
+(?(DEFINE)
+  (?<dstring> (?'open'[!0-9\\,]{1})(?'str'.*?)(?'close'\k'open'))
+  (?<number> \d+ )
+  (?<value>
+    \s* (?:
+        (?&dstring)
+      | (?&number)
+      | (?&list)
+    ) \s*
+  )
+  (?<list> \\  (?&value) (?: [,;]* (?&value) )* \\ )
+)
+^(?&value)$/gm
+
+----
+
+/[;,[:space:]]*(?'dstring'(?'delim'[^0-9,\\[:space:]])(?'str'.*?(?=\2))(?'close'\2)(?>[;,[:space:]]+))/gm // merlin delimited string
+/[;,[:space:]]*(?'binarystr'(?'delim'[%])(?'val'[0-1+?)(?'close'\2)(?>[;,[:space:]]+))/gm  // binary value %01001
+/[;,[:space:]]*(?'decimalstr'(?'val'[0-9*?)(?'close'\2)(?>[;,[:space:]]+))/gm // integer
+/[;,[:space:]]*(?'delim'[\$])(?'hexval'[0-9a-zA-Z]+?)(?'end'[;,[:space:]]+)/gm // hex
+/[;,[:space:]]*(?'delim'[\%])(?'binval'[0-9a-zA-Z]+?)(?'end'[;,[:space:]]+)/gm // binary %1001
+
+(?'stringval'[;,[:space:]]*(?'dstring'(?'delim'[^0-9,\\[:space:]])(?'str'.*?(?=(?P=delim)))(?'close'(?P=delim)(?>[;,[:space:]]+))))
+
+/(?x) # ignore pattern whitespace
+(?(DEFINE)
+  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
+  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
+  (?<binary>([\#]?[<>|\^]?%[01]+))
+  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
+  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
+  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
+  (?<value>
+     (
+        (?&binary)
+      | (?&number)
+      | (?&hex)
+      | (?&hex1)
+     
+      | (?&stringitem)
+      | (?&label)
+      | (?&list)
+    ) 
+  )
+  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
+)
+^((?&value))$/gm
+
+/(?x) # ignore pattern whitespace
+(?(DEFINE)
+  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
+  (?'separator' ([,;]))
+  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
+  (?<binary>[\#]?[<>|\^]?%[01]+)
+  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
+  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
+  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
+(?<sexprx>(?'sexpr'[\(][#]?[<>|]?[\S]+[\)]))
+(?<lexprx>(?'lexpr'[\[][#]?[<>|]?[\S]+[\]]))
+
+  (?<value>
+        (?&separator)
+      | (?&binary)
+      | (?&number)
+      | (?&hex)
+      | (?&hex1)
+      | (?&sexprx)
+      | (?&lexprx)
+      | (?&stringitem)
+      | (?&label)
+    
+     
+  )
+  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
+)
+((?&value))/gm
+
+/(?x) # ignore pattern whitespace
+(?(DEFINE)
+  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
+  (?'separator' ([\\,;[:blank:]]))
+  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
+  (?<binary>[\#]?[<>|\^]?%[01]+)
+  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
+  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
+  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
+(?<sexprx>(?'sexpr'[\(][#]?[<>|]?[\S]+[\)]))
+(?<lexprx>(?'lexpr'[\[][#]?[<>|]?[\S]+[\]]))
+
+  (?<value>
+        (?&separator)
+      | (?&binary)
+      | (?&number)
+      | (?&hex)
+      | (?&hex1)
+      | (?&sexprx)
+      | (?&lexprx)
+      | (?&stringitem)
+      | (?&label)
+    
+     
+  )
+  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
+)
+(?&separator){1}(?'output'(?&value))/gm
+
+#endif
+
+	std::vector<string> tokens;
+	string expr;
+	uint64_t value;
+	int32_t error;
+	TOperParam() //: splitStringRegEx(splitString)
+	{
+		splitString="^(?'open'[[:punct:]]{1})(?'string'.*?)(?'close'\\1)(?'sep'[[:blank:],;]{1})(?'therest'.*?$)";
+		tokens.clear();
+		expr="";
+		value=DEF_VAL;
+		error=-1;
+	}
+	TOperParam(string ex) : TOperParam()
+	{
+		expr=ex;
+		parse(expr);
+	}
+
+	int parse(string ex)
+	{
+		int res=-1;
+		string orig=trim(ex);
+		std::vector<string> strs;
+		int x;
+		tokens.clear();
+
+		strs.clear();
+		//Poco::RegularExpression split(splitString);
+		Poco::RegularExpression splitEx(splitString, 0, true);
+		x = 0;
+		try
+		{
+			x = splitEx.split(orig, strs, 0);
+		}
+		catch (Poco::Exception &e)
+		{
+			x = 0;
+		}
+
+		if (x>0)
+		{
+			for (int i=0;i<x;i++)
+			{
+				printf("split: |%s|\n",strs[i].c_str());
+			}
+		}
+
+		if (res<=0)
+		{
+			tokens.clear();
+			error=-1;
+		}
+		return(res);
+	}
+};
 
 class TOriginSection
 {
@@ -298,6 +476,7 @@ public:
 
 	//uint32_t syntax;
 	ConfigOptions *qoptions;
+	std::vector<TOperParam> operparams;
 	std::string wholetext;
 	std::string lable;
 	std::string printlable;
@@ -604,6 +783,7 @@ public:
 
 	void showVariables(TVariable &vars);
 	int evaluate(MerlinLine &line, std::string expr, int64_t &value);
+	int split_params(string param_string, std::vector<TOperParam> &params);
 
 	int substituteVariables(MerlinLine & line, std::string &outop);
 

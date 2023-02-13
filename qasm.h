@@ -9,6 +9,9 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 
 #include <functional>
 #include <iostream>
