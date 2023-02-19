@@ -2003,7 +2003,7 @@ void CLASS::complete(void)
 int CLASS::split_params(string param_string, std::vector<TOperParam> &params)
 {
 	int res=-1;
-	printf("split: |%s|\n",param_string.c_str());
+	//printf("split: |%s|\n",param_string.c_str());
 	TOperParam p(param_string);
 
 	return(res);
@@ -2107,6 +2107,10 @@ int CLASS::getAddrMode(MerlinLine & line)
 	std::vector<std::string> groups;
 	shiftStruct shift(line.operand);
 
+	printf("evaloper\n");
+	TOperParam p(line.operand);
+	printf("evaloper exit\n");
+
 	oper=line.operand;
 	int l=oper.length();
 	int ol=line.opcode.length();
@@ -2126,6 +2130,11 @@ int CLASS::getAddrMode(MerlinLine & line)
 	oper = shift.shiftString;
 	//printf("shiftstring: |%s|\n",oper.c_str());
 	line.shiftchar=shift.shiftchar;
+
+	//printf("evaloper\n");
+	//TOperParam p(line.operand);
+	//printf("evaloper exit\n");
+
 
 	idx = 0;
 	RegularExpression valEx(valExpression, 0, true);

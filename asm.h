@@ -4,6 +4,7 @@
 #include "qasm.h"
 //
 //extern ConfigOptions qoptions;
+using Poco::RegularExpression;
 
 #define OPHANDLER(ACB) std::bind(ACB, this, std::placeholders::_1, std::placeholders::_2)
 
@@ -117,132 +118,20 @@ class TOperParam
 {
 public:
 	std::string splitString;
-	//const string splitHex="^[$]?(?'hex'[A-Za-z0-9]+)(?'sep'[[:blank:],;]*)$";
-	//const string splitNum="^(?'number'[0-9]+)(?'sep'[[:blank:],;]*)$";
-	//const string splitBin="^[%]?(?'binary'[01]+)(?'sep'[[:blank:],;]*)$";
-	//const string splitLabel="^[#|<>^]?(?'label'[A-Za-z:]?[A-Za-z0-9_]*)[:]?(?'sep'[[:blank:],;]*)$";
-	//const string splitVariable="^[#|<>\\^]?[\\]]{1}(?'variable'[A-Za-z:]?[A-Za-z0-9_]*)[:]?(?'sep'[[:blank:],;]*)$";
 
-	//Poco::RegularExpression splitStringRegEx;
-	//Poco::RegularExpression splitStringRegEx(&splitString,0,true);
+	const char *dataRegExString =
+	    //"(?x)\r\n(?(DEFINE) \r\n(?<stringitem>(?'s_delim'[^0-9\\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim))) \r\n(?'separator' (?<sepout>[,;[:blank:]])) \r\n(?<number> (?'numout'[\\#]?[<>|\\^]?\\d+ )) \r\n(?<binary>[\\#]?[<>|\\^]?%[01]+) \r\n(?<hex>(?'hexout'[\\#]?[<>|\\^]?\\$[A-Fa-f0-9]+)) \r\n(?<hex1>(?'hexlist'[A-Fa-f0-9]+)) \r\n(?<label>(?'labelout'[\\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*)) \r\n(?<sexprx>(?'sexpr'[\\(][#]?[<>|]?[\\S]+[\\)])) \r\n(?<lexprx>(?'lexpr'[\\[][#]?[<>|]?[\\S]+[\\]])) \r\n(?<value> \r\n  (?&separator) \r\n  | (?&binary) \r\n  | (?&number) \r\n  | (?&hex) \r\n  | (?&hex1) \r\n  | (?&sexprx) \r\n  | (?&lexprx) \r\n  | (?&stringitem) \r\n  | (?&label) \r\n) \r\n(?<list> \\/ (?<listout>(?&value) (?: [,;]+ (?&value) )*) \\/ ) \r\n) \r\n(?&separator){0}((?&value)) ";
+	    //  "(?x)\r\n(?(DEFINE) \r\n(?<stringitem>(?'s_delim'[^0-9\\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim))) \r\n(?'separator' (?<sepout>[,;])) \r\n(?<number> (?'numout'[\\#]?[<>|\\^]?\\d+ )) \r\n(?<binary>[\\#]?[<>|\\^]?%[01]+) \r\n(?<hex>(?'hexout'[\\#]?[<>|\\^]?\\$[A-Fa-f0-9]+)) \r\n(?<hex1>(?'hexlist'[A-Fa-f0-9]+)) \r\n(?<label>(?'labelout'[\\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*)) \r\n(?<sexprx>(?'sexpr'[\\(][#]?[<>|]?[\\S]+[\\)])) \r\n(?<lexprx>(?'lexpr'[\\[][#]?[<>|]?[\\S]+[\\]])) \r\n(?<value> \r\n  (?&separator) \r\n  | (?&binary) \r\n  | (?&number) \r\n  | (?&hex) \r\n  | (?&hex1) \r\n  | (?&sexprx) \r\n  | (?&lexprx) \r\n  | (?&label) \r\n  | (?&stringitem)\r\n) \r\n(?<list> (?<listout>(?&value) (?: [,;]+ (?&value) )*)  ) \r\n) \r\n(?&separator){0}(?'output'(?&value)) ";
 
-#if 0
-/(?x) # ignore pattern whitespace
-(?(DEFINE)
-  (?<dstring> (?'open'[!0-9\\,]{1})(?'str'.*?)(?'close'\k'open'))
-  (?<number> \d+ )
-  (?<value>
-    \s* (?:
-        (?&dstring)
-      | (?&number)
-      | (?&list)
-    ) \s*
-  )
-  (?<list> \\  (?&value) (?: [,;]* (?&value) )* \\ )
-)
-^(?&value)$/gm
-
-----
-
-/[;,[:space:]]*(?'dstring'(?'delim'[^0-9,\\[:space:]])(?'str'.*?(?=\2))(?'close'\2)(?>[;,[:space:]]+))/gm // merlin delimited string
-/[;,[:space:]]*(?'binarystr'(?'delim'[%])(?'val'[0-1+?)(?'close'\2)(?>[;,[:space:]]+))/gm  // binary value %01001
-/[;,[:space:]]*(?'decimalstr'(?'val'[0-9*?)(?'close'\2)(?>[;,[:space:]]+))/gm // integer
-/[;,[:space:]]*(?'delim'[\$])(?'hexval'[0-9a-zA-Z]+?)(?'end'[;,[:space:]]+)/gm // hex
-/[;,[:space:]]*(?'delim'[\%])(?'binval'[0-9a-zA-Z]+?)(?'end'[;,[:space:]]+)/gm // binary %1001
-
-(?'stringval'[;,[:space:]]*(?'dstring'(?'delim'[^0-9,\\[:space:]])(?'str'.*?(?=(?P=delim)))(?'close'(?P=delim)(?>[;,[:space:]]+))))
-
-/(?x) # ignore pattern whitespace
-(?(DEFINE)
-  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
-  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
-  (?<binary>([\#]?[<>|\^]?%[01]+))
-  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
-  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
-  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
-  (?<value>
-     (
-        (?&binary)
-      | (?&number)
-      | (?&hex)
-      | (?&hex1)
-     
-      | (?&stringitem)
-      | (?&label)
-      | (?&list)
-    ) 
-  )
-  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
-)
-^((?&value))$/gm
-
-/(?x) # ignore pattern whitespace
-(?(DEFINE)
-  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
-  (?'separator' ([,;]))
-  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
-  (?<binary>[\#]?[<>|\^]?%[01]+)
-  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
-  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
-  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
-(?<sexprx>(?'sexpr'[\(][#]?[<>|]?[\S]+[\)]))
-(?<lexprx>(?'lexpr'[\[][#]?[<>|]?[\S]+[\]]))
-
-  (?<value>
-        (?&separator)
-      | (?&binary)
-      | (?&number)
-      | (?&hex)
-      | (?&hex1)
-      | (?&sexprx)
-      | (?&lexprx)
-      | (?&stringitem)
-      | (?&label)
-    
-     
-  )
-  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
-)
-((?&value))/gm
-
-/(?x) # ignore pattern whitespace
-(?(DEFINE)
-  (?<stringitem>(?'s_delim'[^0-9\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim)))
-  (?'separator' ([\\,;[:blank:]]))
-  (?<number> (?'numout'[\#]?[<>|\^]?\d+ ))
-  (?<binary>[\#]?[<>|\^]?%[01]+)
-  (?<hex>(?'hexout'[\#]?[<>|\^]?\$[A-Fa-f0-9]+))
-  (?<hex1>(?'hexlist'[A-Fa-f0-9]+))
-  (?<label>(?'labelout'[\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*))
-(?<sexprx>(?'sexpr'[\(][#]?[<>|]?[\S]+[\)]))
-(?<lexprx>(?'lexpr'[\[][#]?[<>|]?[\S]+[\]]))
-
-  (?<value>
-        (?&separator)
-      | (?&binary)
-      | (?&number)
-      | (?&hex)
-      | (?&hex1)
-      | (?&sexprx)
-      | (?&lexprx)
-      | (?&stringitem)
-      | (?&label)
-    
-     
-  )
-  (?<list> \/ ((?&value) (?: [,;]+ (?&value) )*) \/ )
-)
-(?&separator){1}(?'output'(?&value))/gm
-
-#endif
-
+	    "(?x)\r\n(?(DEFINE) \r\n(?<stringitem>(?'s_delim'[^0-9\\/[:space:]])(?'strout'.*?(?=(?P=s_delim)))(?'e_delim'(?P=s_delim))) \r\n(?'separator'[,;])\r\n(?'blank'[[:blank:]]+)\r\n(?<number>[\\#]?[<>|\\^]?\\d+ ) \r\n(?<binary>[\\#]?[<>|\\^]?%[01]+) \r\n(?<hex>[\\#]?[<>|\\^]?\\$[A-Fa-f0-9]+) \r\n(?<hex1>[A-Fa-f0-9]+)\r\n(?<label>[\\#]?[<>|]?[A-Za-z_][A-Z-a-z0-9]*)\r\n(?<sexprx>[\\(][#]?[<>|]?[\\S]+[\\)]) \r\n(?<lexprx>[\\[][#]?[<>|]?[\\S]+[\\]]) \r\n(?<value>\r\n    (?&separator) \r\n  | (?&binary) \r\n  | (?&number) \r\n  | (?&hex) \r\n  | (?&hex1) \r\n  | (?&sexprx) \r\n  | (?&lexprx) \r\n  | (?&label) \r\n  | (?&stringitem)\r\n  | (?&blank)\r\n)\r\n#(?<list> (?<listout>(?&value) (?: [,;]+ (?&value) )*)  ) \r\n(?<list> (?&value) ((?&separator) (?&list) )*)$   \r\n)\r\n\r\n\r\n\r\n(?&separator){0}(?'output'(?&value)) ";
 	std::vector<string> tokens;
 	string expr;
 	uint64_t value;
 	int32_t error;
 	TOperParam() //: splitStringRegEx(splitString)
 	{
-		splitString="^(?'open'[[:punct:]]{1})(?'string'.*?)(?'close'\\1)(?'sep'[[:blank:],;]{1})(?'therest'.*?$)";
+		splitString=dataRegExString;
+		//splitString="^(?'open'[[:punct:]]{1})(?'string'.*?)(?'close'\\1)(?'sep'[[:blank:],;]{1})(?'therest'.*?$)";
 		tokens.clear();
 		expr="";
 		value=DEF_VAL;
@@ -254,35 +143,147 @@ public:
 		parse(expr);
 	}
 
+	int matchall(RegularExpression &regex, string instr, std::vector<string> &strs)
+	{
+		//return(0);
+		uint32_t len,off,offset,slen;
+		int res=0;
+		int x;
+		std::vector<string> groups;
+		uint32_t flags=0;
+		string ss,m;
+		uint64_t tick;
+		Poco::RegularExpression::MatchVec  mVec;
+		int err=0;
+
+		ss=instr;
+		slen=ss.length();
+		offset=0;
+		printf("matchall: |%s|\n",ss.c_str());
+
+		tick=GetTickCount();
+		try
+		{
+			while(offset<slen)
+			{
+				mVec.clear();
+				x=regex.match(ss,0,mVec,flags);
+				if (x>0)
+				{
+					for (int i=0; i<x; i++)
+					{
+						off=mVec[i].offset;
+						len=mVec[i].length;
+						if (len>0)
+						{
+							offset+=len;
+							m=ss.substr(off,len);
+							ss=ss.substr(off+len);
+							printf("    match: %d: |%s| %s\n",res,m.c_str(),ss.c_str());
+
+							groups.clear();
+							int y=regex.split(m,0,groups,flags);
+							for (int i=0; i<y; i++)
+							{
+								printf("      group: |%s|\n",groups[i].c_str());
+							}
+							res++;
+						}
+						else
+						{
+							offset=slen;
+							err=1;
+						}
+					}
+				}
+				else
+				{
+					offset=slen;
+				}
+			}
+		}
+		catch(Poco::Exception ex)
+		{
+			printf("catch execpt\n");
+		}
+		tick=GetTickCount()-tick;
+		printf("took: %lums\n",tick);
+		if (err)
+		{
+			//res=0;
+		}
+		return(res);
+	}
+
 	int parse(string ex)
 	{
+		std::vector<string> groups;
 		int res=-1;
+		int x;
+		//int y;
+		string ss;
+		//bool v;
 		string orig=trim(ex);
 		std::vector<string> strs;
-		int x;
+		//size_t offset;
 		tokens.clear();
 
 		strs.clear();
-		//Poco::RegularExpression split(splitString);
-		Poco::RegularExpression splitEx(splitString, 0, true);
-		x = 0;
+		uint32_t flags=0
+		               |Poco::RegularExpression::RE_DUPNAMES
+		               //|Poco::RegularExpression::RE_EXTENDED
+		               ;
+
+//		Poco::RegularExpression::MatchVec  mVec;
+		Poco::RegularExpression splitEx(splitString, flags, true);
+
+		x=0;
+		// offset=0;
+		ss=orig;
+		//v=false;
+		groups.clear();
+
+		printf("MATCHALL: |%s|\n",ss.c_str());
+		x=matchall(splitEx,ss,strs);
+		if (x>0)
+		{
+
+		}
+#if 0
 		try
 		{
-			x = splitEx.split(orig, strs, 0);
+			mVec.clear();
+			groups.clear();
+			//printf("%s\n",splitString.c_str());
+			printf("\n\nss=|%s|\n",ss.c_str());
+			uint64_t tick=GetTickCount();
+			x=splitEx.match(ss,0,mVec,flags);
+
+			tick=GetTickCount()-tick;
+			printf("%lu ms regex\n",tick);
 		}
 		catch (Poco::Exception &e)
 		{
-			x = 0;
+			printf("split exception %s\n",e.what());
+			mVec.clear();
+			//v=false;
+			x=0;
 		}
-
 		if (x>0)
 		{
-			for (int i=0;i<x;i++)
+			size_t ct=mVec.size();
+			//x=splitEx.split(ss, 0,groups, 0);
+			for (size_t i=0; i<ct; i++)
 			{
-				printf("split: |%s|\n",strs[i].c_str());
+				off = (uint32_t)mVec[i].offset;
+				len = (uint32_t)mVec[i].length;
+				s = ss.substr(off, len);
+				printf("match: |%s|\n",s.c_str());
+
+				//printf("splitxx: |%s|\n",groups[i].c_str());
 			}
 		}
-
+#endif
 		if (res<=0)
 		{
 			tokens.clear();

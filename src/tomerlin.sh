@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export NEWDIR=./QASMOUT
+export NEWDIR=../testdata1/QASMOUT
 rm -rf $NEWDIR
 mkdir -p $NEWDIR
 mkdir -p $NEWDIR/ASM

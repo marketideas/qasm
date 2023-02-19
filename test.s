@@ -52,9 +52,11 @@ DPCODE   nop
          lda   |DPCODE
          lda   >DPCODE
 
-        DFB $FF,#<ABS,#>ABS
+        DFB $FF,#<ABS,#>ABS,*dstring*
         dfb 'string';D7;\slash\
-        dfb 'string',D7,\slash\
+        dfb $1,1,%01,'string',D723A5,\slash\
+        dfb $1,1,%01, 'string',D723A5,\slash\
+
 
 
          lst
