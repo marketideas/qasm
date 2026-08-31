@@ -1,0 +1,9 @@
+/merlin
+/test_merlin
+*.o
+*.bin
+*.lst
+*.out
+*.exe
+.DS_Store
+/tmp/
