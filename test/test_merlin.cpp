@@ -1,4 +1,8 @@
-#include "merlin.h"
+#include "merlin.hpp"
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,25 +12,21 @@ static int fails = 0;
 
 static void expect_ok(const char *src, const uint8_t *want, size_t n, const char *tag)
 {
-    MerlinOptions opt;
-    merlin_options_default(&opt);
-    AsmResult r;
-    int rc = merlin_assemble_string(src, tag, &opt, &r);
-    if (rc != 0) {
+    merlin::Options opt;
+    merlin::Result r = merlin::assemble_string(src, tag, opt);
+    if (!r.ok()) {
         fprintf(stderr, "FAIL %s: assemble errors:\n", tag);
-        for (int i = 0; i < r.nerrors; i++)
-            fprintf(stderr, "  %s:%d: %s\n", r.errors[i].file, r.errors[i].line, r.errors[i].msg);
+        for (const auto &e : r.errors)
+            fprintf(stderr, "  %s:%d: %s\n", e.file.c_str(), e.line, e.msg.c_str());
         fails++;
-        merlin_result_free(&r);
         return;
     }
-    if (r.len != n) {
-        fprintf(stderr, "FAIL %s: len got %zu want %zu\n", tag, r.len, n);
+    if (r.bytes.size() != n) {
+        fprintf(stderr, "FAIL %s: len got %zu want %zu\n", tag, r.bytes.size(), n);
         fails++;
-        merlin_result_free(&r);
         return;
     }
-    if (memcmp(r.bytes, want, n) != 0) {
+    if (memcmp(r.bytes.data(), want, n) != 0) {
         fprintf(stderr, "FAIL %s: bytes\n  got ", tag);
         for (size_t i = 0; i < n; i++) fprintf(stderr, "%02X ", r.bytes[i]);
         fprintf(stderr, "\n  exp ");
@@ -34,7 +34,6 @@ static void expect_ok(const char *src, const uint8_t *want, size_t n, const char
         fprintf(stderr, "\n");
         fails++;
     }
-    merlin_result_free(&r);
 }
 
 static void append_hi(char *dst, size_t *o, size_t max, const char *s)
@@ -106,6 +105,48 @@ static void test_native_string_space(void)
 
     const uint8_t want[] = {'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
     expect_ok(src, want, sizeof(want), "native-str-space");
+}
+
+static void test_force_prefixes(void)
+{
+    const char *src =
+        "     XC\n"
+        "     XC\n"
+        "     ORG   $2000\n"
+        "     LDA   <$FFF0\n"
+        "     LDA   |$FFF0\n"
+        "     LDA   >$FFF0\n"
+        "     LDA:  $00\n"
+        "     LDAL  $FFF0+24\n";
+    /* A5 F0 | AD F0 FF | AF F0 FF 00 | AD 00 00 | AF 08 00 01 */
+    const uint8_t want[] = {
+        0xA5, 0xF0,
+        0xAD, 0xF0, 0xFF,
+        0xAF, 0xF0, 0xFF, 0x00,
+        0xAD, 0x00, 0x00,
+        0xAF, 0x08, 0x00, 0x01
+    };
+    expect_ok(src, want, sizeof(want), "force-prefix");
+}
+
+static void test_macro_semicolon(void)
+{
+    const char *src =
+        "     XC\n"
+        "     XC\n"
+        "     ORG   $2000\n"
+        "_M        MAC\n"
+        "          LDAL  ]1\n"
+        "          LDAL  ]2\n"
+        "          EOM\n"
+        "          _M    *;1\n";
+    /* ldal * at $2000 = AF 00 20 00; ldal 1 = AF 01 00 00
+       After first 4 bytes PC is $2004, so ldal * → AF 04 20 00 */
+    const uint8_t want[] = {
+        0xAF, 0x00, 0x20, 0x00,
+        0xAF, 0x01, 0x00, 0x00
+    };
+    expect_ok(src, want, sizeof(want), "macro-semi");
 }
 
 static void test_hello(void)
@@ -273,21 +314,224 @@ static void test_lup(void)
     expect_ok(src, want, sizeof(want), "lup");
 }
 
+static void test_lup_at(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          LUP   2\n"
+        "KBD_@     LDA   $C000\n"
+        "          BPL   KBD_@\n"
+        "          --^\n";
+    const uint8_t want[] = {
+        0xAD, 0x00, 0xC0, 0x10, 0xFB,
+        0xAD, 0x00, 0xC0, 0x10, 0xFB
+    };
+    expect_ok(src, want, sizeof(want), "lup-at");
+}
+
+static void test_macro_uniquify(void)
+{
+    const char *src =
+        "INCL      MAC\n"
+        "FOO       INC\n"
+        "          BNE   FOO\n"
+        "          <<<\n"
+        "          ORG   $8000\n"
+        "          INCL\n"
+        "          INCL\n";
+    const uint8_t want[] = {0x1A, 0xD0, 0xFD, 0x1A, 0xD0, 0xFD};
+    expect_ok(src, want, sizeof(want), "mac-uniquify");
+}
+
+static void test_put(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          PUT   test/fixtures/put_inc.s\n"
+        "          RTS\n";
+    const uint8_t want[] = {0xA9, 0x01, 0x60};
+    expect_ok(src, want, sizeof(want), "put");
+}
+
+static void test_use(void)
+{
+    const char *src =
+        "          USE   test/fixtures/use_macs.s\n"
+        "          ORG   $8000\n"
+        "          BELL\n"
+        "          RTS\n";
+    const uint8_t want[] = {0x20, 0xDD, 0xFB, 0x60};
+    expect_ok(src, want, sizeof(want), "use");
+}
+
+static void test_var_put(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          VAR   $10;$12\n"
+        "          PUT   test/fixtures/var_put.s\n";
+    const uint8_t want[] = {0xA5, 0x10, 0x85, 0x12};
+    expect_ok(src, want, sizeof(want), "var-put");
+}
+
+static void test_flo(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          FLO   1.0\n"
+        "          FLO   '2.0'\n";
+    const uint8_t want[] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xFF, 0x3F,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x40
+    };
+    expect_ok(src, want, sizeof(want), "flo");
+}
+
+static void test_date(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          DATE  1\n"
+        "          DATE  5\n";
+    merlin::Options opt;
+    merlin::Result r = merlin::assemble_string(src, "date", opt);
+    if (!r.ok() || r.bytes.size() != 18) {
+        fprintf(stderr, "FAIL date: len %zu errors %zu\n", r.bytes.size(), r.errors.size());
+        fails++;
+        return;
+    }
+    /* mode 1 high-ASCII, mode 5 positive; both "dd-MMM-yy" */
+    if ((r.bytes[0] & 0x80) == 0 || (r.bytes[9] & 0x80) != 0) {
+        fprintf(stderr, "FAIL date: high-bit convention\n");
+        fails++;
+    }
+}
+
 static void test_indy(void)
 {
     const char *src =
         "          ORG   $8000\n"
         "          LDA   ($10),Y\n"
         "          LDA   $10,S\n"
+        "          LDA   ($10,S),Y\n"
         "          PHK\n"
         "          PLB\n";
-    const uint8_t want[] = {0xB1, 0x10, 0xA3, 0x10, 0x4B, 0xAB};
+    const uint8_t want[] = {0xB1, 0x10, 0xA3, 0x10, 0xB3, 0x10, 0x4B, 0xAB};
     expect_ok(src, want, sizeof(want), "indy/s");
+}
+
+static void test_brk_wdm(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          BRK   $00\n"
+        "          BRK   #$DB\n"
+        "          WDM   $FF\n"
+        "          COP   $12\n";
+    const uint8_t want[] = {0x00, 0x00, 0x00, 0xDB, 0x42, 0xFF, 0x02, 0x12};
+    expect_ok(src, want, sizeof(want), "brk/wdm");
+}
+
+static void test_jml_jsl_abs(void)
+{
+    const char *src =
+        "          ORG   $10E3\n"
+        "          JML   L10E7\n"
+        "L10E7     NOP\n"
+        "          JSL   $000000\n"
+        "LONG      EQU   $000000\n"
+        "          JSL   LONG\n"
+        "ABS       EQU   $0000\n"
+        "          JML   [ABS]\n";
+    const uint8_t want[] = {
+        0x5C, 0xE7, 0x10, 0x00,
+        0xEA,
+        0x22, 0x00, 0x00, 0x00,
+        0x22, 0x00, 0x00, 0x00,
+        0xDC, 0x00, 0x00
+    };
+    expect_ok(src, want, sizeof(want), "jml/jsl-abs");
+}
+
+static void test_acc_a(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          ROR   A\n"
+        "          ROL   A\n"
+        "          ASL   A\n"
+        "          LSR\n";
+    const uint8_t want[] = {0x6A, 0x2A, 0x0A, 0x4A};
+    expect_ok(src, want, sizeof(want), "acc-a");
+}
+
+static void test_dfb_hash_sel(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "ABS       EQU   $FEFF\n"
+        "          DFB   $0C,#<ABS,#>ABS\n"
+        "          DW    |$01A55A,|$011234\n"
+        "          DB    >$01A55A,<$01A55A\n";
+    const uint8_t want[] = {
+        0x0C, 0xFF, 0xFE,
+        0x5A, 0xA5, 0x34, 0x12,
+        0xA5, 0x5A
+    };
+    expect_ok(src, want, sizeof(want), "dfb-hash");
+}
+
+static void test_ldaz(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          LDAZ  $2345\n"
+        "          ORAZ  $FFFF\n"
+        "          LDA:  $05\n";
+    const uint8_t want[] = {0xA5, 0x45, 0x05, 0xFF, 0xAD, 0x05, 0x00};
+    expect_ok(src, want, sizeof(want), "ldaz");
+}
+
+static void test_org_resume(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          NOP\n"
+        "          ORG   $00BC\n"
+        "L00BC     BIT   L00BC\n"
+        "          ORG\n"
+        "          RTS\n";
+    /* ORG changes PC but object bytes stay sequential, so BIT is stored.
+       L00BC=$BC encodes as DP BIT. */
+    const uint8_t want[] = {0xEA, 0x24, 0xBC, 0x60};
+    expect_ok(src, want, sizeof(want), "org-resume");
+}
+
+static void test_ext_list(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          EXT   a,b,c,d\n"
+        "          DW    a,b,c,d\n";
+    const uint8_t want[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    expect_ok(src, want, sizeof(want), "ext-list");
+}
+
+static void test_usr_width(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "CODES     USR   ADC\n"
+        "          ERR   *-CODES-2\n";
+    const uint8_t want[] = {0x00, 0x00};
+    expect_ok(src, want, sizeof(want), "usr-width");
 }
 
 int main(void)
 {
     test_hello();
+    test_force_prefixes();
+    test_macro_semicolon();
     test_native_merlin_format();
     test_native_string_space();
     test_mx_imm();
@@ -303,7 +547,22 @@ int main(void)
     test_ds_da();
     test_strl();
     test_lup();
+    test_lup_at();
+    test_macro_uniquify();
+    test_put();
+    test_use();
+    test_var_put();
+    test_flo();
+    test_date();
     test_indy();
+    test_brk_wdm();
+    test_jml_jsl_abs();
+    test_acc_a();
+    test_dfb_hash_sel();
+    test_ldaz();
+    test_org_resume();
+    test_ext_list();
+    test_usr_width();
     if (fails) {
         fprintf(stderr, "%d test(s) failed\n", fails);
         return 1;

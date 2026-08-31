@@ -1,9 +1,6 @@
          lst   off
-* [QASM] SYNTAX MERLIN16
-* [QASM] Filetype $06
-* [QASM] AuxType $2000
-* [QASM] Volume TESTASM test.2mg 800K prodos 2mg
-* [QASM] copyto TESTASM :SOURCE:${FILE}.bin
+* Merlin 16+ opcode / addressing smoke test
+* File type BIN ($06), load $2000
 
 
 
@@ -14,32 +11,32 @@
 ZP       equ   $00
          org   $2000
 
-         lda   <$fff0     ;zp
-         lda   >$fff0     ;ABS (lo word)
-         lda   ^$fff0     ;ABS (hi word)
-         lda   |$fff0     ;ABS (long in 65816 mode)
+         lda   <$fff0     ; force DP
+         lda   >$fff0     ; force long
+         lda   ^$fff0     ; abs, high word
+         lda   |$fff0     ; force abs
          lda   <$FFF0+$FFFF
 
-         lda   <$fff0+24  ;zp
-         lda   >$fff0+24  ;ABS (lo word)
-         lda   ^$fff0+24  ;ABS (hi word)
-         lda   |$fff0+24  ;ABS (long in 65816 mode)
-         ldal  $fff0+24   ;ABS (long in 65816 mode)
-         lda:  $fff0+24   ;ABS (long in 65816 mode)
+         lda   <$fff0+24  ; force DP
+         lda   >$fff0+24  ; force long
+         lda   ^$fff0+24  ; abs, high word
+         lda   |$fff0+24  ; force abs
+         ldal  $fff0+24   ; long
+         lda:  $fff0+24   ; force abs
          lda:  $00
 
          mx    %11
-         lda   #<$fff0    ;zp
-         lda   #>$fff0    ;ABS (lo word)
-         lda   #^$fff0    ;ABS (hi word)
+         lda   #<$fff0    ; imm low byte
+         lda   #>$fff0    ; imm high byte
+         lda   #^$fff0    ; imm bank
          lda   #<$FFF0+$FFFF
          lda   #>$FFF0+$FFFF
          lda   #^$FFF0+$FFFF
 
          mx    %00
-         lda   #<$fff0    ;zp
-         lda   #>$fff0    ;ABS (lo word)
-         lda   #^$fff0    ;ABS (hi word)
+         lda   #<$fff0    ; imm low word
+         lda   #>$fff0    ; imm high word
+         lda   #^$fff0    ; imm bank word
          lda   #<$FFF0+$FFFF
          lda   #>$FFF0+$FFFF
          lda   #^$FFF0+$FFFF

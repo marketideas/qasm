@@ -4,6 +4,8 @@
 *.bin
 *.lst
 *.out
+*.obj
 *.exe
+*.L
 .DS_Store
 /tmp/

@@ -1,14 +1,16 @@
-#include "merlin.h"
+#include "intern.hpp"
 
-#include <ctype.h>
-#include <string.h>
+#include <array>
+#include <cstring>
 
-typedef struct {
+namespace merlin {
+
+struct Enc {
     const char *name;
     AddrMode am;
     uint8_t opc;
     uint8_t cpu;
-} Enc;
+};
 
 static const Enc ENC[] = {
     /* ADC */
@@ -73,7 +75,6 @@ static const Enc ENC[] = {
     {"JMP", AM_ABSINDX, 0x7C, CPU_65C02}, {"JMP", AM_LONG, 0x5C, CPU_65816},
     {"JMP", AM_ABSINDL, 0xDC, CPU_65816},
     {"JML", AM_LONG, 0x5C, CPU_65816}, {"JML", AM_ABSINDL, 0xDC, CPU_65816},
-    {"JML", AM_INDL, 0xDC, CPU_65816},
     /* JSR / JSL */
     {"JSR", AM_ABS, 0x20, CPU_6502}, {"JSR", AM_ABSINDX, 0xFC, CPU_65816},
     {"JSR", AM_LONG, 0x22, CPU_65816},
@@ -190,91 +191,93 @@ static const Enc ENC[] = {
     {"SEP", AM_IMM, 0xE2, CPU_65816}, {"SEP", AM_IMM8, 0xE2, CPU_65816},
 };
 
-static const Enc *find_enc(const char *name, AddrMode am, int cpu)
+static const Enc *find_enc(const std::string &name, AddrMode am, int cpu)
 {
     for (size_t i = 0; i < sizeof(ENC) / sizeof(ENC[0]); i++) {
-        if (merlin_stricmp(ENC[i].name, name) == 0 && ENC[i].am == am &&
-            ENC[i].cpu <= cpu)
+        if (icmp(ENC[i].name, name.c_str()) == 0 && ENC[i].am == am && ENC[i].cpu <= cpu)
             return &ENC[i];
     }
-    return NULL;
+    return nullptr;
 }
 
-const char *opcode_canonical(const char *name, char *tmp, size_t tmpn,
-                             int *force_out, bool *long_mn)
+std::string opcode_canonical(const std::string &name, int &force_out, bool &long_mn)
 {
-    *force_out = FORCE_NONE;
-    *long_mn = false;
-    merlin_strlcpy(tmp, name, tmpn);
-    size_t n = strlen(tmp);
-    while (n > 0 && (tmp[n - 1] == ':' || tmp[n - 1] == '\\')) {
-        *force_out = FORCE_ABS;
-        tmp[--n] = '\0';
+    force_out = FORCE_NONE;
+    long_mn = false;
+    std::string tmp = name;
+    while (!tmp.empty() && (tmp.back() == ':' || tmp.back() == '\\')) {
+        force_out = FORCE_ABS;
+        tmp.pop_back();
     }
-    if (n > 1 && (tmp[n - 1] == 'L' || tmp[n - 1] == 'l')) {
-        char base[MERLIN_MAX_OP];
-        merlin_strlcpy(base, tmp, n);
-        base[n - 1] = '\0';
-        /* LDAL STAL ADCL etc. */
-        if (merlin_stricmp(base, "LDA") == 0 || merlin_stricmp(base, "STA") == 0 ||
-            merlin_stricmp(base, "ADC") == 0 || merlin_stricmp(base, "SBC") == 0 ||
-            merlin_stricmp(base, "AND") == 0 || merlin_stricmp(base, "ORA") == 0 ||
-            merlin_stricmp(base, "EOR") == 0 || merlin_stricmp(base, "CMP") == 0 ||
-            merlin_stricmp(base, "JMP") == 0) {
-            *long_mn = true;
-            merlin_strlcpy(tmp, base, tmpn);
+    if (tmp.size() > 1 && (tmp.back() == 'Z' || tmp.back() == 'z' ||
+                           tmp.back() == 'D' || tmp.back() == 'd')) {
+        std::string base = tmp.substr(0, tmp.size() - 1);
+        if (find_enc(base, AM_DP, CPU_65816) || find_enc(base, AM_DP, CPU_6502)) {
+            force_out = FORCE_DP;
+            tmp = base;
+        }
+    }
+    if (tmp.size() > 1 && (tmp.back() == 'L' || tmp.back() == 'l')) {
+        std::string base = tmp.substr(0, tmp.size() - 1);
+        if (icmp(base, "LDA") == 0 || icmp(base, "STA") == 0 ||
+            icmp(base, "ADC") == 0 || icmp(base, "SBC") == 0 ||
+            icmp(base, "AND") == 0 || icmp(base, "ORA") == 0 ||
+            icmp(base, "EOR") == 0 || icmp(base, "CMP") == 0 ||
+            icmp(base, "JMP") == 0) {
+            long_mn = true;
+            tmp = base;
         }
     }
     return tmp;
 }
 
-int opcode_encode(const char *cname, AddrMode am, int cpu, uint8_t *opc)
+int opcode_encode(const std::string &cname, AddrMode am, int cpu, uint8_t &opc)
 {
     const Enc *e = find_enc(cname, am, cpu);
     if (!e) return -1;
-    *opc = e->opc;
+    opc = e->opc;
     return 0;
 }
 
-bool opcode_supports(const char *cname, AddrMode am, int cpu)
+bool opcode_supports(const std::string &cname, AddrMode am, int cpu)
 {
-    return find_enc(cname, am, cpu) != NULL;
+    return find_enc(cname, am, cpu) != nullptr;
 }
 
-bool is_branch(const char *cname)
+bool is_branch(const std::string &cname)
 {
     static const char *b[] = {
         "BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ",
-        "BLT", "BGE", "BRA", "BRL", NULL
+        "BLT", "BGE", "BRA", "BRL", nullptr
     };
     for (int i = 0; b[i]; i++)
-        if (merlin_stricmp(cname, b[i]) == 0) return true;
-    return merlin_stricmp(cname, "PER") == 0;
+        if (icmp(cname, b[i]) == 0) return true;
+    return icmp(cname, "PER") == 0;
 }
 
-bool is_branch_long(const char *cname)
+bool is_branch_long(const std::string &cname)
 {
-    return merlin_stricmp(cname, "BRL") == 0 || merlin_stricmp(cname, "PER") == 0;
+    return icmp(cname, "BRL") == 0 || icmp(cname, "PER") == 0;
 }
 
-bool is_alu_acc(const char *cname)
+bool is_alu_acc(const std::string &cname)
 {
-    return merlin_stricmp(cname, "ASL") == 0 || merlin_stricmp(cname, "LSR") == 0 ||
-           merlin_stricmp(cname, "ROL") == 0 || merlin_stricmp(cname, "ROR") == 0 ||
-           merlin_stricmp(cname, "INC") == 0 || merlin_stricmp(cname, "DEC") == 0;
+    return icmp(cname, "ASL") == 0 || icmp(cname, "LSR") == 0 ||
+           icmp(cname, "ROL") == 0 || icmp(cname, "ROR") == 0 ||
+           icmp(cname, "INC") == 0 || icmp(cname, "DEC") == 0;
 }
 
-int imm_width_reg(const char *cname)
+int imm_width_reg(const std::string &cname)
 {
-    if (merlin_stricmp(cname, "SEP") == 0 || merlin_stricmp(cname, "REP") == 0 ||
-        merlin_stricmp(cname, "COP") == 0 || merlin_stricmp(cname, "WDM") == 0 ||
-        merlin_stricmp(cname, "BRK") == 0)
+    if (icmp(cname, "SEP") == 0 || icmp(cname, "REP") == 0 ||
+        icmp(cname, "COP") == 0 || icmp(cname, "WDM") == 0 ||
+        icmp(cname, "BRK") == 0)
         return 8;
-    if (merlin_stricmp(cname, "PEA") == 0) return 16;
-    if (merlin_stricmp(cname, "LDX") == 0 || merlin_stricmp(cname, "LDY") == 0 ||
-        merlin_stricmp(cname, "CPX") == 0 || merlin_stricmp(cname, "CPY") == 0)
-        return 1; /* X */
-    return 0; /* M */
+    if (icmp(cname, "PEA") == 0) return 16;
+    if (icmp(cname, "LDX") == 0 || icmp(cname, "LDY") == 0 ||
+        icmp(cname, "CPX") == 0 || icmp(cname, "CPY") == 0)
+        return 1;
+    return 0;
 }
 
-
+} // namespace merlin
