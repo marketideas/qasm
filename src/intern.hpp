@@ -119,6 +119,7 @@ struct ExprCtx {
     int mx = 3;
     bool algebraic = false;
     bool case_sensitive = false;
+    bool rel = false; /* REL files: undefined names are implicit EXT = 0 */
     int pass = 1;
     void *asm_ptr = nullptr;
     int (*lookup)(void *asm_ptr, const std::string &name, int64_t *val, bool *known) = nullptr;
@@ -136,7 +137,10 @@ int imm_width_reg(const std::string &cname);
 
 Result assemble_lines(std::vector<SrcLine> &lines, const Options &opt);
 
+bool is_pseudo_op(const std::string &op);
+
 std::string format_listing(const std::string &name, const Result &r,
-                           const std::vector<ListLine> &lines);
+                           const std::vector<ListLine> &lines,
+                           const std::string &syntax = {});
 
 } // namespace merlin

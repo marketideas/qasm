@@ -6,6 +6,7 @@
 *.out
 *.obj
 *.exe
+*.pcode
 *.L
 .DS_Store
 /tmp/

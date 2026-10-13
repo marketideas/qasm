@@ -114,7 +114,7 @@ static int64_t parse_atom(P &p)
         bool known = false;
         if (p.ctx->lookup)
             p.ctx->lookup(p.ctx->asm_ptr, name, &v, &known);
-        if (!known && p.ctx->pass == 2)
+        if (!known && p.ctx->pass == 2 && !p.ctx->rel)
             seterr(p, "unknown label");
         return v;
     }
@@ -168,9 +168,18 @@ static int read_op(P &p)
     skip(p);
     int c = static_cast<unsigned char>(p.s[p.i]);
     if (c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '.' ||
-        c == '!' || c == '=' || c == '#') {
+        c == '!') {
         p.i++;
         return c;
+    }
+    /* '=' equal, '#' not-equal. Both sit at the comparison precedence. */
+    if (c == '=') {
+        p.i++;
+        return 'E';
+    }
+    if (c == '#') {
+        p.i++;
+        return 'N';
     }
     if (c == '<') {
         p.i++;

@@ -1,4 +1,5 @@
 #include "merlin.hpp"
+#include "pcode.hpp"
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -527,6 +528,208 @@ static void test_usr_width(void)
     expect_ok(src, want, sizeof(want), "usr-width");
 }
 
+static void expect_syn(const char *src, const uint8_t *want, size_t n,
+                       const char *tag, const char *syn)
+{
+    merlin::Options opt;
+    merlin::Result r = merlin::assemble_string(src, tag, opt);
+    if (!r.ok()) {
+        fprintf(stderr, "FAIL %s: assemble errors:\n", tag);
+        for (const auto &e : r.errors)
+            fprintf(stderr, "  %s:%d: %s\n", e.file.c_str(), e.line, e.msg.c_str());
+        fails++;
+        return;
+    }
+    if (r.syntax != syn) {
+        fprintf(stderr, "FAIL %s: syntax got %s want %s\n", tag, r.syntax.c_str(), syn);
+        fails++;
+    }
+    if (r.bytes.size() != n || memcmp(r.bytes.data(), want, n) != 0) {
+        fprintf(stderr, "FAIL %s: bytes\n  got ", tag);
+        for (size_t i = 0; i < r.bytes.size(); i++) fprintf(stderr, "%02X ", r.bytes[i]);
+        fprintf(stderr, "\n  exp ");
+        for (size_t i = 0; i < n; i++) fprintf(stderr, "%02X ", want[i]);
+        fprintf(stderr, "\n");
+        fails++;
+    }
+}
+
+static void test_rel_ext(void)
+{
+    const char *src =
+        "          REL\n"
+        "          LDA   #gequ1\n"
+        "          LDY   #equ1\n"
+        "          EXT   gequ2\n"
+        "          LDX   #gequ2\n"
+        "          RTL\n";
+    const uint8_t want[] = {0xA9, 0x00, 0xA0, 0x00, 0xA2, 0x00, 0x6B};
+    expect_ok(src, want, sizeof(want), "rel-ext");
+}
+
+static void test_expr_cmp(void)
+{
+    const char *src =
+        "          ORG   $8000\n"
+        "          DFB   1=1,1#2\n"
+        "          DFB   1+2*3\n"
+        "          DFB   {1+2*3}\n";
+    const uint8_t want[] = {0x01, 0x01, 0x09, 0x07};
+    expect_syn(src, want, sizeof(want), "expr-cmp", "merlin");
+}
+
+static void test_syntax_cross(void)
+{
+    const uint8_t bell[] = {0x20, 0xDD, 0xFB, 0x60};
+    expect_syn(
+        "              ORG   $8000\n"
+        "BELL          EQU   $FBDD\n"
+        "START         JSR   BELL\n"
+        "              RTS\n",
+        bell, sizeof(bell), "syn-merlin", "merlin");
+    expect_syn(
+        ".p816\n"
+        ".org $8000\n"
+        "bell = $fbdd\n"
+        "start:\n"
+        "jsr bell\n"
+        "rts\n",
+        bell, sizeof(bell), "syn-ca65", "ca65");
+    expect_syn(
+        " org $8000\n"
+        " longa off\n"
+        "bell equ $fbdd\n"
+        "start anop\n"
+        " jsr bell\n"
+        " rts\n"
+        " end\n",
+        bell, sizeof(bell), "syn-orca", "orca");
+    expect_syn(
+        ".OR $8000\n"
+        "BELL .EQ $FBDD\n"
+        "START JSR BELL\n"
+        " RTS\n"
+        ".EN\n",
+        bell, sizeof(bell), "syn-lisa", "lisa");
+
+    const uint8_t alg[] = {0x07, 0x09, 0x03};
+    expect_syn(
+        ".p816\n"
+        ".org $8000\n"
+        ".byte 1+2*3,(1+2)*3,1|2\n",
+        alg, sizeof(alg), "ca65-alg", "ca65");
+
+    const uint8_t imm16[] = {0xA9, 0x01, 0x00};
+    expect_syn(
+        ".p816\n"
+        ".a16\n"
+        ".org $8000\n"
+        "lda #1\n",
+        imm16, sizeof(imm16), "ca65-a16", "ca65");
+    expect_syn(
+        " org $8000\n"
+        " longa on\n"
+        " lda #1\n"
+        " end\n",
+        imm16, sizeof(imm16), "orca-longa", "orca");
+
+    const uint8_t dp[] = {0xA5, 0x34};
+    expect_syn(
+        ".OR $8000\n"
+        "ZP .EPZ $1234\n"
+        " LDA ZP\n"
+        ".EN\n",
+        dp, sizeof(dp), "lisa-epz", "lisa");
+
+    const uint8_t dc[] = {0x01, 0x02, 0x10, 0x00, 0x41, 0x0D};
+    expect_syn(
+        " org $8000\n"
+        " longa off\n"
+        " dc i1'1,2',i2'$10',c'A',h'0d'\n"
+        " end\n",
+        dc, sizeof(dc), "orca-dc", "orca");
+
+    const uint8_t inc[] = {0xE6, 0x10};
+    expect_syn(
+        ".p816\n"
+        ".org $8000\n"
+        ".macro bump addr\n"
+        "    inc addr\n"
+        ".endmacro\n"
+        "    bump $10\n",
+        inc, sizeof(inc), "ca65-mac", "ca65");
+    expect_syn(
+        " org $8000\n"
+        " longa off\n"
+        " macro\n"
+        "&lab bump &addr\n"
+        " inc &addr\n"
+        " mend\n"
+        " bump $10\n"
+        " end\n",
+        inc, sizeof(inc), "orca-mac", "orca");
+}
+
+static void test_pcode_dump(void)
+{
+    const char *src =
+        "              ORG   $8000\n"
+        "BELL          EQU   $FBDD\n"
+        "START         JSR   BELL\n"
+        "              RTS\n";
+    merlin::Options opt;
+    opt.dump_pcode = true;
+    merlin::Result r = merlin::assemble_string(src, "hello", opt);
+    if (!r.ok() || r.syntax != "merlin" ||
+        r.pcode.find("syntax=merlin") == std::string::npos ||
+        r.pcode.find("P_ORG") == std::string::npos ||
+        r.pcode.find("P_EQU") == std::string::npos ||
+        r.pcode.find("P_INST") == std::string::npos) {
+        fprintf(stderr, "FAIL pcode-dump syntax=%s\n%s\n", r.syntax.c_str(), r.pcode.c_str());
+        fails++;
+    }
+
+    const char *m32 =
+        "* Assembler: Merlin 32\n"
+        "          ORG   $8000\n"
+        "          RTS\n";
+    merlin::Result r2 = merlin::assemble_string(m32, "m32", opt);
+    if (!r2.ok() || r2.syntax != "merlin32" || r2.bytes.size() != 1 || r2.bytes[0] != 0x60) {
+        fprintf(stderr, "FAIL merlin32 marker syntax=%s bytes=%zu errors=%zu\n",
+                r2.syntax.c_str(), r2.bytes.size(), r2.errors.size());
+        for (const auto &e : r2.errors)
+            fprintf(stderr, "  %s\n", e.msg.c_str());
+        fails++;
+    }
+
+    if (merlin::identify_syntax(" ORG $8000\n JSR $FBDD\n RTS\n") != merlin::Syntax::Merlin) {
+        fprintf(stderr, "FAIL identify plain merlin\n");
+        fails++;
+    }
+
+    merlin::Options bad;
+    bad.syntax = "z80";
+    merlin::Result r3 = merlin::assemble_string(" RTS\n", "bad", bad);
+    if (r3.ok() || r3.errors.empty() ||
+        r3.errors[0].msg.find("unknown syntax") == std::string::npos) {
+        fprintf(stderr, "FAIL unknown syntax\n");
+        fails++;
+    }
+
+    merlin::Options au;
+    au.syntax = "auto";
+    merlin::Result r4 = merlin::assemble_string(
+        ".p816\n.org $8000\nbell = $fbdd\njsr bell\nrts\n", "auto-ca", au);
+    if (!r4.ok() || r4.syntax != "ca65" || r4.bytes.size() != 4 ||
+        r4.bytes[0] != 0x20 || r4.bytes[3] != 0x60) {
+        fprintf(stderr, "FAIL syntax auto ca65 syntax=%s len=%zu\n",
+                r4.syntax.c_str(), r4.bytes.size());
+        for (const auto &e : r4.errors)
+            fprintf(stderr, "  %s\n", e.msg.c_str());
+        fails++;
+    }
+}
+
 int main(void)
 {
     test_hello();
@@ -563,6 +766,10 @@ int main(void)
     test_org_resume();
     test_ext_list();
     test_usr_width();
+    test_rel_ext();
+    test_expr_cmp();
+    test_syntax_cross();
+    test_pcode_dump();
     if (fails) {
         fprintf(stderr, "%d test(s) failed\n", fails);
         return 1;

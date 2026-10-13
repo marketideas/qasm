@@ -1,4 +1,4 @@
-#include "intern.hpp"
+#include "pcode.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -39,6 +39,7 @@ struct Assembler {
     int mx = 3;
     int xc = 2;
     bool dummy = false;
+    bool rel = false;
     uint32_t dummy_save = 0;
     uint32_t org_resume = 0;
     bool org_saved = false;
@@ -85,9 +86,12 @@ struct Assembler {
     void do_pseudo(const SrcLine *ln);
     void do_instruction(const SrcLine *ln);
     void do_range(std::vector<SrcLine> &ls, int lo, int hi);
+    void begin_pass(int p);
     void run_pass(int p);
     void begin_list(const SrcLine *ln);
     void end_list();
+    void exec_asm_line(SrcLine *ln);
+    void exec_pcode(std::vector<PInstr> &ins, int lo, int hi);
 };
 
 void Assembler::err(const SrcLine *ln, const std::string &msg)
@@ -248,6 +252,7 @@ bool Assembler::eval_on(const SrcLine *ln, const std::string &expr, int64_t &out
     ctx.mx = mx;
     ctx.algebraic = opt.algebraic;
     ctx.case_sensitive = case_sensitive;
+    ctx.rel = rel;
     ctx.pass = pass;
     ctx.asm_ptr = this;
     ctx.lookup = lookup_cb;
@@ -260,7 +265,7 @@ bool Assembler::eval_on(const SrcLine *ln, const std::string &expr, int64_t &out
     return true;
 }
 
-static bool is_pseudo(const std::string &op)
+bool is_pseudo_op(const std::string &op)
 {
     static const char *ps[] = {
         "ORG", "OBJ", "EQU", "=", "HEX", "DFB", "DB", "DA", "DW", "DDB",
@@ -979,7 +984,10 @@ void Assembler::do_pseudo(const SrcLine *ln)
         return;
     }
     if (icmp(op, "REL") == 0) {
-        /* absolute assembler: accept, start PC at 0 if no ORG yet */
+        /* absolute assembler: accept, start PC at 0 if no ORG yet.
+           Undefined labels are treated as EXT (= 0) so relocatable
+           modules can assemble without a linker. */
+        rel = true;
         if (!org_set) {
             pc = 0;
             org = 0;
@@ -1080,6 +1088,7 @@ void Assembler::do_instruction(const SrcLine *ln)
         ctx.mx = mx;
         ctx.algebraic = opt.algebraic;
         ctx.case_sensitive = case_sensitive;
+        ctx.rel = rel;
         ctx.pass = pass;
         ctx.asm_ptr = this;
         ctx.lookup = lookup_cb;
@@ -1289,13 +1298,13 @@ void Assembler::do_range(std::vector<SrcLine> &ls, int lo, int hi)
             end_list();
             continue;
         }
-        if (is_pseudo(op)) do_pseudo(ln);
+        if (is_pseudo_op(op)) do_pseudo(ln);
         else do_instruction(ln);
         end_list();
     }
 }
 
-void Assembler::run_pass(int p)
+void Assembler::begin_pass(int p)
 {
     pass = p;
     pc = 0x8000;
@@ -1304,6 +1313,7 @@ void Assembler::run_pass(int p)
     mx = opt.start_mx;
     xc = opt.start_xc;
     dummy = false;
+    rel = false;
     org_resume = 0;
     org_saved = false;
     emitting = true;
@@ -1313,20 +1323,247 @@ void Assembler::run_pass(int p)
     last_global_scope = 0;
     def_order = 0;
     oz_id = 1;
+    case_sensitive = opt.case_sensitive;
     if (p == 1) syms.clear();
     if (p == 2) {
         obj.clear();
         listing.clear();
     }
+}
+
+void Assembler::run_pass(int p)
+{
+    begin_pass(p);
     do_range(*lines, 0, static_cast<int>(lines->size()));
 }
 
+static SrcLine line_from(const PInstr &in)
+{
+    SrcLine ln;
+    ln.file = in.file;
+    ln.lineno = in.lineno;
+    ln.raw = in.source;
+    ln.label = in.label;
+    ln.opcode = in.opcode;
+    ln.operand = in.operand;
+    ln.has_label = !in.label.empty();
+    return ln;
+}
+
+static void sub_at_str(std::string &s, char at)
+{
+    for (char &c : s)
+        if (c == '@') c = at;
+}
+
+/* `@` in a LUP body is the per-iteration letter. File name stays put. */
+static PInstr sub_at_pinstr(const PInstr &src, char at)
+{
+    PInstr in = src;
+    sub_at_str(in.label, at);
+    sub_at_str(in.opcode, at);
+    sub_at_str(in.operand, at);
+    sub_at_str(in.source, at);
+    sub_at_str(in.expr, at);
+    sub_at_str(in.expr2, at);
+    sub_at_str(in.cname, at);
+    return in;
+}
+
+static int find_endlup(const std::vector<PInstr> &ins, int start, int hi)
+{
+    int nest = 1;
+    int n = hi;
+    if (n > static_cast<int>(ins.size())) n = static_cast<int>(ins.size());
+    for (int i = start; i < n; i++) {
+        if (ins[i].op == POp::Lup) nest++;
+        else if (ins[i].op == POp::Endlup) {
+            if (--nest == 0) return i;
+        }
+    }
+    return n;
+}
+
+void Assembler::exec_asm_line(SrcLine *ln)
+{
+    const auto &op = ln->opcode;
+    if (ln->has_label && icmp(op, "EQU") != 0 && op != "=" &&
+        icmp(op, "GEQU") != 0 && icmp(op, "GEQ") != 0)
+        define_label(ln, ln->label, pc, false);
+    if (op.empty()) {
+        end_list();
+        return;
+    }
+    if (is_pseudo_op(op)) do_pseudo(ln);
+    else do_instruction(ln);
+    end_list();
+}
+
+void Assembler::exec_pcode(std::vector<PInstr> &ins, int lo, int hi)
+{
+    if (hi > static_cast<int>(ins.size())) hi = static_cast<int>(ins.size());
+    for (int i = lo; i < hi && !ended; i++) {
+        PInstr &in = ins[i];
+        SrcLine ln = line_from(in);
+        begin_list(&ln);
+        switch (in.op) {
+        case POp::Nop:
+            /* Macro names and full-line comments are not symbols.
+               A label on PUT/USE or a flattened no-op still is. */
+            if (!ln.label.empty() && ln.label[0] != '*' && ln.label[0] != ';' &&
+                icmp(ln.opcode, "MAC") != 0 && icmp(ln.opcode, "EOM") != 0 &&
+                icmp(ln.opcode, "<<<") != 0)
+                define_label(&ln, ln.label, pc, false);
+            end_list();
+            break;
+        case POp::End:
+            if (!ln.label.empty()) define_label(&ln, ln.label, pc, false);
+            ended = true;
+            end_list();
+            break;
+        case POp::If: {
+            bool parent = emitting;
+            bool take = false;
+            if (icmp(ln.opcode, "IF") == 0 && ln.operand.size() >= 2 &&
+                (ln.operand[1] == ',' || ln.operand[1] == '=')) {
+                const char *rhs = ln.operand.c_str() + 2;
+                while (*rhs == ' ' || *rhs == '\t') rhs++;
+                take = (*rhs == ln.operand[0]);
+            } else {
+                int64_t v = 0;
+                eval_on(&ln, ln.operand.empty() ? "1" : ln.operand, v);
+                take = v != 0;
+            }
+            if (csp >= kMaxCond - 1) {
+                err(&ln, "conditional nest too deep");
+                end_list();
+                break;
+            }
+            csp++;
+            cond[csp] = parent;
+            cond_taken[csp] = take;
+            cond_else[csp] = 0;
+            emitting = parent && take;
+            end_list();
+            break;
+        }
+        case POp::Else:
+            if (csp <= 0) err(&ln, "ELSE without DO/IF");
+            else {
+                bool parent = cond[csp];
+                cond_else[csp] = 1;
+                emitting = parent && !cond_taken[csp];
+            }
+            end_list();
+            break;
+        case POp::Endif:
+            if (csp <= 0) err(&ln, "FIN without DO/IF");
+            else {
+                csp--;
+                bool em = true;
+                for (int k = 1; k <= csp; k++) {
+                    bool on = cond_taken[k];
+                    if (cond_else[k]) on = !cond_taken[k];
+                    em = cond[k] && on;
+                }
+                if (csp == 0) em = true;
+                emitting = em;
+            }
+            end_list();
+            break;
+        case POp::Lup: {
+            int body_end = find_endlup(ins, i + 1, hi);
+            int64_t n = 0;
+            eval_on(&ln, ln.operand, n);
+            if (n < 0) n = 0;
+            if (n > 0x8000) n = 0x8000;
+            end_list();
+            for (int64_t k = 0; k < n && !ended; k++) {
+                char at = (k < 26) ? static_cast<char>('Z' - k) : 'A';
+                std::vector<PInstr> iter;
+                iter.reserve(static_cast<size_t>(body_end - (i + 1)));
+                for (int j = i + 1; j < body_end; j++)
+                    iter.push_back(sub_at_pinstr(ins[j], at));
+                exec_pcode(iter, 0, static_cast<int>(iter.size()));
+            }
+            i = body_end;
+            break;
+        }
+        case POp::Endlup:
+            end_list();
+            break;
+        case POp::MxPart:
+            if (!ln.label.empty()) define_label(&ln, ln.label, pc, false);
+            mx = (mx & ~in.i0) | (in.i1 & in.i0);
+            end_list();
+            break;
+        case POp::Cpu:
+            if (!ln.label.empty()) define_label(&ln, ln.label, pc, false);
+            if (in.i0 < CPU_6502) xc = CPU_6502;
+            else if (in.i0 > CPU_65816) xc = CPU_65816;
+            else xc = in.i0;
+            end_list();
+            break;
+        case POp::Bytes:
+            if (!ln.label.empty()) define_label(&ln, ln.label, pc, false);
+            for (uint8_t b : in.raw) emit_byte(b);
+            end_list();
+            break;
+        case POp::Align: {
+            if (!ln.label.empty()) define_label(&ln, ln.label, pc, false);
+            int64_t n = 0, fill = 0;
+            eval_on(&ln, ln.operand.empty() ? "1" : ln.operand, n);
+            if (!in.expr2.empty()) eval_on(&ln, in.expr2, fill);
+            if (n > 1) {
+                if (n > 0x10000) n = 0x10000;
+                uint32_t a = static_cast<uint32_t>(n);
+                uint32_t rem = a ? pc % a : 0;
+                if (rem) {
+                    uint32_t pad = a - rem;
+                    for (uint32_t k = 0; k < pad; k++)
+                        emit_byte(static_cast<uint8_t>(fill));
+                }
+            }
+            end_list();
+            break;
+        }
+        default:
+            exec_asm_line(&ln);
+            break;
+        }
+    }
+}
+
+Result assemble_pcode(PCode &code, const Options &opt)
+{
+    Result r;
+    r.filetype = 0x06;
+    r.errors = code.errors;
+    r.syntax = syntax_name(code.syntax);
+    Assembler a;
+    a.opt = opt;
+    a.out = &r;
+    a.begin_pass(1);
+    a.exec_pcode(code.ins, 0, static_cast<int>(code.ins.size()));
+    a.begin_pass(2);
+    a.exec_pcode(code.ins, 0, static_cast<int>(code.ins.size()));
+    r.bytes = std::move(a.obj);
+    r.org = a.org_set ? a.org : 0x8000;
+    r.filetype = a.filetype;
+    r.dsk_name = a.dsk_name;
+    r.listing = format_listing(code.name, r, a.listing, r.syntax);
+    if (opt.dump_pcode) r.pcode = format_pcode(code);
+    return r;
+}
+
 std::string format_listing(const std::string &name, const Result &r,
-                           const std::vector<ListLine> &lines)
+                           const std::vector<ListLine> &lines,
+                           const std::string &syntax)
 {
     std::ostringstream o;
-    o << "; merlin  " << name
-      << "  org=$" << std::uppercase << std::hex;
+    o << "; merlin  " << name;
+    if (!syntax.empty()) o << "  syntax=" << syntax;
+    o << "  org=$" << std::uppercase << std::hex;
     o.width(6); o.fill('0');
     o << r.org << std::dec
       << "  bytes=" << r.bytes.size()
@@ -1368,29 +1605,18 @@ std::string format_listing(const std::string &name, const Result &r,
 
 Result assemble_lines(std::vector<SrcLine> &lines, const Options &opt)
 {
-    Result r;
-    r.filetype = 0x06;
-    Assembler a;
-    a.opt = opt;
-    a.out = &r;
-    a.lines = &lines;
-    a.case_sensitive = opt.case_sensitive;
-    a.emitting = true;
-    a.collect_macros();
-    a.run_pass(1);
-    a.run_pass(2);
-    r.bytes = std::move(a.obj);
-    r.org = a.org_set ? a.org : 0x8000;
-    r.filetype = a.filetype;
-    r.dsk_name = a.dsk_name;
-    r.listing = format_listing(lines.empty() ? std::string() : lines[0].file, r, a.listing);
-    return r;
+    PCode code;
+    code.syntax = Syntax::Merlin;
+    code.name = lines.empty() ? std::string() : lines[0].file;
+    merlin_compile(lines, opt, code);
+    return assemble_pcode(code, opt);
 }
 
 Result assemble_string(const std::string &src, const std::string &name, const Options &opt)
 {
-    auto lines = parse_source(src, name.empty() ? "<src>" : name);
-    return assemble_lines(lines, opt);
+    std::string nm = name.empty() ? "<src>" : name;
+    PCode code = compile_source(src, nm, opt);
+    return assemble_pcode(code, opt);
 }
 
 Result assemble_file(const std::string &path, const Options &opt)

@@ -49,10 +49,46 @@ usage: merlin [options] file.s [file2.s ...]
   -I DIR           add PUT/USE search directory
   --case-sensitive
   --algebraic      evaluate all expressions with operator precedence (FARMS bit)
+  --syntax NAME    merlin, merlin32, orca, lisa, ca65, or auto
+  --dump-pcode     write <file>.pcode beside the source
 ```
 
 Absolute BIN/SYS is the current output. Relocatable OMF / Linker.GS is not
 done yet.
+
+## Syntaxes
+
+Each source file is identified, lowered to one 65816 pcode stream, and then
+assembled. The object stays absolute BIN. How identification works, how
+each dialect's pseudo-ops are rewritten, and the limits of that lowering
+are in `doc/SYNTAX.md`. Merlin 16+ itself is `doc/DIALECT.md`.
+
+| Dialect | `--syntax` | How a file is recognized |
+| --- | --- | --- |
+| Merlin 16+ | `merlin` | Default when the text is ambiguous. Native high-bit / `$A0` / `$8D` files. |
+| Merlin 32 | `merlin32` | Same language. `Assembler: Merlin 32`, or `GEQU` / `GEQ`. |
+| ORCA/M | `orca` | `longa`, `anop`, `mcopy`, `dc i1'...'`. |
+| LISA | `lisa` | `.OR`, `.EQ`, `.DA`, `.HS`, `.EP`. |
+| ca65 | `ca65` | `.org`, `.byte`, `.p816`, `.macro`. |
+
+A marker in the first 40 lines wins: `syntax: ca65` or `Assembler: Merlin 32`.
+`--syntax auto` (or leaving it off) identifies each file. An unknown name is
+an error.
+
+Merlin expressions stay left to right (`1+2*3` is 9). ca65 and ORCA/M
+expressions are rewritten into fully parenthesized Merlin form, so the same
+text is 7. LISA stays left to right. A LISA `EPZ` name is forced to direct
+page on later instructions.
+
+Macros expand while the source is lowered, so Merlin `]1` text and `LUP`'s
+`@` letter still work when the assembler runs the pcode. `PUT` and `USE`
+are pulled in at that step, including when they sit in a false conditional.
+ca65 symbols are case-sensitive. ORCA/M `CASE ON` is too. Segments are
+flattened into the absolute image.
+
+ORCA/M `AIF` / `SETA` / `LCLA` and ca65 anonymous `:` labels are rejected.
+`--dump-pcode` writes the lowered stream; the library itself only fills
+`Result::pcode` when asked.
 
 ## References
 

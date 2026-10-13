@@ -6,7 +6,10 @@ This assembler implements **Merlin 16+** (Glen Bredon, Roger Wagner Publishing,
 - `doc/manuals/Merlin_816_Macro_Assembler_Manual.pdf` — base syntax
 - `doc/manuals/Merlin_16_Supplementary_Manual.pdf` — 16+ additions
 
-No other assembler’s extensions are in scope.
+Merlin 16+ is the native language and the form the encoder consumes.
+ORCA/M, LISA, Merlin 32, and ca65 sources are lowered to that form.
+Identification, pcode, per-dialect pseudo-ops, and limitations are in
+`doc/SYNTAX.md`.
 
 ## Line format
 

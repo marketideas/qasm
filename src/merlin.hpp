@@ -16,6 +16,8 @@ struct Options {
     bool write_listing = true;
     bool write_object = true;
     std::vector<std::string> include_dirs; /* PUT/USE search path (-I) */
+    std::string syntax; /* empty = identify. merlin, merlin32, orca, lisa, ca65 */
+    bool dump_pcode = false;
 };
 
 struct Error {
@@ -30,6 +32,8 @@ struct Result {
     uint16_t filetype = 0x06;
     std::string dsk_name;
     std::string listing;
+    std::string syntax; /* dialect that was lowered to pcode */
+    std::string pcode;  /* filled when Options::dump_pcode is set */
     std::vector<Error> errors;
     bool ok() const { return errors.empty(); }
 };
