@@ -134,7 +134,7 @@ struct OC {
         out->ins.push_back(std::move(in));
     }
 
-    std::string alg(const std::string &s) const { return translate_algebraic(s); }
+    std::string alg(const std::string &s) const { return translate_algebraic(s, true); }
 
     std::string alg_list(const std::string &s) const
     {

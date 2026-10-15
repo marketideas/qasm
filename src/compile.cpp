@@ -415,6 +415,7 @@ struct E {
     const char *s = "";
     int i = 0;
     bool ok = true;
+    bool tilde_name = false;
 };
 
 static void eskip(E &e)
@@ -510,8 +511,11 @@ static std::string e_primary(E &e)
         else e.ok = false;
         return std::string(1, sel) + inner;
     }
+    bool tilde_name = c == '~' && e.tilde_name &&
+                      (std::isalpha(static_cast<unsigned char>(e.s[e.i + 1])) ||
+                       e.s[e.i + 1] == '_');
     if (std::isalpha(static_cast<unsigned char>(c)) || c == '_' || c == '@' ||
-        c == ']' || c == ':') {
+        c == ']' || c == ':' || tilde_name) {
         int start = e.i++;
         while (e.s[e.i]) {
             unsigned char d = static_cast<unsigned char>(e.s[e.i]);
@@ -537,9 +541,13 @@ static std::string e_unary(E &e)
         return "-" + v;
     }
     if (e.s[e.i] == '~') {
-        e.i++;
-        std::string v = e_unary(e);
-        return "{" + v + "!-1}";
+        unsigned char n = static_cast<unsigned char>(e.s[e.i + 1]);
+        /* ORCA/M local labels are `~name`. A tilde before anything else is NOT. */
+        if (!(e.tilde_name && (std::isalpha(n) || n == '_'))) {
+            e.i++;
+            std::string v = e_unary(e);
+            return "{" + v + "!-1}";
+        }
     }
     char sel = 0;
     if (e.s[e.i] == '<' || e.s[e.i] == '>' || e.s[e.i] == '^') {
@@ -721,12 +729,13 @@ static std::string e_lor(E &e)
     return v;
 }
 
-std::string translate_algebraic(const std::string &expr)
+std::string translate_algebraic(const std::string &expr, bool tilde_name)
 {
     std::string t = trim_copy(expr);
     if (t.empty()) return t;
     E e;
     e.s = t.c_str();
+    e.tilde_name = tilde_name;
     std::string r = e_lor(e);
     eskip(e);
     if (!e.ok || e.s[e.i]) return t;

@@ -1,5 +1,9 @@
 /merlin
 /test_merlin
+/build/
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
 *.o
 *.bin
 *.lst

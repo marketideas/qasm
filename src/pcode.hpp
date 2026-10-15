@@ -83,7 +83,8 @@ Syntax syntax_from_name(const std::string &name, bool &ok);
 
 Syntax identify_syntax(const std::string &src);
 
-std::string translate_algebraic(const std::string &expr);
+/* tilde_name: ORCA/M `~label` stays a symbol. Otherwise `~x` is bitwise NOT. */
+std::string translate_algebraic(const std::string &expr, bool tilde_name = false);
 std::vector<std::string> split_args(const std::string &s, char sep = ',');
 std::string form_operand(const OperandForm &f);
 void annotate_inst(PInstr &in);

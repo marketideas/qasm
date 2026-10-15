@@ -208,7 +208,7 @@ unwrapped. On a parse failure the original text is kept.
 | `a<>b` | `{a#b}` (not equal) |
 | `a<=b` | `{{a<b}.{a=b}}` |
 | `a>=b` | `{{a>b}.{a=b}}` |
-| `~x` | `{x!-1}` |
+| `~x` | `{x!-1}` when `~` is not an ORCA/M local label |
 | `<x`, `.lobyte(x)` | low byte |
 | `>x`, `.hibyte(x)` | high byte |
 | `^x`, `.bankbyte(x)` | bank byte |
@@ -296,7 +296,7 @@ the opcode column, so `longa off` at column 0 works. `start anop` stays a
 label plus `ANOP`, because both words are directives and the line is not
 shifted.
 
-Expressions in operands are algebraic, as above.
+Expressions in operands are algebraic, as above. A `~` followed by a name is a local label (`~loop`) and is scoped between global labels, the same way as a Merlin `:label`. A `~` before a number or parenthesis is bitwise NOT.
 
 | Directive | Treatment |
 | --- | --- |
@@ -359,6 +359,7 @@ Expressions stay left to right. There is no macro language.
 | `.BS` `.BLK` `.DFS` `.DS` | Merlin `DS`. |
 | `.IF` / `.EL` or `.ELSE` / `.FI` or `.FIN` | Merlin `DO` / `ELSE` / `FIN`. The test is left to right. |
 | `.EN` `.END` | Stop assembly. |
+| `MX` `XC` | Merlin `MX` and `XC`. LISA has no register-width directive; these set the immediate size so a 65816 immediate matches the other syntaxes. |
 | `.STR` `.DCI` `.INV` | The same Merlin string directives. |
 | anything else with an opcode | Instruction. A leading `/` on the operand becomes `#>`, the high-byte immediate. |
 

@@ -106,7 +106,10 @@ static int64_t parse_atom(P &p)
         p.i += 2;
         return p.ctx->mx;
     }
-    if (std::isalpha(c) || c == '_' || c == ']' || c == ':' || c == '@' || c == '.') {
+    bool tilde_name = c == '~' && (std::isalpha(static_cast<unsigned char>(p.s[p.i + 1])) ||
+                                   p.s[p.i + 1] == '_');
+    if (std::isalpha(c) || c == '_' || c == ']' || c == ':' || c == '@' || c == '.' ||
+        tilde_name) {
         std::string name;
         while (p.s[p.i] && !std::strchr("+-*/&!.<=>#{} \t,;", p.s[p.i]))
             name.push_back(p.s[p.i++]);

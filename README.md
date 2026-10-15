@@ -27,14 +27,19 @@ Language notes: `doc/DIALECT.md`.
 
 ## Build
 
-C++17, `g++`. Independent source files assemble in parallel.
+C++17, `g++`. The Makefile drives CMake, and the binaries land in `build/`.
+Independent source files assemble in parallel.
 
 ```
 make
 make test
-./merlin test/fixtures/hello.s
-./merlin a.s b.s c.s          # parallel; each gets its own .bin and .lst
+make fixtures
+./build/merlin test/fixtures/hello.s
+./build/merlin a.s b.s c.s    # parallel; each gets its own .bin and .lst
 ```
+
+`make clean` removes `build/` and the `.bin`, `.lst`, and `.pcode` files
+the test targets write into `test/`.
 
 Every assemble writes a listing next to the source (`foo.s` → `foo.lst`) with
 PC, object bytes, and the original source line. Override with `-l`, or disable

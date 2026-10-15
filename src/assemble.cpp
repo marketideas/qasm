@@ -160,11 +160,17 @@ int Assembler::lookup_cb(void *p, const std::string &name, int64_t *val, bool *k
     return static_cast<Assembler *>(p)->lookup(name, val, known);
 }
 
+static bool name_is_scoped(const std::string &name)
+{
+    /* Merlin `:label` and ORCA/M `~label` are local to the current global. */
+    return !name.empty() && (name[0] == ':' || name[0] == '~');
+}
+
 int Assembler::lookup(const std::string &name, int64_t *val, bool *known)
 {
     *known = false;
     *val = 0;
-    int colon_scope = name.size() && name[0] == ':' ? last_global_scope : -1;
+    int colon_scope = name_is_scoped(name) ? last_global_scope : -1;
     int best = -1;
     for (int i = 0; i < static_cast<int>(syms.size()); i++) {
         if (namecmp(syms[i].name, name) != 0) continue;
@@ -201,7 +207,7 @@ void Assembler::define_label(const SrcLine *ln, const std::string &name, int64_t
 {
     if (name.empty()) return;
     def_order++;
-    if (name[0] != ']' && name[0] != ':') {
+    if (name[0] != ']' && !name_is_scoped(name)) {
         scope_id++;
         last_global_scope = scope_id;
     }
@@ -237,7 +243,7 @@ void Assembler::define_label(const SrcLine *ln, const std::string &name, int64_t
         syms.push_back({});
         s = &syms.back();
         s->name = name;
-        s->is_colon = name[0] == ':';
+        s->is_colon = name_is_scoped(name);
         s->scope = last_global_scope;
     }
     s->value = val;

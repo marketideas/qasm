@@ -138,6 +138,10 @@ void lisa_compile(const std::string &src, const std::string &name, const Options
             push(code, ln, POp::Else, "ELSE", {}, false);
         } else if (op == "FI" || op == "FIN") {
             push(code, ln, POp::Endif, "FIN", {}, false);
+        } else if (op == "MX") {
+            push(code, ln, POp::Mx, "MX", ln.operand, true);
+        } else if (op == "XC") {
+            push(code, ln, POp::Xc, "XC", ln.operand, true);
         } else if (op == "EN" || op == "END") {
             push(code, ln, POp::End, "END", {}, true);
         } else if (op == "STR" || op == "DCI" || op == "INV") {

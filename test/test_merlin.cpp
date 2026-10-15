@@ -668,6 +668,42 @@ static void test_syntax_cross(void)
         " bump $10\n"
         " end\n",
         inc, sizeof(inc), "orca-mac", "orca");
+
+    const uint8_t oloc[] = {0xEA, 0xEA, 0x80, 0xFD, 0xAD, 0x01, 0x80, 0xFE};
+    expect_syn(
+        " org $8000\n"
+        " longa off\n"
+        "glob entry\n"
+        " nop\n"
+        "~loop anop\n"
+        " nop\n"
+        " bra ~loop\n"
+        " lda ~loop\n"
+        " dc i1'~1'\n"
+        " end\n",
+        oloc, sizeof(oloc), "orca-local", "orca");
+
+    /* The lda before the second global must keep the first ~loop. */
+    const uint8_t oscope[] = {0xEA, 0xAD, 0x00, 0x80, 0xEA, 0xAD, 0x04, 0x80};
+    expect_syn(
+        " org $8000\n"
+        " longa off\n"
+        "one entry\n"
+        "~loop anop\n"
+        " nop\n"
+        " lda ~loop\n"
+        "two entry\n"
+        "~loop anop\n"
+        " nop\n"
+        " lda ~loop\n"
+        " end\n",
+        oscope, sizeof(oscope), "orca-local-scope", "orca");
+
+    const uint8_t cnot[] = {0xFE};
+    expect_syn(
+        ".org $8000\n"
+        ".byte ~1\n",
+        cnot, sizeof(cnot), "ca65-not", "ca65");
 }
 
 static void test_pcode_dump(void)
