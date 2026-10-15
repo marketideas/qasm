@@ -1,6 +1,6 @@
 # Merlin 16+ dialect
 
-This assembler implements **Merlin 16+** (Glen Bredon, Roger Wagner Publishing,
+QuickAsm implements **Merlin 16+** (Glen Bredon, Roger Wagner Publishing,
 1988–89). The language contract is:
 
 - `doc/manuals/Merlin_816_Macro_Assembler_Manual.pdf` — base syntax

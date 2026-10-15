@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace merlin {
+namespace qasm {
 
 enum class Syntax {
     Merlin = 0,
@@ -98,4 +98,4 @@ void ca65_compile(const std::string &src, const std::string &name, const Options
 
 Result assemble_pcode(PCode &code, const Options &opt);
 
-} // namespace merlin
+} // namespace qasm

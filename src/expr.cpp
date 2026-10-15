@@ -3,7 +3,7 @@
 #include <cctype>
 #include <cstring>
 
-namespace merlin {
+namespace qasm {
 
 struct P {
     const char *s = "";
@@ -274,4 +274,4 @@ bool eval_expr(ExprCtx &ctx, const std::string &expr, int64_t &out, std::string 
     return true;
 }
 
-} // namespace merlin
+} // namespace qasm

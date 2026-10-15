@@ -5,7 +5,7 @@
 #include <cstring>
 #include <sstream>
 
-namespace merlin {
+namespace qasm {
 
 const char *syntax_name(Syntax s)
 {
@@ -779,4 +779,4 @@ PCode compile_source(const std::string &src, const std::string &name, const Opti
     return code;
 }
 
-} // namespace merlin
+} // namespace qasm

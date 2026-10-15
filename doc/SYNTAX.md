@@ -50,7 +50,7 @@ normal label is left at the value from pass 1. A Merlin variable (`]N` or
 Under `REL`, an unknown label is 0.
 
 The listing header records the dialect (`syntax=merlin`, and so on).
-`--dump-pcode` asks the library to fill `Result::pcode`. The `merlin`
+`--dump-pcode` asks the library to fill `Result::pcode`. The `qasm`
 command writes that text to `<file>.pcode`. The library does not write the
 file itself.
 

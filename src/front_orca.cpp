@@ -4,7 +4,7 @@
 #include <cctype>
 #include <map>
 
-namespace merlin {
+namespace qasm {
 
 static bool orca_dir(const std::string &t)
 {
@@ -458,4 +458,4 @@ void orca_compile(const std::string &src, const std::string &name, const Options
     c.compile_all(lines);
 }
 
-} // namespace merlin
+} // namespace qasm

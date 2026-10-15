@@ -1,12 +1,12 @@
 #pragma once
 
-#include "merlin.hpp"
+#include "qasm.hpp"
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-namespace merlin {
+namespace qasm {
 
 constexpr int kMaxCond = 16;
 
@@ -143,4 +143,4 @@ std::string format_listing(const std::string &name, const Result &r,
                            const std::vector<ListLine> &lines,
                            const std::string &syntax = {});
 
-} // namespace merlin
+} // namespace qasm

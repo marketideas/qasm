@@ -3,7 +3,7 @@
 #include <cctype>
 #include <map>
 
-namespace merlin {
+namespace qasm {
 
 struct Mac {
     std::string name;
@@ -336,4 +336,4 @@ void merlin_compile(const std::vector<SrcLine> &lines, const Options &opt, PCode
     c.compile_range(lines, 0, static_cast<int>(lines.size()));
 }
 
-} // namespace merlin
+} // namespace qasm

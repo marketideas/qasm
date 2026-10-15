@@ -1,4 +1,4 @@
-#include "merlin.hpp"
+#include "qasm.hpp"
 #include "pcode.hpp"
 #include <cstdint>
 #include <cstring>
@@ -13,8 +13,8 @@ static int fails = 0;
 
 static void expect_ok(const char *src, const uint8_t *want, size_t n, const char *tag)
 {
-    merlin::Options opt;
-    merlin::Result r = merlin::assemble_string(src, tag, opt);
+    qasm::Options opt;
+    qasm::Result r = qasm::assemble_string(src, tag, opt);
     if (!r.ok()) {
         fprintf(stderr, "FAIL %s: assemble errors:\n", tag);
         for (const auto &e : r.errors)
@@ -394,8 +394,8 @@ static void test_date(void)
         "          ORG   $8000\n"
         "          DATE  1\n"
         "          DATE  5\n";
-    merlin::Options opt;
-    merlin::Result r = merlin::assemble_string(src, "date", opt);
+    qasm::Options opt;
+    qasm::Result r = qasm::assemble_string(src, "date", opt);
     if (!r.ok() || r.bytes.size() != 18) {
         fprintf(stderr, "FAIL date: len %zu errors %zu\n", r.bytes.size(), r.errors.size());
         fails++;
@@ -531,8 +531,8 @@ static void test_usr_width(void)
 static void expect_syn(const char *src, const uint8_t *want, size_t n,
                        const char *tag, const char *syn)
 {
-    merlin::Options opt;
-    merlin::Result r = merlin::assemble_string(src, tag, opt);
+    qasm::Options opt;
+    qasm::Result r = qasm::assemble_string(src, tag, opt);
     if (!r.ok()) {
         fprintf(stderr, "FAIL %s: assemble errors:\n", tag);
         for (const auto &e : r.errors)
@@ -713,9 +713,9 @@ static void test_pcode_dump(void)
         "BELL          EQU   $FBDD\n"
         "START         JSR   BELL\n"
         "              RTS\n";
-    merlin::Options opt;
+    qasm::Options opt;
     opt.dump_pcode = true;
-    merlin::Result r = merlin::assemble_string(src, "hello", opt);
+    qasm::Result r = qasm::assemble_string(src, "hello", opt);
     if (!r.ok() || r.syntax != "merlin" ||
         r.pcode.find("syntax=merlin") == std::string::npos ||
         r.pcode.find("P_ORG") == std::string::npos ||
@@ -729,7 +729,7 @@ static void test_pcode_dump(void)
         "* Assembler: Merlin 32\n"
         "          ORG   $8000\n"
         "          RTS\n";
-    merlin::Result r2 = merlin::assemble_string(m32, "m32", opt);
+    qasm::Result r2 = qasm::assemble_string(m32, "m32", opt);
     if (!r2.ok() || r2.syntax != "merlin32" || r2.bytes.size() != 1 || r2.bytes[0] != 0x60) {
         fprintf(stderr, "FAIL merlin32 marker syntax=%s bytes=%zu errors=%zu\n",
                 r2.syntax.c_str(), r2.bytes.size(), r2.errors.size());
@@ -738,23 +738,23 @@ static void test_pcode_dump(void)
         fails++;
     }
 
-    if (merlin::identify_syntax(" ORG $8000\n JSR $FBDD\n RTS\n") != merlin::Syntax::Merlin) {
+    if (qasm::identify_syntax(" ORG $8000\n JSR $FBDD\n RTS\n") != qasm::Syntax::Merlin) {
         fprintf(stderr, "FAIL identify plain merlin\n");
         fails++;
     }
 
-    merlin::Options bad;
+    qasm::Options bad;
     bad.syntax = "z80";
-    merlin::Result r3 = merlin::assemble_string(" RTS\n", "bad", bad);
+    qasm::Result r3 = qasm::assemble_string(" RTS\n", "bad", bad);
     if (r3.ok() || r3.errors.empty() ||
         r3.errors[0].msg.find("unknown syntax") == std::string::npos) {
         fprintf(stderr, "FAIL unknown syntax\n");
         fails++;
     }
 
-    merlin::Options au;
+    qasm::Options au;
     au.syntax = "auto";
-    merlin::Result r4 = merlin::assemble_string(
+    qasm::Result r4 = qasm::assemble_string(
         ".p816\n.org $8000\nbell = $fbdd\njsr bell\nrts\n", "auto-ca", au);
     if (!r4.ok() || r4.syntax != "ca65" || r4.bytes.size() != 4 ||
         r4.bytes[0] != 0x20 || r4.bytes[3] != 0x60) {

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iterator>
 
-namespace merlin {
+namespace qasm {
 
 int icmp(const char *a, const char *b)
 {
@@ -168,4 +168,4 @@ std::string resolve_include(const std::string &name0, const std::string &from_fi
     return {};
 }
 
-} // namespace merlin
+} // namespace qasm

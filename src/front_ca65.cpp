@@ -5,7 +5,7 @@
 #include <cstring>
 #include <map>
 
-namespace merlin {
+namespace qasm {
 
 struct CaLine {
     std::string label;
@@ -668,4 +668,4 @@ void ca65_compile(const std::string &src, const std::string &name, const Options
     c.compile_slice(lines, 0, static_cast<int>(lines.size()));
 }
 
-} // namespace merlin
+} // namespace qasm

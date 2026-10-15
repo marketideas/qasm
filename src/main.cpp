@@ -1,4 +1,4 @@
-#include "merlin.hpp"
+#include "qasm.hpp"
 #include "intern.hpp"
 
 #include <algorithm>
@@ -18,7 +18,7 @@ std::mutex io_mu;
 void usage()
 {
     std::cerr
-        << "usage: merlin [options] file.s [file2.s ...]\n"
+        << "usage: qasm [options] file.s [file2.s ...]\n"
         << "  -o FILE            object output (single file only)\n"
         << "  -l FILE            listing path (single file only; default: <src>.lst)\n"
         << "  --no-lst           do not write a listing\n"
@@ -45,16 +45,16 @@ bool write_file(const std::string &path, const void *data, size_t n, bool binary
 
 struct JobResult {
     std::string src;
-    merlin::Result r;
+    qasm::Result r;
     std::string bin_path;
     std::string lst_path;
 };
 
-JobResult assemble_one(std::string src, merlin::Options opt)
+JobResult assemble_one(std::string src, qasm::Options opt)
 {
     JobResult jr;
     jr.src = src;
-    jr.r = merlin::assemble_file(src, opt);
+    jr.r = qasm::assemble_file(src, opt);
 
     {
         std::lock_guard<std::mutex> g(io_mu);
@@ -65,20 +65,20 @@ JobResult assemble_one(std::string src, merlin::Options opt)
 
     if (opt.write_object) {
         jr.bin_path = opt.output_path.empty()
-                          ? merlin::default_bin_path(src, jr.r)
+                          ? qasm::default_bin_path(src, jr.r)
                           : opt.output_path;
         if (!write_file(jr.bin_path, jr.r.bytes.data(), jr.r.bytes.size(), true))
             jr.r.errors.push_back({src, 0, "cannot write object"});
     }
     if (opt.write_listing) {
         jr.lst_path = opt.listing_path.empty()
-                          ? merlin::default_lst_path(src)
+                          ? qasm::default_lst_path(src)
                           : opt.listing_path;
         if (!write_file(jr.lst_path, jr.r.listing.data(), jr.r.listing.size(), false))
             jr.r.errors.push_back({src, 0, "cannot write listing"});
     }
     if (opt.dump_pcode) {
-        std::string ppath = merlin::replace_ext(src, ".pcode");
+        std::string ppath = qasm::replace_ext(src, ".pcode");
         if (!write_file(ppath, jr.r.pcode.data(), jr.r.pcode.size(), false))
             jr.r.errors.push_back({src, 0, "cannot write pcode"});
     }
@@ -102,7 +102,7 @@ JobResult assemble_one(std::string src, merlin::Options opt)
 
 int main(int argc, char **argv)
 {
-    merlin::Options opt;
+    qasm::Options opt;
     std::vector<std::string> files;
     unsigned jobs = std::thread::hardware_concurrency();
     if (jobs == 0) jobs = 1;
@@ -157,18 +157,18 @@ int main(int argc, char **argv)
         std::vector<std::string> inc_names;
         for (const auto &src : files) {
             std::string err;
-            std::string text = merlin::read_file(src, &err);
+            std::string text = qasm::read_file(src, &err);
             if (text.empty() && !err.empty()) continue;
-            for (const auto &ln : merlin::parse_source(text, src)) {
-                if (merlin::icmp(ln.opcode, "PUT") != 0 &&
-                    merlin::icmp(ln.opcode, "USE") != 0)
+            for (const auto &ln : qasm::parse_source(text, src)) {
+                if (qasm::icmp(ln.opcode, "PUT") != 0 &&
+                    qasm::icmp(ln.opcode, "USE") != 0)
                     continue;
-                std::string name = merlin::strip_quotes(ln.operand);
+                std::string name = qasm::strip_quotes(ln.operand);
                 if (name.empty()) continue;
                 inc_names.push_back(name);
                 inc_names.push_back(basename(name));
                 std::string resolved =
-                    merlin::resolve_include(name, src, opt.include_dirs);
+                    qasm::resolve_include(name, src, opt.include_dirs);
                 if (!resolved.empty()) {
                     inc_names.push_back(resolved);
                     inc_names.push_back(basename(resolved));
@@ -178,8 +178,8 @@ int main(int argc, char **argv)
         auto is_include = [&](const std::string &f) {
             std::string b = basename(f);
             for (const auto &n : inc_names) {
-                if (merlin::icmp(f, n) == 0 || merlin::icmp(b, n) == 0 ||
-                    merlin::icmp(b, basename(n)) == 0)
+                if (qasm::icmp(f, n) == 0 || qasm::icmp(b, n) == 0 ||
+                    qasm::icmp(b, basename(n)) == 0)
                     return true;
             }
             return false;
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 
     auto launch = [&]() {
         while (futs.size() < jobs && next < files.size()) {
-            merlin::Options o = opt;
+            qasm::Options o = opt;
             futs.push_back(std::async(std::launch::async, assemble_one, files[next++], o));
         }
     };

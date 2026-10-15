@@ -5,7 +5,7 @@ CMAKE ?= cmake
 .PHONY: all test fixtures clean
 
 all: $(BUILD)/CMakeCache.txt
-	$(CMAKE) --build $(BUILD) --target merlin --parallel
+	$(CMAKE) --build $(BUILD) --target qasm --parallel
 
 $(BUILD)/CMakeCache.txt: CMakeLists.txt
 	$(CMAKE) -S . -B $(BUILD)

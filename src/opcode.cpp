@@ -3,7 +3,7 @@
 #include <array>
 #include <cstring>
 
-namespace merlin {
+namespace qasm {
 
 struct Enc {
     const char *name;
@@ -280,4 +280,4 @@ int imm_width_reg(const std::string &cname)
     return 0;
 }
 
-} // namespace merlin
+} // namespace qasm

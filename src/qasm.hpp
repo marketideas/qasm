@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace merlin {
+namespace qasm {
 
 struct Options {
     bool case_sensitive = false;
@@ -45,4 +45,4 @@ Result assemble_string(const std::string &src, const std::string &name,
 std::string default_bin_path(const std::string &src, const Result &r);
 std::string default_lst_path(const std::string &src);
 
-} // namespace merlin
+} // namespace qasm

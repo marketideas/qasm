@@ -10,7 +10,7 @@
 #include <map>
 #include <sstream>
 
-namespace merlin {
+namespace qasm {
 
 struct Sym {
     std::string name;
@@ -1567,7 +1567,7 @@ std::string format_listing(const std::string &name, const Result &r,
                            const std::string &syntax)
 {
     std::ostringstream o;
-    o << "; merlin  " << name;
+    o << "; qasm  " << name;
     if (!syntax.empty()) o << "  syntax=" << syntax;
     o << "  org=$" << std::uppercase << std::hex;
     o.width(6); o.fill('0');
@@ -1637,4 +1637,4 @@ Result assemble_file(const std::string &path, const Options &opt)
     return assemble_string(src, path, opt);
 }
 
-} // namespace merlin
+} // namespace qasm

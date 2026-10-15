@@ -2,7 +2,7 @@
 
 #include <cctype>
 
-namespace merlin {
+namespace qasm {
 
 static std::string upper_op(std::string s)
 {
@@ -154,4 +154,4 @@ void lisa_compile(const std::string &src, const std::string &name, const Options
     }
 }
 
-} // namespace merlin
+} // namespace qasm

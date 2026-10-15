@@ -3,7 +3,7 @@
 #include <cctype>
 #include <cstring>
 
-namespace merlin {
+namespace qasm {
 
 static bool is_ws(unsigned char c)
 {
@@ -295,4 +295,4 @@ OperandForm parse_operand_form(const std::string &operand)
     return form;
 }
 
-} // namespace merlin
+} // namespace qasm
