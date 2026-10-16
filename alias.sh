@@ -3,7 +3,7 @@
 export BASE=$PWD
 alias koin='repo koin'
 alias iigs='repo m65816 && cd fpga'
-alias qasm='repo m65816 && cd fpga'
+alias qasm='repo qasm'
 
 alias gss='git status'
 

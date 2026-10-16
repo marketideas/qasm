@@ -1,19 +1,50 @@
 # QuickAsm
 
-QuickAsm (`qasm`) is a host-side Merlin 16+ cross-assembler for the 65816,
-and for the 6502 and 65C02 through `XC`. The language is Glen Bredon’s
-Merlin 16+ (Roger Wagner Publishing, 1988–89), as documented in the 8/16
-user’s manual and the 16+ supplementary.
+QuickAsm (`qasm`) is a Linux cross-assembler for the 65816, and for the
+6502 and 65C02 through `XC`. It reads source in more than one syntax,
+lowers every file to one common pcode stream, and assembles from that
+stream. The object is an absolute binary.
 
-Edit source on the host, assemble it with `qasm`, and run the object on a
+The original QuickAsm repository is now
+[qasm-legacy](https://github.com/marketideas/qasm-legacy). This tree is
+the current assembler.
+
+The syntaxes are Merlin 16+, Merlin 32, ORCA/M, LISA, and ca65. Merlin
+16+ (Glen Bredon, Roger Wagner Publishing, 1988–89) is the language the
+encoder consumes. The other four are rewritten into the same pcode, so
+one program can be written in any of them and assemble to the same
+bytes. Identification, pseudo-op rewriting, and the limits of that
+lowering are in `doc/SYNTAX.md`. The Merlin 16+ language contract is
+`doc/DIALECT.md`.
+
+Edit source on Linux, assemble it with `qasm`, and run the object on a
 IIgs, an emulator, or the sibling `m65816` FPGA core.
 
-Each source file is identified, lowered to one 65816 pcode stream, and
-assembled in two passes. The object is an absolute binary. Merlin 16+ is
-the language the encoder consumes. Merlin 32, ORCA/M, LISA, and ca65 are
-lowered to that form. Identification, pseudo-op rewriting, and the limits
-of that lowering are in `doc/SYNTAX.md`. The Merlin 16+ language contract
-is `doc/DIALECT.md`.
+## From source to pcode to object
+
+```
+source file
+    → identify the syntax, or take --syntax
+    → dialect front end writes one pcode stream
+    → two passes over that pcode
+    → absolute BIN and a listing
+```
+
+A file is identified by `--syntax`, a marker in the first 40 lines,
+native high-bit Merlin text, or a score of distinctive tokens. A tie
+stays Merlin 16+. One `--syntax` name applies to every file on the
+command line. Omitting it identifies each file on its own, so one
+`qasm` command can assemble a Merlin file and a ca65 file together.
+
+The front end expands macros, and pulls in Merlin `PUT` and `USE`,
+ORCA/M `COPY`, `MCOPY`, and `APPEND`, and ca65 `.include`, while it
+writes the pcode. QuickAsm then walks that stream twice. Pass 1
+assigns addresses and defines symbols. Pass 2 emits the object bytes
+and the listing. `--dump-pcode` writes the stream beside the source
+as `<file>.pcode`.
+
+Several sources on one command line assemble independently, in
+parallel. Each file keeps its own syntax and its own object.
 
 Startup matches Merlin 16+ on a IIgs: 65816 opcodes, `MX %11` (M and X both
 8-bit), case-insensitive labels, program counter `$8000`, and filetype `$06`
@@ -22,7 +53,8 @@ real 16+ assembly. `TYP` changes the type printed with the object. The
 bytes stay a raw image.
 
 Native Merlin disk files are accepted as-is (bit 7 set, `$A0` column tabs,
-`$8D` line endings). Host `.s` files with spaces, tabs, and LF work too.
+`$8D` line endings). Linux text `.s` files with spaces, tabs, and LF work
+too.
 
 Labels of 26 characters or fewer, lines of 255 characters or fewer, a macro
 nest of 15, and a condition nest of 8 stay inside the Merlin 16+ limits for
@@ -33,9 +65,10 @@ Under `REL`, an unknown label is 0 and the object is still the raw image.
 
 ## Build
 
-C++17. CMake is the build. The Makefile configures `build/` when
-`CMakeLists.txt` is newer than the cache, then builds the requested target.
-Binaries are `build/qasm` and `build/test_qasm`.
+QuickAsm builds and runs on Linux. The code is C++17. CMake is the build.
+The Makefile configures `build/` when `CMakeLists.txt` is newer than the
+cache, then builds the requested target. Binaries are `build/qasm` and
+`build/test_qasm`.
 
 ```
 make
@@ -88,7 +121,7 @@ applies to every file on the command line. An unknown name is an error.
 `--dump-pcode` writes the lowered stream to `<file>.pcode`.
 
 The assemble line reports the byte count, origin, dialect, object path,
-listing path, and filetype. A clean Merlin file looks like:
+listing path, and filetype. A clean QuickAsm run looks like:
 
 ```
 test/fixtures/hello.s: assembled 4 bytes at $008000 syntax=merlin -> test/fixtures/hello.bin  lst test/fixtures/hello.lst (typ $06)
