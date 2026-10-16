@@ -1,0 +1,1 @@
+#   File:       P2000.make#   Target:     P2000#   Sources:    P2000.aii #   Created:    Thursday, October 5, 1989 11:36:58 AMP2000 ÄÄ P2000.make ¶		P2000.aii.obj	LinkIIGS  ¶		P2000.aii.obj ¶		-o P2000 -t $BB -at $0430P2000.aii.obj Ä P2000.make P2000.aii	AsmIIGS P2000.aii

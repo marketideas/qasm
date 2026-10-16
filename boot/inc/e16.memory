@@ -1,0 +1,10 @@
+* Memory Manager attribute bits used by the ProDOS 8 GS patch.
+* Passed with qasm -I. This is not a system include directory.
+attrlocked	equ	$8000
+attrfixed	equ	$4000
+attrlocked2	equ	$8000
+attrpage	equ	$0004
+attrnospec	equ	$0008
+attrnocross	equ	$0010
+attraddr	equ	$0002
+attrbank	equ	$0001

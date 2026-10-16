@@ -1,0 +1,1 @@
+## GetFFFromGood## Copies the file ROM.FF from Pasta:good.rom:############################################################################## duplicate pasta:good.rom:rom.FF : -y

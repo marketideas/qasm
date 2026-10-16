@@ -1,0 +1,1 @@
+#   File:       debug.make#   Target:     debug#   Sources:    debug.aii toolnames.aii dosnames.aii misc.aii history.aii#   Created:    Friday, March 8, 1989Objs =	debug.aii.obj ¶		toolnames.aii.obj ¶		dosnames.aii.obj ¶		history.aii.obj ¶		misc.aii.obj		debug Ä {Objs}		LinkIIGS {Objs} -o debug		.aii.obj Ä .aii		AsmIIGS -t -d ThisIsRam=2 -l {default}.aii

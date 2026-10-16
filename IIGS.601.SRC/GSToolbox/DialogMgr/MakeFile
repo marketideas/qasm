@@ -1,0 +1,1 @@
+### Dependancies for Dialog Managertool021					Ä		dialog.asm.obj	linkiigs    dialog.asm.obj						¶				-o tool021 -t TOL	if {AutoDuplicate} == 1		DuplicateIIGS -y -mac Tool021 :	End### Dependancies for componentsdialog.asm.obj 			Ä 		dialog.asm	ASMIIGS dialog.asm

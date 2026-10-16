@@ -1,0 +1,1 @@
+/**/#include <types.h>integer 	qFlag = 0;integer 	_toolErr;integer 	_argc;long 		_argv;integer 	_retCode;long 		qPath;long 		_cmdLine;long 		_1p;

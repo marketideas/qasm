@@ -1,0 +1,1 @@
+### Dependancies for IWtool029			Ä		ace.asm.obj	LINKIIGS ace.asm.obj  -o tool029 -t TOL### Dependancies for ace.asm.OBJace.ASM.obj 			Ä 		ace.asm e16.ace	ASMIIGS ace.asm	

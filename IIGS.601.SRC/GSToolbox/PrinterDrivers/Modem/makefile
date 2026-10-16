@@ -1,0 +1,1 @@
+modem		Ä		modem.asm.obj dialogdata.asm.obj     Linkiigs modem.asm.obj dialogdata.asm.obj -o modem -t $BB -at $0002	Modem.asm.obj	Ä		Modem.asm	asmiigs Modem.asm	DialogData.asm.obj	Ä		dialogdata.asm	asmiigs dialogdata.asm

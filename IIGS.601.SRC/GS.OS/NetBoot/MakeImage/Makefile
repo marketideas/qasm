@@ -1,0 +1,1 @@
+mi		Ä	main.c.o	Link -w -t MPST -c "MPS " main.c.o ¶	"{Libraries}"Stubs.o ¶	"{CLibraries}"CRuntime.o ¶	"{CLibraries}"StdCLib.o ¶	"{CLibraries}"CInterface.o ¶	"{Libraries}"Interface.o ¶	"{Libraries}"ToolLibs.o ¶	-o mimain.c.o	Ä	main.c	C main.c

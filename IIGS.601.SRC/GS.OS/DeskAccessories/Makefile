@@ -1,0 +1,1 @@
+GSOS.CDA	ÄÄ	GSOS.CDA.obj	LinkIIGS GSOS.CDA.obj -o GSOS.CDA -t CDAGSOS.CDA.obj	Ä	GSOS.CDA.src	AsmIIGS GSOS.CDA.src -o GSOS.CDA.obj

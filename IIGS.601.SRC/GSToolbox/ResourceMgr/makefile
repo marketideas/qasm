@@ -1,0 +1,1 @@
+# Build file for Apple IIGS Resource Manager.Resource.Mgr Ä Resource.a.obj	Linkiigs  Resource.a.obj -o Resource.Mgr -t $B6 	if {AutoDuplicate} == 1		DuplicateIIGS -y -mac Resource.Mgr :	End		Resource.a.obj Ä Resource.a	Asmiigs -d debug=0 -d JimsExperiment=1 Resource.a

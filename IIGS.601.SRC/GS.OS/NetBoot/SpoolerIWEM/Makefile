@@ -1,0 +1,1 @@
+### Dependancies for Spooler ImageWriter emulatorIWEm Ä SpoolerIWEm.src SpoolerIWEM.r	BuildSpoolerIWEm	rez SpoolerIWEM.r -o IWEM	setfile iwem -t lspt -c asps

@@ -1,0 +1,1 @@
+## stub (FST stub used in booting over the network).#stub		Ä	stub.aii.obj	linkiigs -o stub stub.aii.obj	makebiniigs -org $2000 stubstub.aii.obj	Ä	stub.aii	asmiigs -l stub.aii

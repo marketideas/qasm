@@ -1,0 +1,1 @@
+	INCLUDE  'all.macros'	include  'TextEdit.macros'	INCLUDE  'E16.Quickdraw'	INCLUDE  'E16.Event'	include ':::ControlMgr:CtlCustomEqus.asm'	INCLUDE  'E16.Window'	INCLUDE  'Tool.Records'	INCLUDE  'GlobalRecords'	INCLUDE  'GlobalEquates'	INCLUDE  'GlobalVars'	INCLUDE  '::sys.equs.asm'		DUMP  'Include.Symbols'	END

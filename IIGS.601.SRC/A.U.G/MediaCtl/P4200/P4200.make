@@ -1,0 +1,1 @@
+Objects =		¶				P4200.aii.objP4200			Ä	  {Objects}	reziigs P4200.r -o P4200  -c "pdos"	linkiigs -x	P4200.aii.obj ¶		-o P4200 -t $BB -at $0410.aii.obj					Ä	.aii	asmiigs  {default}.aii

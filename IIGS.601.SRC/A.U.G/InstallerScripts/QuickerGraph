@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2Tool set: QuickerGraphThis script installs the QuickerGraph setup file.  QuickerGraph will speed up several graphics operations, at the expense of using more memory for the system.  The selected disk must be a startup disk.\\:SystemTools2~*~:::Workspace:::1System:System.Setup:QuickerGraphSystem:System.Setup:QuickerGraph~~

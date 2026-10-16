@@ -1,0 +1,1 @@
+## Makefile for Quick Logoff#QuickLogoff	Ä	quick.o	LinkIIGS -o QuickLogoff -t $B7 -at 0 quick.oquick.o		Ä	quick.aii	AsmIIGS -o quick.o quick.aii

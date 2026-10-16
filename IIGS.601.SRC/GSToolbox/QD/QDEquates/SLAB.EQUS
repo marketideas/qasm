@@ -1,0 +1,1 @@
+DestRef        equ EndofRectCombinedMask   equ DestRef+4NotMaskAndDest equ CombinedMask+2StartWord      equ NotMaskAndDest+2FinishWord     equ StartWord+2PatMask        equ FinishWord+2Pat            equ PatMask+2DrawMask       equ Pat+4EndofSlab      equ DrawMask+4ZZEndOfSlab    equ EndOfSlab

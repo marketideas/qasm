@@ -1,0 +1,1 @@
+#   File:       AppleCDSC.make#   Target:     AppleCDSC#   Sources:    AppleCDSC.aii #   Created:    Thursday, February 15, 1990 10:56:01 PMAppleCDSC ÄÄ AppleCDSC.make ¶		AppleCDSC.aii.obj	LinkIIGS ¶		AppleCDSC.aii.obj ¶		-o AppleCDSC -t $BB -at $0420AppleCDSC.aii.obj Ä AppleCDSC.make AppleCDSC.aii	AsmIIGS AppleCDSC.aii

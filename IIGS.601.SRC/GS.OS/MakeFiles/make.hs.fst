@@ -1,0 +1,1 @@
+## Dependency rules for High Sierra FST...#{SDfsts}hs.fst 	Ä {Object}hs.fst.obj	linkiigs {Object}hs.fst.obj -t $bd -o {object}hs.fst {LnkOptions}		duplicate -y  {object}hs.fst {SDfsts}hs.fst{Object}hs.fst.obj Ä {HighSierra}hs.fst.src	asmiigs {HighSierra}hs.fst.src -o {Object}hs.fst.obj -i {Common} {AsmOptions}

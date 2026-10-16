@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2File System: DOS 3.3 FSTThe script ÒFile System: DOS 3.3 FSTÓ installs the files necessary for you to use Apple II DOS 3.3 disks (not MS-DOS disks).  The selected disk must be a startup disk.\\:SystemTools1~*~:::Workspace:::1System:FSTS:DOS3.3.FSTSystem:FSTS:DOS3.3.FST~~

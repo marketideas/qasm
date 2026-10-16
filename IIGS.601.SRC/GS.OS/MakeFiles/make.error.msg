@@ -1,0 +1,1 @@
+## Dependencies for error messages...#{SDSystem}Error.Msg Ä {ErrorMessages}english.src asmiigs 	{ErrorMessages}english.src   	-o {Object}english.obj  {AsmOptions} linkiigs -x {Object}english.obj -o {SDSystem}Error.Msg -t $bc {LnkOptions}

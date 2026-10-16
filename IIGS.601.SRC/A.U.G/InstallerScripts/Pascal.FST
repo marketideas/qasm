@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2File System: Pascal FSTThe script ÒFile System: Pascal FSTÓ installs the files necessary for you to use Apple Pascal file system disks.  The selected disk must be a startup disk.\\:SystemTools1~*~:::Workspace:::1System:FSTS:Pascal.FSTSystem:FSTS:Pascal.FST~~

@@ -1,0 +1,69 @@
+# Absolute Apple II image at bank 00 / $2000, plus relocatable and library links.
+# qlink reads this file. It is not assembled and it is not a makefile.
+
+include common.inc
+
+apple.omf: rel-code-merlin.o rel-data-merlin.o
+    ver 1
+    typ $(bin),$(load)
+    org $2000
+    entry CODE
+    +rel-code-merlin.o
+    +rel-data-merlin.o
+
+apple-orca.omf: rel-code-orca.o rel-data-orca.o
+    ver 1
+    typ $(bin),$(load)
+    org $2000
+    entry code
+    +rel-code-orca.o(code)
+    +rel-data-orca.o(data)
+
+apple-ca65.omf: rel-code-ca65.o rel-data-ca65.o
+    ver 1
+    typ $(bin),$(load)
+    org $2000
+    entry CODE
+    +rel-code-ca65.o(CODE)
+    +rel-data-ca65.o(DATA)
+
+apple-apw.omf: rel-code-apw.o rel-data-apw.o
+    ver 1
+    typ $(bin),$(load)
+    org $2000
+    entry code
+    +rel-code-apw.o(code)
+    +rel-data-apw.o(data)
+
+prog.omf: rel-code-merlin.o rel-data-merlin.o
+    ver 2
+    entry CODE
+    seg CODE kind=$0000
+    +rel-code-merlin.o
+    seg DATA kind=$0001
+    +rel-data-merlin.o
+
+runtime.lib: rel-data-merlin.o
+    ver 2
+    typ $B2,$0000
+    +rel-data-merlin.o
+
+proglib.omf: rel-code-merlin.o runtime.lib
+    ver 2
+    seg CODE kind=$0000
+    +rel-code-merlin.o
+    lib runtime.lib
+
+gap.omf: rel-code-merlin.o rel-data-merlin.o
+    ver 1
+    org $2000
+    seg CODE
+    +rel-code-merlin.o
+    seg DATA
+    ds $20
+    +rel-data-merlin.o
+
+merged.omf: rel-code-merlin.o rel-data-merlin.o
+    ver 2
+    +rel-code-merlin.o
+    +rel-data-merlin.o

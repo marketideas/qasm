@@ -1,0 +1,1 @@
+boot.driver	Ä	atboot.aii.obj	LinkIIGS ¶			atboot.aii.obj ¶			-t $70BB0181 ¶			-o boot.driver	echo "FileType = $BB  AuxType = $0181"	quote `directory`boot.driveratboot.aii.obj	Ä	atboot.aii equates	AsmIIGS 	atboot.aii

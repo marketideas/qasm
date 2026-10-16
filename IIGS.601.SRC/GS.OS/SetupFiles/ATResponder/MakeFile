@@ -1,0 +1,1 @@
+Objects	=	atresponder.oii.oii			Ä	.aii	asmiigs {aiigsoptions} -o {Default}.oii -l -lo {Default}.lst {Default}.aiiatresponder		Ä	{Objects}	linkiigs -t B6 -l >{Targ}.objlist -o {Targ} {Objects}	echo "FileType = $B6  AuxType = $0000" >> {Worksheet}	quote `directory`{Targ}	{Objects}		Ä	atresponder.aii

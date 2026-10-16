@@ -1,0 +1,1 @@
+Y1             equ EndOfRegionsX1             equ Y1+2Y2             equ X1+2X2             equ Y2+2Rect2          equ X2+2FillMode       equ Rect2+8LocalPnSize    equ FillMode+2EndOfRect      equ LocalPnSize+4ZZEndOfRect    equ EndofRect

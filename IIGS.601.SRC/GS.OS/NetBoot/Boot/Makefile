@@ -1,0 +1,1 @@
+## Make the GS/OS Boot Block#boot		Ä	boot.o	LinkIIGS -o boot boot.o	MakeBinIIGS -org $800 bootboot.o		Ä	boot.aii	AsmIIGS -o boot.o boot.aii

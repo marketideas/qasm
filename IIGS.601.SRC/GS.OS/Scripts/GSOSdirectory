@@ -1,0 +1,1 @@
+Directory "{dir}"if "{LastItem}"	addmenu GSOS "{LastItem}" "set item {LastItem}; set dir {LastDir} ; execute GSOSdirectory"	endaddmenu GSOS "{Item}!" "set item {Item}; set dir {Dir} ; execute GSOSdirectory"set LastDir "{Dir}"set LastItem "{Item}"

@@ -1,0 +1,1 @@
+## Makefile for building Fizzy#fizzy		Ä	fizzy.o	LinkIIGS -o fizzy fizzy.o	MakeBinIIGS -org $1000 fizzyfizzy.o		Ä	fizzy.aii	AsmIIGS -o fizzy.o fizzy.aii

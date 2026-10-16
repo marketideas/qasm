@@ -1,0 +1,1 @@
+Slope          equ EndOfSlab           ; fixed point valueLeftEdge       equ Slope+4             ; fixed point valueRightEdge      equ LeftEdge+4          ; fixed point valueSlopeTemp      equ RightEdge+4         ; fixed point valueAdjust         equ SlopeTemp+4         ; fixed point valueZZEndOfLines   equ Adjust+4

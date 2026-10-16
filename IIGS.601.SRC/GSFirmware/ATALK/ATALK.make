@@ -1,0 +1,1 @@
+#   File:       ATALK.make#   Created:    June 13, 1991   by JOA# 	Copyright Apple Computer, Inc. 1991# 	All rights reserved.ATALK 		Ä	ATALK.make				¶				::Firmware.macros.aii	¶				Port7.aii	AsmIIgs  {userAOptions} -h Port7.aii -wt -o Port7.obj	LinkIIgs  Port7.obj -o Port7.rel	MakeBinIIgs Port7.rel -o ATALK	dup ATALK ::bin:C7xx.bin	dup ATALK.2 ::bin:ATpatch.bin

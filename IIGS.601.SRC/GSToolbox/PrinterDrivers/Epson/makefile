@@ -1,0 +1,1 @@
+### Dependancies for Epson driverepson			Ä		epson.asm.obj			¶							dialogdata.asm.obj	LINKIIGS epson.asm.obj dialogdata.asm.obj -o epson -t $BB -at $0001							### Dependancies for epson.asm.objepson.asm.obj 			Ä 		epson.asm					ASMIIGS  epson.asm	### Dependancies for dialogdata.asm.OBJdialogdata.asm.obj	Ä		dialogdata.asm	ASMIIGS dialogdata.asm

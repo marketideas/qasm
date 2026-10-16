@@ -1,0 +1,1 @@
+CDEV = MediaCtrl{CDEV}			 	Ä				{CDEV}.Load 	¶									{CDEV}.r	reziigs {CDEV}.r -o {CDEV} -t "C7  " -c "pdos"{CDEV}.Load		Ä	¶			MediaCtrl.aii.obj	LinkIIGS MediaCtrl.aii.obj ¶			 -o {CDEV}.Load				MediaCtrl.aii.obj	Ä	MediaCtrl.aii	asmiigs  MediaCtrl.aii

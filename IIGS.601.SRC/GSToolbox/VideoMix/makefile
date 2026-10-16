@@ -1,0 +1,1 @@
+### Dependencies for building video mix (Tool033) ###Tool033		Ä	VD.asm.obj	Linkiigs 	VD.asm.obj	¶	-o Tool033 -t TOL		VD.asm.obj		Ä		VD.asm    Equates.asm	Asmiigs	VD.asm

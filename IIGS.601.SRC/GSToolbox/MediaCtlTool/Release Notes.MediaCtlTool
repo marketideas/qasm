@@ -1,0 +1,1 @@
+MediaCtl Tool (Tool038)   6.0d23Dan HitchensOVERVIEW:Added volume support.  MISCELLANEOUS CHANGES:	-Added MCSetVolume call $2E26	 BRC BUG FIXES:None

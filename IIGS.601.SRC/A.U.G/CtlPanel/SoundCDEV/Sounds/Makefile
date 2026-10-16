@@ -1,0 +1,1 @@
+All		ÄÄ	SoundsSounds	ÄÄ	Ahh ¶			Chirp ¶			Clavichord ¶			DoorBell ¶			Droplet ¶			Eastern ¶			Frog ¶			Guitar ¶			Lore ¶			PipeOrgan ¶			Quack ¶			SimpleBeep ¶			Sosumi ¶			Swish ¶			Trumpets ¶			Whip ¶			Whoosh.		Ä	.r	RezIIGS {Default}.r -o {Default} -t $70D80003

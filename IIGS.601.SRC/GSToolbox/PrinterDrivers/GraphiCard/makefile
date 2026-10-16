@@ -1,0 +1,1 @@
+Parallel.Card		Ä		GraphiCard.asm.obj dialogdata.asm.obj ¶							Linkiigs GraphiCard.asm.obj dialogdata.asm.obj -o Parallel.Card -t $BB -at $0002	GraphiCard.asm.obj	Ä		GraphiCard.asm 	asmiigs GraphiCard.asm	DialogData.asm.obj	Ä		dialogdata.asm 	asmiigs dialogdata.asm

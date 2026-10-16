@@ -1,0 +1,1 @@
+Objects	=	atp_includes.oii lap_includes.oii aptalk.oii.oii		Ä	.aii	asmiigs {aiigsoptions} -w -o {Default}.oii {Default}.aii	atrom		Ä	{Objects}	linkiigs -l >{Targ}.objlist -t $70BB0201 -o {Targ} {Objects}	echo "FileType = $BB  AuxType = $0201" >> {Worksheet}	rename -y {targ} 'atp1.'{targ}	quote `directory`'atp1.'{Targ}	{Objects}	ÄÄ	MakeFile

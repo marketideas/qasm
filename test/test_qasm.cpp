@@ -706,6 +706,527 @@ static void test_syntax_cross(void)
         cnot, sizeof(cnot), "ca65-not", "ca65");
 }
 
+static void test_apw(void)
+{
+    const uint8_t abs_on[] = {
+        0xA5, 0x40,
+        0xAD, 0x40, 0x00,
+        0xBD, 0x40, 0x00,
+        0xA9, 0x40,
+        0xA5, 0x40,
+        0x60
+    };
+    expect_syn(
+        "* Assembler: APW\n"
+        "         longa  off\n"
+        "         org    $8000\n"
+        "slot     equ    $40\n"
+        "         absaddr off\n"
+        "         lda    slot\n"
+        "         absaddr on\n"
+        "         lda    slot\n"
+        "         lda    slot,x\n"
+        "         lda    #slot\n"
+        "         lda    <slot\n"
+        "         rts\n",
+        abs_on, sizeof(abs_on), "apw-absaddr", "apw");
+
+    const uint8_t msb[] = {0x41, 0xC1, 0xE2, 0x43};
+    expect_syn(
+        "* Assembler: MPW\n"
+        "         org    $8000\n"
+        "         msb    off\n"
+        "         dc     c'A'\n"
+        "         msb    on\n"
+        "         dc     c'Ab'\n"
+        "         msb    no\n"
+        "         dc     c'C'\n",
+        msb, sizeof(msb), "apw-msb", "apw");
+
+    const uint8_t nops[] = {0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         kind   $06\n"
+        "         rename old,new\n"
+        "         setcom 0\n"
+        "         direct on\n"
+        "         codecheck on\n"
+        "         instime on\n"
+        "         ieee   on\n"
+        "         title  Hello\n"
+        "         printer off\n"
+        "         list   off\n"
+        "         6502\n"
+        "         65c02\n"
+        "         65816\n"
+        "         rts\n",
+        nops, sizeof(nops), "apw-nops", "apw");
+
+    const uint8_t col0[] = {0xAD, 0x40, 0x00, 0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "absaddr  on\n"
+        "longa    off\n"
+        "org      $8000\n"
+        "slot     equ $40\n"
+        "         lda slot\n"
+        "         rts\n",
+        col0, sizeof(col0), "apw-col0", "apw");
+
+    /* ABSADDR is applied while lowering, so a false IF does not hide it. */
+    const uint8_t hidden[] = {0xAD, 0x40, 0x00};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "slot     equ    $40\n"
+        "         if     0\n"
+        "         absaddr on\n"
+        "         endc\n"
+        "         lda    slot\n",
+        hidden, sizeof(hidden), "apw-absaddr-if", "apw");
+
+    /* Column-1 directive names are labels when the next field is an
+       instruction. DC.B strings are bytes. DS.B reserves bytes. #AD is
+       the symbol AD, not Merlin's bank prefix. */
+    const uint8_t labels[] = {
+        0x08,
+        0xEA,
+        0xEA,
+        0xFF,
+        0x53, 0x41,
+        0xC1,
+        0xA9, 0x80,
+        0xD0, 0xF7,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00,
+        0x60
+    };
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         longa  off\n"
+        "append   php\n"
+        "call     nop\n"
+        "print    nop\n"
+        "         dc.b   call-print,'SA'\n"
+        "         msb    on\n"
+        "         dc.b   'A'\n"
+        "         msb    off\n"
+        "ad       equ    $80\n"
+        "         lda    #ad\n"
+        "         bne    print\n"
+        "buf      ds.b   4\n"
+        "         ds.w   1\n"
+        "         rts\n",
+        labels, sizeof(labels), "apw-main-forms", "apw");
+
+    const uint8_t temporg[] = {0xA9, 0x42, 0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "main     proc   temporg $9A00\n"
+        "         longa  off\n"
+        "         lda    #$42\n"
+        "         rts\n",
+        temporg, sizeof(temporg), "apw-temporg", "apw");
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "main     proc   temporg $9A00\n"
+            "         rts\n",
+            "apw-temporg-org", opt);
+        if (!r.ok() || r.org != 0x9A00) {
+            fprintf(stderr, "FAIL apw-temporg-org org=$%X ok=%d\n", r.org, r.ok() ? 1 : 0);
+            fails++;
+        }
+    }
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "glbl     proc   entry,org $BE00\n"
+            "         longa  off\n"
+            "         rts\n",
+            "apw-proc-org", opt);
+        if (!r.ok() || r.org != 0xBE00 || r.bytes.size() != 1 || r.bytes[0] != 0x60) {
+            fprintf(stderr, "FAIL apw-proc-org org=$%X bytes=%zu ok=%d\n",
+                    r.org, r.bytes.size(), r.ok() ? 1 : 0);
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s\n", e.msg.c_str());
+            fails++;
+        }
+    }
+
+    /* Forward direct-page operands are absolute on pass 1. That moves
+       later labels. A backward branch must be remeasured after they settle. */
+    {
+        std::string src =
+            "* Assembler: APW\n"
+            "         org    $8000\n"
+            "         longa  off\n";
+        for (int i = 0; i < 40; i++)
+            src += "         lda    zp\n";
+        src += "syn      nop\n";
+        for (int i = 0; i < 90; i++)
+            src += "         nop\n";
+        src +=
+            "         bne    syn\n"
+            "zp       equ    $10\n"
+            "         rts\n";
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(src, "apw-phase-branch", opt);
+        if (!r.ok() || r.bytes.size() < 3 || r.bytes[r.bytes.size() - 3] != 0xD0 ||
+            r.bytes.back() != 0x60) {
+            fprintf(stderr, "FAIL apw-phase-branch ok=%d len=%zu\n",
+                    r.ok() ? 1 : 0, r.bytes.size());
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s:%d: %s\n", e.file.c_str(), e.line, e.msg.c_str());
+            fails++;
+        }
+    }
+    /* `base equ *` is the same address as the next label. Both have to move
+       together, or mark-base becomes the pass-1 inflation instead of 1. */
+    {
+        std::string src =
+            "* Assembler: APW\n"
+            "         org    $8000\n"
+            "         longa  off\n";
+        for (int i = 0; i < 40; i++)
+            src += "         lda    zp\n";
+        src +=
+            "base     equ    *\n"
+            "         nop\n"
+            "mark     nop\n"
+            "         dc.b   mark-base\n"
+            "zp       equ    $10\n"
+            "         rts\n";
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(src, "apw-phase-equ", opt);
+        /* 40 direct-page LDA, two NOP, the difference byte, RTS. */
+        if (!r.ok() || r.bytes.size() != 84 || r.bytes[82] != 0x01 || r.bytes.back() != 0x60) {
+            fprintf(stderr, "FAIL apw-phase-equ ok=%d len=%zu byte=%02X\n",
+                    r.ok() ? 1 : 0, r.bytes.size(),
+                    r.bytes.size() > 82 ? r.bytes[82] : 0);
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s:%d: %s\n", e.file.c_str(), e.line, e.msg.c_str());
+            fails++;
+        }
+    }
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            ".p816\n"
+            ".org $8000\n"
+            ".set STEP, 1\n"
+            ".set STEP, STEP+1\n"
+            ".byte STEP\n",
+            "ca65-set-freeze", opt);
+        if (!r.ok() || r.bytes.size() != 1 || r.bytes[0] != 0x02) {
+            fprintf(stderr, "FAIL ca65-set-freeze ok=%d len=%zu byte=%02X\n",
+                    r.ok() ? 1 : 0, r.bytes.size(),
+                    r.bytes.empty() ? 0 : r.bytes[0]);
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s:%d: %s\n", e.file.c_str(), e.line, e.msg.c_str());
+            fails++;
+        }
+    }
+
+    const uint8_t bank[] = {0xA9, 0x12};
+    expect_ok(
+        "         org    $8000\n"
+        "         lda    #A$123456\n",
+        bank, sizeof(bank), "merlin-hash-a");
+
+    const uint8_t mpw[] = {0xEA, 0x20, 0x00, 0x00, 0x00, 0x00, 0x6B, 0x60};
+    expect_syn(
+        "* Assembler: MPW\n"
+        "         machine m65816\n"
+        "         org    $8000\n"
+        "one      proc\n"
+        "         nop\n"
+        "         endp\n"
+        "code     proc\n"
+        "         import hook\n"
+        "         jsr    hook\n"
+        "         dc.w   hook\n"
+        "         rtl\n"
+        "         endp\n"
+        "         rts\n",
+        mpw, sizeof(mpw), "apw-mpw-proc", "apw");
+
+    if (qasm::identify_syntax(
+            " longa off\n longi off\n anop\n dc i1'$01'\n") != qasm::Syntax::Orca) {
+        fprintf(stderr, "FAIL identify orca stays orca\n");
+        fails++;
+    }
+    if (qasm::identify_syntax(
+            " absaddr off\n longa off\n dc i1'$01'\n") != qasm::Syntax::Apw) {
+        fprintf(stderr, "FAIL identify absaddr is apw\n");
+        fails++;
+    }
+    if (qasm::identify_syntax(
+            ".p816\n.org $8000\nabsaddr: .byte 1\n") != qasm::Syntax::Ca65) {
+        fprintf(stderr, "FAIL identify ca65 keeps absaddr label\n");
+        fails++;
+    }
+
+    qasm::Options mpw_opt;
+    mpw_opt.syntax = "mpw";
+    qasm::Result rm = qasm::assemble_string(" org $8000\n rts\n", "mpw-opt", mpw_opt);
+    if (!rm.ok() || rm.syntax != "apw" || rm.bytes.size() != 1 || rm.bytes[0] != 0x60) {
+        fprintf(stderr, "FAIL --syntax mpw syntax=%s bytes=%zu\n",
+                rm.syntax.c_str(), rm.bytes.size());
+        for (const auto &e : rm.errors)
+            fprintf(stderr, "  %s\n", e.msg.c_str());
+        fails++;
+    }
+
+    const uint8_t thenb[] = {0xA9, 0x42, 0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         longa  off\n"
+        "         if     0 then\n"
+        "         lda    #$ff\n"
+        "         endif\n"
+        "         if     1 then\n"
+        "         lda    #$42\n"
+        "         else\n"
+        "         lda    #$00\n"
+        "         endif\n"
+        "         rts\n",
+        thenb, sizeof(thenb), "apw-if-then", "apw");
+
+    const uint8_t gotob[] = {0xA9, 0x01, 0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         longa  off\n"
+        "         lda    #$01\n"
+        "         if     1 goto .skip\n"
+        "         lda    #$ff\n"
+        ".skip\n"
+        "         rts\n",
+        gotob, sizeof(gotob), "apw-if-goto", "apw");
+
+    /* A GOTO inside a false IF must not jump past the ENDIF. */
+    const uint8_t nest[] = {0xA9, 0x42, 0x60};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         longa  off\n"
+        "         if     0 then\n"
+        "         if     1 goto .after\n"
+        "         nop\n"
+        "         endif\n"
+        "         lda    #$42\n"
+        ".after\n"
+        "         rts\n",
+        nest, sizeof(nest), "apw-goto-nested", "apw");
+
+    const uint8_t dcbb[] = {0xEE, 0xEE, 0xEE};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         dcb.b  3,$ee\n",
+        dcbb, sizeof(dcbb), "apw-dcb-b", "apw");
+
+    const uint8_t semi[] = {0x41, 0x42};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         msb    off\n"
+        "         dc.b   'AB';\n",
+        semi, sizeof(semi), "apw-semi", "apw");
+
+    const uint8_t lenb[] = {0x01};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "meslen   equ    &len('AB')-1\n"
+        "         dc.b   meslen\n",
+        lenb, sizeof(lenb), "apw-len", "apw");
+
+    const uint8_t modb[] = {0x05};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         dc.b   ($105 mod $100)\n",
+        modb, sizeof(modb), "apw-mod", "apw");
+
+    const uint8_t dca[] = {0x56, 0x34, 0x12};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         dc.a   $123456\n",
+        dca, sizeof(dca), "apw-dc-a", "apw");
+
+    /* MacRoman 0xB3 is '>=' in an APW source. */
+    const uint8_t geb[] = {0x42};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         if     $10 \xB3 $10 goto .ok\n"
+        "         dc.b   $ff\n"
+        ".ok\n"
+        "         dc.b   $42\n",
+        geb, sizeof(geb), "apw-macroman-ge", "apw");
+
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "         org    $8000\n"
+            "         if     0 then\n"
+            "         aerror 'nope'\n"
+            "         endif\n"
+            "         rts\n",
+            "apw-aerror-hidden", opt);
+        if (!r.ok() || r.bytes.size() != 1 || r.bytes[0] != 0x60) {
+            fprintf(stderr, "FAIL apw-aerror-hidden ok=%d\n", r.ok() ? 1 : 0);
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s\n", e.msg.c_str());
+            fails++;
+        }
+    }
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "         org    $8000\n"
+            "         aerror 'boom'\n"
+            "         rts\n",
+            "apw-aerror", opt);
+        if (r.ok() || r.errors.empty() ||
+            r.errors[0].msg.find("boom") == std::string::npos) {
+            fprintf(stderr, "FAIL apw-aerror\n");
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s\n", e.msg.c_str());
+            fails++;
+        }
+    }
+
+    /* IMPORT after the label must not collapse the address to direct page. */
+    const uint8_t imp[] = {0x4C, 0x03, 0x80, 0x60, 0xAD, 0x00, 0x80};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         longa  off\n"
+        "warmdos  jmp    next\n"
+        "next     rts\n"
+        "         import warmdos\n"
+        "         lda    warmdos\n",
+        imp, sizeof(imp), "apw-import-after", "apw");
+
+    /* A repeated EQU is visible to the next line, not only the last value. */
+    const uint8_t requ[] = {0x10, 0x20};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "max      equ    $10\n"
+        "         dc.b   max\n"
+        "max      equ    $20\n"
+        "         dc.b   max\n",
+        requ, sizeof(requ), "apw-requ", "apw");
+
+    /* APW `>>` is a logical shift. The high byte of $02FF is $02. */
+    const uint8_t shb[] = {0xA9, 0x02};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $8000\n"
+        "         lda    #inline>>8\n"
+        "inline   equ    $02ff\n",
+        shb, sizeof(shb), "apw-shift", "apw");
+
+    /* Each PROC keeps its own procstart. A shared symbol would be 30 30. */
+    const uint8_t psb[] = {0x20, 0x30};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $2000\n"
+        "a        proc\n"
+        "procstart dc.b  >procstart\n"
+        "         endp\n"
+        "         org    $3000\n"
+        "b        proc\n"
+        "procstart dc.b  >procstart\n"
+        "         endp\n",
+        psb, sizeof(psb), "apw-procstart", "apw");
+
+    /* Two `@1` labels in one proc. The far one would be out of range. */
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "         org    $8000\n"
+            "one      proc\n"
+            "         bcc    @1\n"
+            "@1       rts\n"
+            "mid      nop\n"
+            "         ds.b   200\n"
+            "         bcc    @1\n"
+            "@1       rts\n"
+            "         endp\n",
+            "apw-at", opt);
+        const uint8_t head[] = {0x90, 0x00, 0x60, 0xEA};
+        const uint8_t tail[] = {0x90, 0x00, 0x60};
+        bool bad = !r.ok() || r.bytes.size() != 207 ||
+                   memcmp(r.bytes.data(), head, 4) != 0 ||
+                   memcmp(r.bytes.data() + 204, tail, 3) != 0;
+        if (!bad) {
+            for (size_t i = 4; i < 204; i++)
+                if (r.bytes[i] != 0) bad = true;
+        }
+        if (bad) {
+            fprintf(stderr, "FAIL apw-at ok=%d bytes=%zu\n", r.ok() ? 1 : 0, r.bytes.size());
+            for (const auto &e : r.errors)
+                fprintf(stderr, "  %s\n", e.msg.c_str());
+            fails++;
+        }
+    }
+
+    /* EXPORT keeps the name global. An unexported name stays in its proc. */
+    const uint8_t exb[] = {0x11, 0x20};
+    expect_syn(
+        "* Assembler: APW\n"
+        "         org    $2000\n"
+        "a        proc\n"
+        "         export seen\n"
+        "seen     dc.b   $11\n"
+        "         endp\n"
+        "b        proc\n"
+        "         dc.b   >seen\n"
+        "         endp\n",
+        exb, sizeof(exb), "apw-export", "apw");
+    {
+        qasm::Options opt;
+        qasm::Result r = qasm::assemble_string(
+            "* Assembler: APW\n"
+            "         org    $2000\n"
+            "a        proc\n"
+            "hidden   dc.b   $22\n"
+            "         endp\n"
+            "b        proc\n"
+            "         dc.b   hidden\n"
+            "         endp\n",
+            "apw-proc-hide", opt);
+        if (r.ok()) {
+            fprintf(stderr, "FAIL apw-proc-hide: hidden label leaked\n");
+            fails++;
+        }
+    }
+
+    qasm::Options orc;
+    orc.syntax = "orca";
+    qasm::Result ro = qasm::assemble_string(
+        " longa off\n org $8000\n absaddr on\n rts\n", "orca-abs", orc);
+    if (ro.ok() || ro.syntax != "orca") {
+        fprintf(stderr, "FAIL orca rejects absaddr ok=%d syntax=%s\n",
+                ro.ok() ? 1 : 0, ro.syntax.c_str());
+        fails++;
+    }
+}
+
 static void test_pcode_dump(void)
 {
     const char *src =
@@ -805,6 +1326,7 @@ int main(void)
     test_rel_ext();
     test_expr_cmp();
     test_syntax_cross();
+    test_apw();
     test_pcode_dump();
     if (fails) {
         fprintf(stderr, "%d test(s) failed\n", fails);

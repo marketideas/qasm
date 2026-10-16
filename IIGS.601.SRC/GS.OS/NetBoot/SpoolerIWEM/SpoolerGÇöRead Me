@@ -1,0 +1,1 @@
+To print from text-based Apple II programs through a print spooler, you need to put the IWEm file (ImageWriter Emulator) into the System Folder on the print spooler.This is a special version of ImageWriter Emulator 1.6, which ships with Apple IIgs System Software 6.0.1.

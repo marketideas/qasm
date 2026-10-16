@@ -1,0 +1,1 @@
+printer		Ä		printer.asm.obj dialogdata.asm.obj 	Linkiigs printer.asm.obj dialogdata.asm.obj -o printer -t $BB -at $0002	printer.asm.obj	Ä		printer.asm	asmiigs printer.asm	DialogData.asm.obj	Ä		dialogdata.asm	asmiigs dialogdata.asm

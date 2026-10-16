@@ -1,0 +1,1 @@
+## GetFFFromExp## Copies the file ROM.FF from Pasta:exp.rom:############################################################################## duplicate pasta:exp.rom:rom.FF : -y

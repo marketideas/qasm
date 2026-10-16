@@ -1,0 +1,1 @@
+appletalk		Ä		appletalk.asm.obj dialogdata.asm.obj ¶						special.macros	Linkiigs appletalk.asm.obj dialogdata.asm.obj -o appletalk -t $BB -at $0003	Appletalk.asm.obj	Ä		appletalk.asm  special.macros	asmiigs appletalk.asm	DialogData.asm.obj	Ä		dialogdata.asm  special.macros	asmiigs dialogdata.asm

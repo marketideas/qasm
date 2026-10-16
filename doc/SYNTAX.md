@@ -62,8 +62,9 @@ Order:
    is an error and nothing is assembled.
 2. A marker in the first 40 lines, after high bits are stripped:
    `syntax: ca65`, `syntax ca65`, `!syntax ca65`, or
-   `Assembler: Merlin 32`. `Merlin 32` and `Merlin32` are checked before
-   the single word `Merlin`.
+   `Assembler: Merlin 32`, `Assembler: APW`, or `Assembler: MPW`.
+   `Merlin 32` and `Merlin32` are checked before the single word
+   `Merlin`. `MPW` selects APW. The listing name is `apw`.
 3. A native Merlin file: a `$A0` column tab or a `$8D` line ending, and
    more than four bytes with bit 7 set.
 4. Otherwise, score distinctive tokens on comment-stripped, uppercased
@@ -76,6 +77,7 @@ Order:
 | Merlin | `MX` `XC` `DFB` `DDB` `STRL` `ADRL` `DEND` `DSK` `LUP` `DCI` `FLS` `PMC` `EOM` `DUM` `PUT` `USE` `--^` `MAC` |
 | Merlin 32 | `GEQU` or `GEQ` (also counts as Merlin) |
 | ORCA/M | `LONGA` `LONGI` `ANOP` `MCOPY` `MEND` `PRIVDATA` `ENDC`, or a `DC` lead-in `I1'` `I2'` `I4'` `I1"` `I2"` `C'` `H'` |
+| APW/MPW | No separate score. `ABSADDR`, `MSB`, `CODECHK`, `CODECHECK`, or `INSTIME` selects APW when the winner would otherwise be ORCA/M or Merlin. |
 | LISA | `.OR` `.HS` `.BS` `.EQ` `.DA` `.EN` `.EP` `.AS` `.FI` `.EL` `.DB` `.BY` |
 | ca65 | `.ORG` `.BYTE` `.WORD` `.DWORD` `.FARADDR` `.RES` `.MACRO` `.ENDMACRO` `.P816` `.A8` `.A16` `.I8` `.I16` `.PROC` `.IMPORT` `.EXPORT` `.SEGMENT` `.SETCPU` `.PC02` `.P02` `.FEATURE` `.INCLUDE` `.ALIGN` `.REPEAT` `.ENDPROC` |
 
@@ -84,9 +86,14 @@ so a file that is only `ORG` / `EQU` / `JSR` / `RTS` is Merlin. If the
 Merlin 32 flag is set and Merlin wins, the dialect is Merlin 32. Merlin 32
 uses the same front end and the same encoder as Merlin 16+.
 
+`ABSADDR`, `MSB`, `CODECHK`, `CODECHECK`, or `INSTIME` then selects APW when that
+winner is ORCA/M or Merlin, including a Merlin 32 win. LISA and ca65 keep
+a higher score. A pure ORCA/M file stays ORCA/M. `Assembler: MPW` and
+`--syntax mpw` select APW, and the reported name is `apw`.
+
 Accepted names: `merlin`, `merlin16`, `merlin16+`, `merlin-16`, `merlin32`,
-`merlin-32`, `m32`, `orca`, `orca/m`, `orcam`, `orca-m`, `lisa`, `lisa816`,
-`lisa-816`, `ca65`, `cc65`, `auto`.
+`merlin-32`, `m32`, `orca`, `orca/m`, `orcam`, `orca-m`, `apw`, `mpw`,
+`apw/mpw`, `apw-mpw`, `lisa`, `lisa816`, `lisa-816`, `ca65`, `cc65`, `auto`.
 
 ## What pcode is
 
@@ -294,7 +301,9 @@ The Merlin line parser is used, then a column fix. A trailing `:` on a
 label is removed. A directive written in the label column is shifted into
 the opcode column, so `longa off` at column 0 works. `start anop` stays a
 label plus `ANOP`, because both words are directives and the line is not
-shifted.
+shifted. The line is also left alone when the second field is an instruction
+mnemonic, so a label may be spelled like a directive (`APPEND PHP`,
+`PRINT STA`).
 
 Expressions in operands are algebraic, as above. A `~` followed by a name is a local label (`~loop`) and is scoped between global labels, the same way as a Merlin `:label`. A `~` before a number or parenthesis is bitwise NOT.
 
@@ -335,6 +344,51 @@ the quotes: `dc i1'1,2',i2'$10',c'A',h'0d'` is `01 02 10 00 41 0D`.
 
 Instruction operands are algebraic in the expression only.
 `jsr bell` stays `JSR bell`.
+
+## APW/MPW
+
+APW is Apple's 65816 assembler. It is the ORCA/M language Apple shipped,
+so this dialect uses the ORCA/M front end. `--syntax apw` and `--syntax
+mpw` both select it. `Assembler: APW` and `Assembler: MPW` do too. The
+listing and the pcode dump say `syntax=apw`.
+
+The MPW IIgs assembler is the other Apple 65816 assembler. The forms
+below that change bytes are accepted on this same dialect. Its `RECORD`
+templates and `STRING PASCAL` or `STRING C` prefixes are not applied:
+those directives are kept and emit no bytes.
+
+Everything in the ORCA/M tables above works. These are the additions.
+`ABSADDR` and `MSB` are applied while the file is lowered, including
+inside a false `IF`, the same way `CASE` is.
+
+| Directive | Treatment |
+| --- | --- |
+| `ABSADDR ON` | `ON`, `YES`, or `1` forces later instruction operands to absolute when they have no `<`, `\|`, or `>` and are not immediate or implied. Any other operand, including `OFF`, clears it. The default is off, which matches ORCA/M. |
+| `MSB ON` | `ON`, `YES`, or `1` sets bit 7 on each later `DC C` character and on each character of a quoted `DC.B` string. The bytes are raw. Any other operand clears it. The default is off, so `DC C` stays ORCA/M ASCII. |
+| `65816` `65C02` `6502` | Selects that CPU, as `MACHINE` does. `OFF`, `NO`, or `0` leaves the CPU alone. An empty operand selects the CPU. |
+| `MACHINE M65816` | The ORCA/M `MACHINE` check. `M65816`, `M65C02`, and `M6502` select that CPU. |
+| `PROC` `FUNC` `MAIN` | Label only, like `START`. They do not open a segment. An operand `temporg expr` or `org expr` (with an optional leading `ENTRY`) is Merlin `ORG` before the label is defined. `ENTRY` itself emits no bytes. |
+| `RECORD` `CODE` | Label only. They do not open a segment. |
+| `ENDP` `ENDPROC` `ENDF` `ENDFUNC` `ENDMAIN` `ENDR` `ENDS` `ENDWITH` | No bytes. They do not stop the file. `END` still does. |
+| `IMPORT` | Merlin `EXT`. Each name is 0. |
+| `EXPORT` | No bytes. A label on the line is kept. There is no export record yet. |
+| `SET` | Merlin `EQU`. |
+| `DC.B` `DCB` | One byte per comma-separated expression (`DFB`). An item that is only a single- or double-quoted string emits one byte per character. `MSB ON` sets bit 7 on those bytes. A one-character quote used inside a larger expression stays an expression. |
+| `DC.W` | One word per expression (`DA`). |
+| `DC.L` | Four-byte values (`ADRL`). |
+| `DS.B` | Merlin `DS`. The count is a number of bytes. A second comma-separated value is the fill. |
+| `DS.W` | Merlin `DS` of twice the count (words). |
+| `DS.L` | Merlin `DS` of four times the count (longs). |
+| `INCLUDE` | Include and assemble, the same as `COPY`. |
+| `CODECHK` `CODECHECK` `DATACHECK` `DATACHK` `DYNCHK` `EXPAND` `GEN` `IEEE` `INSTIME` `LIST` `NUMSEX` `OBJCASE` `PRINTER` `SYMBOL` `TITLE` `STRING` `BLANKS` `PRINT` `SEG` `SEGATTR` `PAGESIZE` `SPACE` | No bytes. A label is kept. |
+| `KIND` `RENAME` `SETCOM` `DIRECT` | No bytes. A label is kept. The same lines are errors under ORCA/M. |
+
+A directive written in the label column is shifted when it is one of
+these, the same way an ORCA/M directive is. A second field that is an
+instruction mnemonic keeps the first word as the label.
+
+An immediate `#name` is that symbol, including a name that starts with `A`.
+Merlin's `#Aexpr` bank prefix is not applied. The bank byte is `^`.
 
 ## LISA
 
@@ -416,8 +470,9 @@ without storing bytes. The default origin is `$8000` when no `ORG` and no
 `REL` ran. `REL` with no `ORG` records origin 0.
 
 `DSK` or `SAV` names the output file when `-o` is absent. Otherwise the
-output is `<source>.bin`. The listing is `<source>.lst` unless `-l` or
-`--no-lst` is set. `TYP` changes the type printed in the status line and
+output is `<source>.bin`. A listing file is written only with `-l FILE`.
+`FILE` may be `-` or `stdout` to write the listing to standard output.
+`--no-lst` turns that listing off. `TYP` changes the type printed in the status line and
 stored on `Result`. It does not wrap the bytes in an OMF record.
 
 The pcode dump is one line per operation: file, line, op name, label,
@@ -436,6 +491,14 @@ These are properties of this assembler, not of the original dialects.
   are one flat PC. They do not change the origin.
 - ORCA/M conditional macro language is rejected: `AIF`, `AGO`, `SETA`,
   `LCLA`, and the related directives listed above.
+- APW/MPW `ABSADDR` and `MSB` take effect while the file is lowered, so
+  a false `IF` does not hide them. `KIND`, `RENAME`, `SETCOM`, and
+  `DIRECT` are ignored for APW/MPW and are errors for ORCA/M.
+- MPW `RECORD` templates are not expanded, and `STRING PASCAL` or
+  `STRING C` does not add a length byte or a terminator. `DC.W` and
+  `DC.L` take comma-separated expressions, not a quoted character
+  string. A quoted `DC.B` item is raw bytes. Use ORCA/M `DC C` for a
+  typed character constant on the same line as other `DC` types.
 - ca65 anonymous labels (`:`, `:+`, `:-`), `.ELSEIF`, and scoped `.PROC`
   / `.LOCAL` symbols are not implemented. `.LOCAL` is ignored.
 - ca65 `.SMART`, `.FEATURE`, and listing controls do not change encoding

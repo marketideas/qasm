@@ -1,0 +1,1 @@
+Set Echo 1RezIIGS ":MountImage.r" -o ":MountImageGS"AsmIIGS -l "MountImage.aii" -o "MountImage.aii.obj"LinkIIGS -t NDA ¶	"MountImage.aii.obj" ¶	-o ":MountImageGS"DuplicateIIGS -mac -y ":MountImageGS" :

@@ -1,0 +1,1 @@
+SCRIPTV2.00Rr2File System: MS-DOS FSTThe script ÒFile System: MS-DOS FSTÓ installs the files needed for reading MS-DOS disks.Note:  To read MS-DOS disks, you need an Apple SuperDrive connected to an Apple II SuperDrive Card, or other hardware that can read MS-DOS disks.\\:SystemTools1~*~:::Workspace:::1System:FSTS:MSDOS.FSTSystem:FSTS:MSDOS.FST~~

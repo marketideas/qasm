@@ -1,0 +1,5 @@
+# OMF 1.0 cannot store the dynamic attribute.
+bad.omf: rel-code-merlin.o
+    ver 1
+    seg CODE dynamic
+    +rel-code-merlin.o

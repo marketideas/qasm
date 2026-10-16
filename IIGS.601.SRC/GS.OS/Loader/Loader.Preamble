@@ -1,0 +1,1 @@
+Loader_Version	EQU	$0402			;Loader's Tool Version NumberLoader_Entry	EQU	$01A600			;Loader's Starting addressLoader_End	EQU	$01BC00			;Loader's Ending addressLoader_LC_Start	EQU	$01D000			;Loader's Language Card segment start;Loader_Globals EQU     $01FB00                 ;Loader Globals Starting addressLoader_LC_End	EQU	$01FC00			;Loader's Language Card Ending address

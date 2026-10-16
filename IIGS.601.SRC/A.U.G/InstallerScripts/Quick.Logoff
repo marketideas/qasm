@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2Network: Server Quick LogoffThe script “Network: Server Quick Logoff” allows you to quickly log off and back on when booting over the network.  Install on the shared disk or on your Local Startup disk.\\:SystemTools2:AppleTalk~*~:::Workspace:::1QuickLogoffSystem:System.Setup:QuickLogoff~~

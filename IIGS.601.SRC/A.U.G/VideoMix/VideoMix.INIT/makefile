@@ -1,0 +1,1 @@
+### Dependencies for building video mix init  ###AppleIIVOC.INIT		Ä	VDInit.asm.obj	Linkiigs 	VDInit.asm.obj	¶		-o AppleIIVOC.INIT -t $B7		VDInit.asm.obj		Ä		VDInit.asm	Asmiigs	VDInit.asm

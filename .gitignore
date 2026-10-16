@@ -3,6 +3,7 @@
 /merlin
 /test_merlin
 /build/
+/bin/
 /CMakeCache.txt
 /CMakeFiles/
 /cmake_install.cmake
@@ -13,6 +14,11 @@
 *.obj
 *.exe
 *.pcode
+*.omf
+*.lib
 *.L
 .DS_Store
 /tmp/
+__pycache__/
+*.pyc
+__MACOSX/

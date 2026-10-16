@@ -1,0 +1,1 @@
+		MACRO&lab ErrorDeath &text		LCLC &CHAR&char setc &setting('STRING') 		STRING AsIS&lab bcc 	@end 		pea 0 		pea 0 		pha 		ldx #$2A0B 		jsl $E10000 		pla 		sta >@y 		pla 		sta >@y+2 		pea @x>>16 		pea @x 		ldx #$200C 		jsl $E10000 		brk $F0@x 		dc.B &text 		dc.B ' Error was $'@y 		ds.B 4 		dc.B 13,10,0@end  		STRING &char 		mend

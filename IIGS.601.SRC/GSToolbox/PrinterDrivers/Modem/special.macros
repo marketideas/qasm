@@ -1,0 +1,1 @@
+ MACRO&lab _WriteBlock&lab ldx #$1E0C jsl $e10000 MEND MACRO&lab _ReadBlock&lab ldx #$230C jsl $e10000 MEND

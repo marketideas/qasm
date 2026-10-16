@@ -1,0 +1,1 @@
+ MACRO&lab IncYWd&lab iny iny MEND MACRO&lab DecYWd&lab dey dey MEND MACRO&lab movelong &from,&to&lab lda &from sta &to lda &from+2 sta &to+2 MEND 

@@ -1,0 +1,1 @@
+			TITLE	', Last.a';;		 This routine will show whether the Loader has overflowed its;		 allocated memory slot and will allocate the global area.;Globals		PROC	ORG	Loader_Globals			ds.b	256			ENDP

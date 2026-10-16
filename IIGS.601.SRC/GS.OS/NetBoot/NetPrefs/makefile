@@ -1,0 +1,1 @@
+NetPrefs		Ä	NetPrefs.aii.obj	LinkIIGS -o NetPrefs NetPrefs.aii.obj	MakeBinIIGS -t $FF NetPrefsNetPrefs.aii.obj	Ä	NetPrefs.aii	AsmIIGS -l NetPrefs.aii

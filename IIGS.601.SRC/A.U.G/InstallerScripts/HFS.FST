@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2File System: HFS FSTThe script ÒFile System: HFS FSTÓ installs the files necessary for you to use HFS disks.  HFS is a file system commonly used on the Macintosh.  The selected disk must be a startup disk.\\:SystemTools1~*~:::Workspace:::1System:FSTS:HFS.FSTSystem:FSTS:HFS.FST~~

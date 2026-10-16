@@ -1,0 +1,1 @@
+Objects	=	atstart.oii.oii		Ä	.aii	asmiigs {aiigsoptions} -o {Default}.oii {Default}.aiiatstart		Ä	atstart.oii	linkiigs -t $70BB0203 -o {Targ} {Targ}.oii	echo "FileType = $BB  AuxType = $0203" >> {Worksheet}	rename -y {targ} 'atp5.'{targ}	quote `directory`'atp5.'{Targ}	{Objects}	ÄÄ	MakeFile#atstart.oii	ÄÄ	::ASP:atp.equates.inc ::ASP:global.equates.inc

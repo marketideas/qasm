@@ -1,0 +1,1 @@
+### Dependancies for qd.loaderqd.loader					Ä					¶			qd.loader.asm.obj				linkiigs  qd.loader.asm.obj -o qd.loader### Dependancies for componentsqd.loader.asm.obj		Ä	qd.loader.asm	asmiigs qd.loader.asm

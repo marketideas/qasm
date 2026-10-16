@@ -1,0 +1,1 @@
+### Dependencies for Scrap Managertool022 Ä Scrap.asm.obj Common.asm.obj	LinkIIGS Scrap.asm.obj Common.asm.obj -o Tool022 -t TOL	if {AutoDuplicate} == 1		DuplicateIIGS -y -mac Tool022 :	End### Dependencies for componentsScrap.asm.obj Ä Scrap.asm Special.macros	AsmIIGS	Scrap.asm 	Common.asm.obj Ä Common.asm	AsmIIGS Common.asm

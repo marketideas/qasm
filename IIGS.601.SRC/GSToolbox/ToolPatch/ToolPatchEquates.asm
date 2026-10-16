@@ -1,0 +1,1 @@
+oCMDispatcher	equ $0000oWMActivate		equ $0002oWMDeActivate	equ $0004

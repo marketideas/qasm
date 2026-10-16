@@ -1,0 +1,1 @@
+ MACRO&lab PushZWord &Memory&lab pei &Memory MEND MACRO&lab PushZLong &Memory&lab pei &Memory+2 pei &Memory MEND MACRO&lab PushZPtr &TheLabel&lab pea 0 clc tdc adc #&TheLabel pha MEND	MACRO&lab	PushPtr &addr&lab	dc.B $F4	dc.W (&addr)>>16	dc.B $F4	dc.W &addr	MEND	macro&lab	lxy &addr&lab	ldx &addr		ldy &addr+2	mend

@@ -1,0 +1,1 @@
+Set Echo 1AsmIIgs  {userAOptions} -h Applesoft.aii -wt -o Applesoft.objLinkIIgs  Applesoft.obj -o Applesoft.relMakeBinIIgs Applesoft.rel -o Applesoftdup Applesoft ::bin:Applesoft.bin

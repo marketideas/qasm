@@ -1,0 +1,1 @@
+## Dependencies for proboot...#{Object}proboot.obj Ä {GSOSboot}proboot.src asmiigs {GSOSboot}proboot.src -o {Object}proboot.obj {AsmOptions} linkiigs {Object}proboot.obj -o {WorkFolder}proboot.lnk {LnkOptions} makebiniigs -org $2000 {WorkFolder}proboot.lnk -o {SystemDisk}prodos setfile {SystemDisk}prodos -t PSYS

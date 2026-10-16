@@ -1,0 +1,1 @@
+Objects	=	atinit.oii atstart.oii.oii		Ä	.aii	asmiigs {aiigsoptions} -o {Default}.oii {Default}.aiiatinit 		Ä	atinit.oii	linkiigs -o {Targ} {Targ}.oii	makebiniigs {Targ}	setfile -t 'E2  ' {targ}	echo "FileType = $E2  AuxType = $0000" >> {Worksheet}	quote `directory`{Targ}{Objects}	ÄÄ	MakeFileatstart.oii	ÄÄ	::ASP:atp.equates.inc ::ASP:global.equates.inc

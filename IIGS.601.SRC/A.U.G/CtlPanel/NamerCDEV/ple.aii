@@ -1,0 +1,1 @@
+;;;	ple - print line with ellipses.;;	Michael V. Stein	03/11/90.;; 25-Aug-92 DAL:;   This file is no longer used.  The List Manager now uses;   DrawStringWidth, so we don't need a custom drawProc.;

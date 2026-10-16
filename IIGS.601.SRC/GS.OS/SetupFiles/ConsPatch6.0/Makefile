@@ -1,0 +1,1 @@
+ConsPatch	ÄÄ	ConsPatch.obj	LinkIIGS -t TIF ConsPatch.obj -o ConsPatchConsPatch.obj	Ä	ConsPatch.aii	AsmIIGS ConsPatch.aii -o ConsPatch.obj

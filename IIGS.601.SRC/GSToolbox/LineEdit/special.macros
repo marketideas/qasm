@@ -1,0 +1,1 @@
+ MACRO&lab PushZPtr &TheLabel&lab pea 0 clc tdc adc #&TheLabel pha MEND MACRO&lab PushZLong &Memory&lab pei &Memory+2 pei &Memory MEND MACRO&lab PushZWord &Memory&lab pei &Memory MEND

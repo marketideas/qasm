@@ -1,0 +1,1 @@
+EasyAccess GS 1.0Release 1.0d5	¥ Fixed a ROM01 compatibility. It didn't used to recognize early ROM01 machines--------------------------------------------------------------This is the final candidate.Release 1.0d4--------------------------------------------------------------Bug Fixes:  ¥ BRC #74897: Sticky keys will no longer turn off with two modifiers.

@@ -1,0 +1,1 @@
+SCRIPTV2.00RR2Tool set: AnimationThis script installs the Animation Tool Set (Tool037).  The selected disk must be a startup disk.\\:SystemTools1~*~:::Workspace:::1System:Tools:Tool037System:Tools:Tool037~~
